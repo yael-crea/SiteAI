@@ -8,7 +8,7 @@ import {
 
 import { useRouter } from "next/navigation";
 
-import { supabase } from "@/app/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 type SiteSection = {
   title: string;
