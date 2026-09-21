@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
-
-import {
-  useParams,
-} from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 type SiteSection = {
   title: string;
@@ -30,10 +24,7 @@ type PublicSite = {
   activity: string;
   city: string;
   phone: string;
-  designStyle:
-    | "moderne"
-    | "elegant"
-    | "artisan";
+  designStyle: "moderne" | "elegant" | "artisan";
   accentColor: string;
   site: GeneratedSite;
   publicSlug: string;
@@ -59,6 +50,7 @@ export default function PublicSitePage() {
 
   useEffect(() => {
     if (!slug) {
+      setLoading(false);
       return;
     }
 
@@ -68,7 +60,10 @@ export default function PublicSitePage() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/public-sites/${encodeURIComponent(slug)}`,
+          `/api-backend/public-sites/${encodeURIComponent(slug)}`,
+          {
+            cache: "no-store",
+          },
         );
 
         if (response.status === 404) {
@@ -80,7 +75,7 @@ export default function PublicSitePage() {
 
         if (!response.ok) {
           throw new Error(
-            "Impossible de charger le site",
+            `Erreur HTTP ${response.status}`,
           );
         }
 
@@ -118,14 +113,11 @@ export default function PublicSitePage() {
     );
   }
 
-  if (
-    error ||
-    !data
-  ) {
+  if (error || !data) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
         <div className="max-w-lg text-center">
-          <div className="text-6xl">
+          <div className="text-6xl font-black">
             404
           </div>
 
@@ -134,7 +126,8 @@ export default function PublicSitePage() {
           </h1>
 
           <p className="mt-4 text-slate-400">
-            {error}
+            {error ||
+              "Ce site est introuvable."}
           </p>
         </div>
       </main>
@@ -306,15 +299,11 @@ export default function PublicSitePage() {
                   </div>
 
                   <h3 className="text-2xl font-bold">
-                    {
-                      section.title
-                    }
+                    {section.title}
                   </h3>
 
                   <p className="mt-4 leading-8 text-slate-600">
-                    {
-                      section.text
-                    }
+                    {section.text}
                   </p>
                 </article>
               ),
@@ -378,7 +367,7 @@ export default function PublicSitePage() {
           </div>
 
           <p className="text-sm text-slate-500">
-            © 2026{" "}
+            © {new Date().getFullYear()}{" "}
             {data.businessName}
           </p>
         </div>

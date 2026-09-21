@@ -7,8 +7,7 @@ import {
 } from "react";
 
 import { useRouter } from "next/navigation";
-
-import { supabase } from "@/app/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 type SiteSection = {
   title: string;
@@ -46,6 +45,9 @@ type SavedSite = {
   designStyle: DesignStyle;
   accentColor: string;
   site: GeneratedSite;
+  published: boolean;
+  publicSlug: string;
+  publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -141,6 +143,9 @@ export default function Home() {
   const [saving, setSaving] =
     useState(false);
 
+  const [publishing, setPublishing] =
+    useState(false);
+
   const [saveMessage, setSaveMessage] =
     useState("");
 
@@ -158,21 +163,10 @@ export default function Home() {
         } =
           await supabase.auth.getSession();
 
-        if (sessionError) {
-          console.error(
-            "Erreur session :",
-            sessionError,
-          );
-
-          if (active) {
-            setAuthLoading(false);
-            router.replace("/auth");
-          }
-
-          return;
-        }
-
-        if (!data.session) {
+        if (
+          sessionError ||
+          !data.session
+        ) {
           if (active) {
             setAuthLoading(false);
             router.replace("/auth");
@@ -193,10 +187,7 @@ export default function Home() {
 
         await loadSavedSites();
       } catch (err) {
-        console.error(
-          "Erreur initialisation :",
-          err,
-        );
+        console.error(err);
 
         if (active) {
           setAuthLoading(false);
@@ -236,7 +227,7 @@ export default function Home() {
   }
 
   async function authenticatedFetch(
-    url: string,
+    path: string,
     options: RequestInit = {},
   ) {
     const token =
@@ -263,10 +254,14 @@ export default function Home() {
     }
 
     const response =
-      await fetch(url, {
-        ...options,
-        headers,
-      });
+      await fetch(
+        `/api-backend${path}`,
+        {
+          ...options,
+          headers,
+          cache: "no-store",
+        },
+      );
 
     if (
       response.status === 401
@@ -285,7 +280,7 @@ export default function Home() {
     try {
       const response =
         await authenticatedFetch(
-          "http://localhost:8080/sites",
+          "/sites",
         );
 
       if (!response.ok) {
@@ -303,6 +298,22 @@ export default function Home() {
     } finally {
       setSitesLoading(false);
     }
+  }
+
+  function currentSavedSite() {
+    if (
+      savedSiteID === null
+    ) {
+      return null;
+    }
+
+    return (
+      savedSites.find(
+        (saved) =>
+          saved.id ===
+          savedSiteID,
+      ) ?? null
+    );
   }
 
   async function handleLogout() {
@@ -339,7 +350,7 @@ export default function Home() {
     try {
       const response =
         await authenticatedFetch(
-          "http://localhost:8080/generate",
+          "/generate",
           {
             method: "POST",
 
@@ -355,10 +366,10 @@ export default function Home() {
         );
 
       if (!response.ok) {
-        const text =
+        const message =
           await response.text();
 
-        throw new Error(text);
+        throw new Error(message);
       }
 
       const data: GeneratedSite =
@@ -396,6 +407,7 @@ export default function Home() {
 
     setEditLoading(true);
     setEditError("");
+    setSaveMessage("");
 
     setChatMessages(
       (messages) => [
@@ -412,7 +424,7 @@ export default function Home() {
     try {
       const response =
         await authenticatedFetch(
-          "http://localhost:8080/modify",
+          "/modify",
           {
             method: "POST",
 
@@ -492,7 +504,7 @@ export default function Home() {
       ) {
         response =
           await authenticatedFetch(
-            "http://localhost:8080/sites",
+            "/sites",
             {
               method: "POST",
 
@@ -505,7 +517,7 @@ export default function Home() {
       } else {
         response =
           await authenticatedFetch(
-            `http://localhost:8080/sites/${savedSiteID}`,
+            `/sites/${savedSiteID}`,
             {
               method: "PUT",
 
@@ -548,13 +560,107 @@ export default function Home() {
     }
   }
 
+  async function publishCurrentSite() {
+    if (
+      savedSiteID === null
+    ) {
+      setSaveError(
+        "Sauvegarde le site avant de le publier.",
+      );
+      return;
+    }
+
+    setPublishing(true);
+    setSaveError("");
+    setSaveMessage("");
+
+    try {
+      const response =
+        await authenticatedFetch(
+          `/sites/${savedSiteID}/publish`,
+          {
+            method: "POST",
+          },
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          "Erreur publication",
+        );
+      }
+
+      const saved: SavedSite =
+        await response.json();
+
+      setSaveMessage(
+        "🚀 Site publié avec succès.",
+      );
+
+      await loadSavedSites();
+
+      router.push(
+        `/site/${saved.publicSlug}`,
+      );
+    } catch (err) {
+      console.error(err);
+
+      setSaveError(
+        "Impossible de publier le site.",
+      );
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function unpublishCurrentSite() {
+    if (
+      savedSiteID === null
+    ) {
+      return;
+    }
+
+    setPublishing(true);
+    setSaveError("");
+    setSaveMessage("");
+
+    try {
+      const response =
+        await authenticatedFetch(
+          `/sites/${savedSiteID}/unpublish`,
+          {
+            method: "POST",
+          },
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          "Erreur dépublication",
+        );
+      }
+
+      setSaveMessage(
+        "Le site n'est plus public.",
+      );
+
+      await loadSavedSites();
+    } catch (err) {
+      console.error(err);
+
+      setSaveError(
+        "Impossible de retirer le site.",
+      );
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   async function openSavedSite(
     id: number,
   ) {
     try {
       const response =
         await authenticatedFetch(
-          `http://localhost:8080/sites/${id}`,
+          `/sites/${id}`,
         );
 
       if (!response.ok) {
@@ -641,7 +747,7 @@ export default function Home() {
     try {
       const response =
         await authenticatedFetch(
-          `http://localhost:8080/sites/${id}`,
+          `/sites/${id}`,
           {
             method: "DELETE",
           },
@@ -748,6 +854,9 @@ export default function Home() {
       },
     );
   }
+
+  const openedSite =
+    currentSavedSite();
 
   if (authLoading) {
     return (
@@ -1064,7 +1173,7 @@ export default function Home() {
             {site && (
               <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
                 <h2 className="text-xl font-bold">
-                  💾 Sauvegarde
+                  💾 Sauvegarde et publication
                 </h2>
 
                 <button
@@ -1079,18 +1188,76 @@ export default function Home() {
                     ? "Sauvegarde..."
                     : savedSiteID ===
                         null
-                      ? "Sauvegarder"
-                      : "Enregistrer les modifications"}
+                      ? "💾 Sauvegarder"
+                      : "💾 Enregistrer les modifications"}
                 </button>
 
+                {savedSiteID !==
+                  null &&
+                  !openedSite?.published && (
+                    <button
+                      type="button"
+                      onClick={
+                        publishCurrentSite
+                      }
+                      disabled={
+                        publishing
+                      }
+                      className="mt-3 w-full rounded-xl bg-blue-600 px-6 py-4 font-bold hover:bg-blue-500 disabled:opacity-50"
+                    >
+                      {publishing
+                        ? "Publication..."
+                        : "🚀 Publier le site"}
+                    </button>
+                  )}
+
+                {openedSite?.published && (
+                  <>
+                    <a
+                      href={`/site/${openedSite.publicSlug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 block w-full rounded-xl bg-blue-600 px-6 py-4 text-center font-bold hover:bg-blue-500"
+                    >
+                      🌍 Voir le site public
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={
+                        unpublishCurrentSite
+                      }
+                      disabled={
+                        publishing
+                      }
+                      className="mt-3 w-full rounded-xl border border-red-800 px-6 py-4 font-bold text-red-400 hover:bg-red-950 disabled:opacity-50"
+                    >
+                      Retirer de la publication
+                    </button>
+
+                    <div className="mt-4 rounded-xl bg-slate-950 p-4">
+                      <p className="text-xs uppercase text-slate-500">
+                        Adresse publique
+                      </p>
+
+                      <p className="mt-2 break-all text-sm text-blue-400">
+                        /site/
+                        {
+                          openedSite.publicSlug
+                        }
+                      </p>
+                    </div>
+                  </>
+                )}
+
                 {saveMessage && (
-                  <p className="mt-3 text-sm text-green-400">
+                  <p className="mt-4 text-sm text-green-400">
                     {saveMessage}
                   </p>
                 )}
 
                 {saveError && (
-                  <p className="mt-3 text-sm text-red-400">
+                  <p className="mt-4 text-sm text-red-400">
                     {saveError}
                   </p>
                 )}
@@ -1208,22 +1375,41 @@ export default function Home() {
                         key={
                           saved.id
                         }
-                        className="rounded-xl bg-slate-950 p-4"
+                        className={`rounded-xl border p-4 ${
+                          savedSiteID ===
+                          saved.id
+                            ? "border-blue-500 bg-slate-950"
+                            : "border-slate-800 bg-slate-950"
+                        }`}
                       >
-                        <p className="font-bold">
-                          {
-                            saved.businessName
-                          }
-                        </p>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-bold">
+                              {
+                                saved.businessName
+                              }
+                            </p>
 
-                        <p className="text-sm text-slate-400">
-                          {
-                            saved.activity
-                          }{" "}
-                          • {saved.city}
-                        </p>
+                            <p className="text-sm text-slate-400">
+                              {
+                                saved.activity
+                              }{" "}
+                              • {saved.city}
+                            </p>
+                          </div>
 
-                        <p className="mt-1 text-xs text-slate-600">
+                          {saved.published ? (
+                            <span className="rounded-full bg-green-500/10 px-2 py-1 text-xs font-bold text-green-400">
+                              Public
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-slate-800 px-2 py-1 text-xs text-slate-500">
+                              Brouillon
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="mt-2 text-xs text-slate-600">
                           {formatDate(
                             saved.updatedAt,
                           )}
@@ -1254,6 +1440,18 @@ export default function Home() {
                             Supprimer
                           </button>
                         </div>
+
+                        {saved.published &&
+                          saved.publicSlug && (
+                            <a
+                              href={`/site/${saved.publicSlug}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-2 block rounded-lg border border-green-800 px-3 py-2 text-center text-sm text-green-400"
+                            >
+                              🌍 Voir en ligne
+                            </a>
+                          )}
                       </div>
                     ),
                   )}
@@ -1331,7 +1529,7 @@ export default function Home() {
                         backgroundColor:
                           accentColor,
                       }}
-                      className="mt-8 inline-block rounded-xl px-7 py-4 font-bold"
+                      className="mt-8 inline-block rounded-xl px-7 py-4 font-bold text-white"
                     >
                       Appeler
                     </a>
