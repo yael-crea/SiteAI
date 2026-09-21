@@ -70,6 +70,7 @@ export default function PublicSitePage() {
           setError(
             "Ce site n'existe pas ou n'est plus publié.",
           );
+
           return;
         }
 
@@ -134,42 +135,37 @@ export default function PublicSitePage() {
     );
   }
 
-  const site = data.site;
+  const publicSite = data;
+  const site = publicSite.site;
+  const designStyle =
+    publicSite.designStyle;
+  const accentColor =
+    publicSite.accentColor;
 
-  function heroBackground() {
-    if (
-      data.designStyle ===
-      "elegant"
-    ) {
-      return "bg-neutral-950";
-    }
+  let heroBackground =
+    "bg-slate-950";
 
-    if (
-      data.designStyle ===
-      "artisan"
-    ) {
-      return "bg-stone-900";
-    }
-
-    return "bg-slate-950";
+  if (designStyle === "elegant") {
+    heroBackground =
+      "bg-neutral-950";
   }
 
-  function cardStyle() {
-    if (
-      data.designStyle ===
-      "elegant"
-    ) {
-      return "rounded-none";
-    }
+  if (designStyle === "artisan") {
+    heroBackground =
+      "bg-stone-900";
+  }
 
-    if (
-      data.designStyle ===
-      "artisan"
-    ) {
-      return "rounded-xl";
-    }
+  let cardStyle =
+    "rounded-3xl";
 
-    return "rounded-3xl";
+  if (designStyle === "elegant") {
+    cardStyle =
+      "rounded-none";
+  }
+
+  if (designStyle === "artisan") {
+    cardStyle =
+      "rounded-xl";
   }
 
   return (
@@ -177,7 +173,7 @@ export default function PublicSitePage() {
       <nav className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div className="text-xl font-black">
-            {data.businessName}
+            {publicSite.businessName}
           </div>
 
           <div className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
@@ -194,16 +190,16 @@ export default function PublicSitePage() {
             </a>
           </div>
 
-          {data.phone && (
+          {publicSite.phone && (
             <a
-              href={`tel:${data.phone}`}
+              href={`tel:${publicSite.phone}`}
               style={{
                 color:
-                  data.accentColor,
+                  accentColor,
               }}
               className="font-bold"
             >
-              {data.phone}
+              {publicSite.phone}
             </a>
           )}
         </div>
@@ -211,17 +207,17 @@ export default function PublicSitePage() {
 
       <section
         id="accueil"
-        className={`${heroBackground()} px-6 py-28 text-center text-white`}
+        className={`${heroBackground} px-6 py-28 text-center text-white`}
       >
         <div className="mx-auto max-w-5xl">
           <p
             style={{
               color:
-                data.accentColor,
+                accentColor,
             }}
             className="text-sm font-bold uppercase tracking-[0.3em]"
           >
-            {data.businessName}
+            {publicSite.businessName}
           </p>
 
           <h1 className="mx-auto mt-5 max-w-4xl text-5xl font-black leading-tight md:text-7xl">
@@ -233,12 +229,12 @@ export default function PublicSitePage() {
           </p>
 
           <div className="mt-10 flex flex-wrap justify-center gap-4">
-            {data.phone && (
+            {publicSite.phone && (
               <a
-                href={`tel:${data.phone}`}
+                href={`tel:${publicSite.phone}`}
                 style={{
                   backgroundColor:
-                    data.accentColor,
+                    accentColor,
                 }}
                 className="rounded-xl px-8 py-4 font-bold text-white"
               >
@@ -265,7 +261,7 @@ export default function PublicSitePage() {
             <p
               style={{
                 color:
-                  data.accentColor,
+                  accentColor,
               }}
               className="text-sm font-bold uppercase tracking-[0.2em]"
             >
@@ -286,12 +282,12 @@ export default function PublicSitePage() {
               ) => (
                 <article
                   key={index}
-                  className={`border border-slate-200 bg-white p-8 shadow-sm ${cardStyle()}`}
+                  className={`border border-slate-200 bg-white p-8 shadow-sm ${cardStyle}`}
                 >
                   <div
                     style={{
                       backgroundColor:
-                        data.accentColor,
+                        accentColor,
                     }}
                     className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl font-black text-white"
                   >
@@ -320,7 +316,7 @@ export default function PublicSitePage() {
           <p
             style={{
               color:
-                data.accentColor,
+                accentColor,
             }}
             className="text-sm font-bold uppercase tracking-[0.2em]"
           >
@@ -333,21 +329,21 @@ export default function PublicSitePage() {
 
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-600">
             Contactez{" "}
-            {data.businessName} pour
+            {publicSite.businessName} pour
             discuter de votre besoin à{" "}
-            {data.city}.
+            {publicSite.city}.
           </p>
 
-          {data.phone && (
+          {publicSite.phone && (
             <a
-              href={`tel:${data.phone}`}
+              href={`tel:${publicSite.phone}`}
               style={{
                 backgroundColor:
-                  data.accentColor,
+                  accentColor,
               }}
               className="mt-9 inline-block rounded-xl px-9 py-4 font-bold text-white"
             >
-              {data.phone}
+              {publicSite.phone}
             </a>
           )}
         </div>
@@ -357,18 +353,18 @@ export default function PublicSitePage() {
         <div className="mx-auto flex max-w-6xl flex-col justify-between gap-5 md:flex-row">
           <div>
             <p className="text-xl font-black">
-              {data.businessName}
+              {publicSite.businessName}
             </p>
 
             <p className="mt-2 text-sm text-slate-400">
-              {data.activity} à{" "}
-              {data.city}
+              {publicSite.activity} à{" "}
+              {publicSite.city}
             </p>
           </div>
 
           <p className="text-sm text-slate-500">
             © {new Date().getFullYear()}{" "}
-            {data.businessName}
+            {publicSite.businessName}
           </p>
         </div>
       </footer>
