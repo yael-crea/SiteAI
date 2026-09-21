@@ -155,10 +155,16 @@ func main() {
 
 	http.HandleFunc("/public-sites/", publicSiteHandler)
 
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "8080"
+	}
+
 	fmt.Println()
 	fmt.Println("======================================")
 	fmt.Println("SiteAI Backend")
-	fmt.Println("API : http://localhost:8080")
+	fmt.Println("Port :", port)
 	fmt.Println("IA : activée")
 	fmt.Println("Base de données : connectée")
 	fmt.Println("Authentification : activée")
@@ -166,7 +172,12 @@ func main() {
 	fmt.Println("======================================")
 	fmt.Println()
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(
+		http.ListenAndServe(
+			":"+port,
+			nil,
+		),
+	)
 }
 
 func initDatabase() error {
@@ -355,6 +366,15 @@ func healthHandler(
 
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(
+			w,
+			"Méthode non autorisée",
+			http.StatusMethodNotAllowed,
+		)
 		return
 	}
 
@@ -1438,43 +1458,56 @@ func createUniquePublicSlug(
 	baseSlug string,
 	siteID int64,
 ) (string, error) {
-	slug := baseSlug
+	candidate := baseSlug
 
-	var existingID int64
+	for attempt := 0; attempt < 100; attempt++ {
+		var existingID int64
 
-	err := db.QueryRow(
-		ctx,
-		`
-		SELECT id
-		FROM sites
-		WHERE public_slug = $1
-		LIMIT 1;
-		`,
-		slug,
-	).Scan(&existingID)
+		err := db.QueryRow(
+			ctx,
+			`
+			SELECT id
+			FROM sites
+			WHERE public_slug = $1
+			LIMIT 1;
+			`,
+			candidate,
+		).Scan(&existingID)
 
-	if errors.Is(
-		err,
-		pgx.ErrNoRows,
-	) {
-		return slug, nil
+		if errors.Is(
+			err,
+			pgx.ErrNoRows,
+		) {
+			return candidate, nil
+		}
+
+		if err != nil {
+			return "", err
+		}
+
+		if existingID == siteID {
+			return candidate, nil
+		}
+
+		if attempt == 0 {
+			candidate = fmt.Sprintf(
+				"%s-%d",
+				baseSlug,
+				siteID,
+			)
+		} else {
+			candidate = fmt.Sprintf(
+				"%s-%d-%d",
+				baseSlug,
+				siteID,
+				attempt+1,
+			)
+		}
 	}
 
-	if err != nil {
-		return "", err
-	}
-
-	if existingID == siteID {
-		return slug, nil
-	}
-
-	slug = fmt.Sprintf(
-		"%s-%d",
-		baseSlug,
-		siteID,
+	return "", errors.New(
+		"impossible de générer un slug public unique",
 	)
-
-	return slug, nil
 }
 
 func getSavedSiteByID(
