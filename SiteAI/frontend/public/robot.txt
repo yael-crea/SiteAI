@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-
-Disallow: /auth
-Disallow: /api-backend/
-
-Sitemap: https://site-ai-jzjx.vercel.app/sitemap.xml
