@@ -24,6 +24,8 @@ type GeneratedSite = {
   heroText: string;
   phone: string;
   logoUrl: string;
+  heroImageUrl: string;
+  gallery: string[];
   sections: SiteSection[];
 };
 
@@ -58,6 +60,8 @@ type ChatMessage = {
   role: "user" | "assistant";
   text: string;
 };
+
+const MAX_GALLERY_IMAGES = 8;
 
 const colors = [
   {
@@ -161,6 +165,21 @@ export default function Home() {
     useState(false);
 
   const [logoError, setLogoError] =
+    useState("");
+
+  const [heroImageUploading, setHeroImageUploading] =
+    useState(false);
+
+  const [heroImageError, setHeroImageError] =
+    useState("");
+
+  const [galleryUploading, setGalleryUploading] =
+    useState(false);
+
+  const [galleryRemovingIndex, setGalleryRemovingIndex] =
+    useState<number | null>(null);
+
+  const [galleryError, setGalleryError] =
     useState("");
 
   useEffect(() => {
@@ -391,6 +410,10 @@ export default function Home() {
         ...data,
         logoUrl:
           data.logoUrl ?? "",
+        heroImageUrl:
+          data.heroImageUrl ?? "",
+        gallery:
+          data.gallery ?? [],
       };
 
       setSite(generatedSite);
@@ -481,6 +504,14 @@ export default function Home() {
           data.site.logoUrl ||
           site.logoUrl ||
           "",
+        heroImageUrl:
+          data.site.heroImageUrl ||
+          site.heroImageUrl ||
+          "",
+        gallery:
+          data.site.gallery?.length
+            ? data.site.gallery
+            : site.gallery ?? [],
       };
 
       setSite(modifiedSite);
@@ -773,6 +804,10 @@ export default function Home() {
         ...saved.site,
         logoUrl:
           saved.site.logoUrl ?? "",
+        heroImageUrl:
+          saved.site.heroImageUrl ?? "",
+        gallery:
+          saved.site.gallery ?? [],
       });
 
       setBusinessName(
@@ -1044,6 +1079,448 @@ export default function Home() {
     } finally {
       setLogoUploading(false);
     }
+  }
+
+  async function handleHeroImageUpload(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file =
+      event.target.files?.[0];
+
+    event.target.value = "";
+
+    if (!file || !site) {
+      return;
+    }
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/avif",
+    ];
+
+    if (
+      !allowedTypes.includes(
+        file.type,
+      )
+    ) {
+      setHeroImageError(
+        "Format non autorisé. Utilise JPG, PNG, WebP ou AVIF.",
+      );
+      return;
+    }
+
+    if (
+      file.size >
+      5 * 1024 * 1024
+    ) {
+      setHeroImageError(
+        "L'image doit faire 5 Mo maximum.",
+      );
+      return;
+    }
+
+    setHeroImageUploading(true);
+    setHeroImageError("");
+    setSaveMessage("");
+    setSaveError("");
+
+    try {
+      const {
+        data: userData,
+        error: userError,
+      } =
+        await supabase.auth.getUser();
+
+      if (
+        userError ||
+        !userData.user
+      ) {
+        throw new Error(
+          "Utilisateur non connecté",
+        );
+      }
+
+      const extension =
+        getLogoExtension(file);
+
+      const path =
+        `${userData.user.id}/heroes/${crypto.randomUUID()}.${extension}`;
+
+      const {
+        error: uploadError,
+      } =
+        await supabase.storage
+          .from("site-images")
+          .upload(
+            path,
+            file,
+            {
+              cacheControl:
+                "3600",
+              upsert: false,
+              contentType:
+                file.type,
+            },
+          );
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const {
+        data: publicData,
+      } =
+        supabase.storage
+          .from("site-images")
+          .getPublicUrl(path);
+
+      if (
+        !publicData.publicUrl
+      ) {
+        throw new Error(
+          "URL publique introuvable",
+        );
+      }
+
+      updateSiteField(
+        "heroImageUrl",
+        publicData.publicUrl,
+      );
+
+      setSaveMessage(
+        "✅ Image de couverture ajoutée. Pense à enregistrer les modifications.",
+      );
+    } catch (err) {
+      console.error(err);
+
+      setHeroImageError(
+        "Impossible d'envoyer l'image de couverture.",
+      );
+    } finally {
+      setHeroImageUploading(false);
+    }
+  }
+
+  function removeHeroImage() {
+    updateSiteField(
+      "heroImageUrl",
+      "",
+    );
+
+    setHeroImageError("");
+    setSaveMessage(
+      "Image de couverture retirée. Enregistre les modifications pour appliquer ce changement.",
+    );
+  }
+
+  function getStoragePathFromPublicUrl(
+    url: string,
+  ) {
+    const marker =
+      "/storage/v1/object/public/site-images/";
+
+    const markerIndex =
+      url.indexOf(marker);
+
+    if (markerIndex === -1) {
+      return null;
+    }
+
+    const encodedPath =
+      url.slice(
+        markerIndex +
+          marker.length,
+      );
+
+    try {
+      return decodeURIComponent(
+        encodedPath,
+      );
+    } catch {
+      return encodedPath;
+    }
+  }
+
+  async function handleGalleryUpload(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const files =
+      Array.from(
+        event.target.files ?? [],
+      );
+
+    event.target.value = "";
+
+    if (
+      files.length === 0 ||
+      !site
+    ) {
+      return;
+    }
+
+    const currentGallery =
+      site.gallery ?? [];
+
+    if (
+      currentGallery.length +
+        files.length >
+      MAX_GALLERY_IMAGES
+    ) {
+      setGalleryError(
+        `Tu peux mettre ${MAX_GALLERY_IMAGES} photos maximum dans la galerie.`,
+      );
+      return;
+    }
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/avif",
+    ];
+
+    for (const file of files) {
+      if (
+        !allowedTypes.includes(
+          file.type,
+        )
+      ) {
+        setGalleryError(
+          "Une des images a un format non autorisé. Utilise JPG, PNG, WebP ou AVIF.",
+        );
+        return;
+      }
+
+      if (
+        file.size >
+        5 * 1024 * 1024
+      ) {
+        setGalleryError(
+          "Chaque image doit faire 5 Mo maximum.",
+        );
+        return;
+      }
+    }
+
+    setGalleryUploading(true);
+    setGalleryError("");
+    setSaveMessage("");
+    setSaveError("");
+
+    const uploadedPaths: string[] =
+      [];
+
+    try {
+      const {
+        data: userData,
+        error: userError,
+      } =
+        await supabase.auth.getUser();
+
+      if (
+        userError ||
+        !userData.user
+      ) {
+        throw new Error(
+          "Utilisateur non connecté",
+        );
+      }
+
+      const newUrls: string[] =
+        [];
+
+      for (const file of files) {
+        const extension =
+          getLogoExtension(file);
+
+        const path =
+          `${userData.user.id}/gallery/${crypto.randomUUID()}.${extension}`;
+
+        const {
+          error: uploadError,
+        } =
+          await supabase.storage
+            .from("site-images")
+            .upload(
+              path,
+              file,
+              {
+                cacheControl:
+                  "3600",
+                upsert: false,
+                contentType:
+                  file.type,
+              },
+            );
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        uploadedPaths.push(path);
+
+        const {
+          data: publicData,
+        } =
+          supabase.storage
+            .from("site-images")
+            .getPublicUrl(path);
+
+        if (
+          !publicData.publicUrl
+        ) {
+          throw new Error(
+            "URL publique introuvable",
+          );
+        }
+
+        newUrls.push(
+          publicData.publicUrl,
+        );
+      }
+
+      updateSiteField(
+        "gallery",
+        [
+          ...currentGallery,
+          ...newUrls,
+        ],
+      );
+
+      setSaveMessage(
+        `✅ ${newUrls.length} photo${newUrls.length > 1 ? "s" : ""} ajoutée${newUrls.length > 1 ? "s" : ""}. Pense à enregistrer les modifications.`,
+      );
+    } catch (err) {
+      console.error(err);
+
+      if (
+        uploadedPaths.length > 0
+      ) {
+        await supabase.storage
+          .from("site-images")
+          .remove(uploadedPaths);
+      }
+
+      setGalleryError(
+        "Impossible d'envoyer les photos de la galerie.",
+      );
+    } finally {
+      setGalleryUploading(false);
+    }
+  }
+
+  async function removeGalleryImage(
+    index: number,
+  ) {
+    if (!site) {
+      return;
+    }
+
+    const gallery =
+      site.gallery ?? [];
+
+    const imageUrl =
+      gallery[index];
+
+    if (!imageUrl) {
+      return;
+    }
+
+    setGalleryRemovingIndex(index);
+    setGalleryError("");
+    setSaveError("");
+
+    try {
+      const storagePath =
+        getStoragePathFromPublicUrl(
+          imageUrl,
+        );
+
+      if (storagePath) {
+        const {
+          error: removeError,
+        } =
+          await supabase.storage
+            .from("site-images")
+            .remove([
+              storagePath,
+            ]);
+
+        if (removeError) {
+          throw removeError;
+        }
+      }
+
+      updateSiteField(
+        "gallery",
+        gallery.filter(
+          (
+            _,
+            galleryIndex,
+          ) =>
+            galleryIndex !==
+            index,
+        ),
+      );
+
+      setSaveMessage(
+        "Photo retirée de la galerie. Enregistre les modifications.",
+      );
+    } catch (err) {
+      console.error(err);
+
+      setGalleryError(
+        "Impossible de supprimer cette photo.",
+      );
+    } finally {
+      setGalleryRemovingIndex(
+        null,
+      );
+    }
+  }
+
+  function moveGalleryImage(
+    index: number,
+    direction:
+      | "left"
+      | "right",
+  ) {
+    if (!site) {
+      return;
+    }
+
+    const gallery = [
+      ...(site.gallery ?? []),
+    ];
+
+    const targetIndex =
+      direction === "left"
+        ? index - 1
+        : index + 1;
+
+    if (
+      targetIndex < 0 ||
+      targetIndex >=
+        gallery.length
+    ) {
+      return;
+    }
+
+    const currentImage =
+      gallery[index];
+
+    gallery[index] =
+      gallery[targetIndex];
+
+    gallery[targetIndex] =
+      currentImage;
+
+    updateSiteField(
+      "gallery",
+      gallery,
+    );
   }
 
   function removeLogo() {
@@ -1714,6 +2191,191 @@ export default function Home() {
                           )}
                         </div>
                       </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+                      <p className="font-bold">
+                        Image de couverture
+                      </p>
+
+                      <p className="mt-1 text-sm leading-6 text-slate-500">
+                        Grande photo affichée derrière le titre principal du site.
+                      </p>
+
+                      {site.heroImageUrl && (
+                        <img
+                          src={site.heroImageUrl}
+                          alt="Image de couverture"
+                          className="mt-4 h-48 w-full rounded-2xl object-cover"
+                        />
+                      )}
+
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <label className="cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500">
+                          {heroImageUploading
+                            ? "Envoi..."
+                            : site.heroImageUrl
+                              ? "Remplacer l'image"
+                              : "Ajouter une image"}
+
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/avif"
+                            disabled={heroImageUploading}
+                            onChange={handleHeroImageUpload}
+                            className="hidden"
+                          />
+                        </label>
+
+                        {site.heroImageUrl && (
+                          <button
+                            type="button"
+                            onClick={removeHeroImage}
+                            disabled={heroImageUploading}
+                            className="rounded-xl border border-red-900 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-950 disabled:opacity-50"
+                          >
+                            Retirer l&apos;image
+                          </button>
+                        )}
+                      </div>
+
+                      {heroImageError && (
+                        <p className="mt-3 text-sm text-red-400">
+                          {heroImageError}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-bold">
+                            Galerie photos
+                          </p>
+
+                          <p className="mt-1 text-sm leading-6 text-slate-500">
+                            Ajoute jusqu&apos;à {MAX_GALLERY_IMAGES} photos. Tu peux ensuite changer leur ordre.
+                          </p>
+                        </div>
+
+                        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-400">
+                          {(site.gallery ?? []).length}/{MAX_GALLERY_IMAGES}
+                        </span>
+                      </div>
+
+                      {(site.gallery ?? []).length > 0 && (
+                        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                          {(site.gallery ?? []).map(
+                            (
+                              imageUrl,
+                              index,
+                            ) => (
+                              <div
+                                key={`${imageUrl}-${index}`}
+                                className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900"
+                              >
+                                <img
+                                  src={imageUrl}
+                                  alt={`Photo ${index + 1} de ${site.businessName}`}
+                                  className="h-36 w-full object-cover"
+                                />
+
+                                <div className="flex items-center justify-between gap-2 p-3">
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      disabled={index === 0 || galleryUploading}
+                                      onClick={() =>
+                                        moveGalleryImage(
+                                          index,
+                                          "left",
+                                        )
+                                      }
+                                      className="rounded-lg border border-slate-700 px-3 py-2 text-xs disabled:opacity-30"
+                                    >
+                                      ←
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      disabled={
+                                        index ===
+                                          (site.gallery ?? []).length -
+                                            1 ||
+                                        galleryUploading
+                                      }
+                                      onClick={() =>
+                                        moveGalleryImage(
+                                          index,
+                                          "right",
+                                        )
+                                      }
+                                      className="rounded-lg border border-slate-700 px-3 py-2 text-xs disabled:opacity-30"
+                                    >
+                                      →
+                                    </button>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      galleryRemovingIndex ===
+                                        index ||
+                                      galleryUploading
+                                    }
+                                    onClick={() =>
+                                      removeGalleryImage(
+                                        index,
+                                      )
+                                    }
+                                    className="rounded-lg border border-red-900 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-950 disabled:opacity-40"
+                                  >
+                                    {galleryRemovingIndex ===
+                                    index
+                                      ? "Suppression..."
+                                      : "Supprimer"}
+                                  </button>
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      )}
+
+                      <div className="mt-5">
+                        <label
+                          className={`inline-block rounded-xl px-4 py-3 text-sm font-bold ${
+                            galleryUploading ||
+                            (site.gallery ?? []).length >=
+                              MAX_GALLERY_IMAGES
+                              ? "cursor-not-allowed bg-slate-700 text-slate-400"
+                              : "cursor-pointer bg-blue-600 hover:bg-blue-500"
+                          }`}
+                        >
+                          {galleryUploading
+                            ? "Envoi des photos..."
+                            : "Ajouter des photos"}
+
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/jpeg,image/png,image/webp,image/avif"
+                            disabled={
+                              galleryUploading ||
+                              (site.gallery ?? []).length >=
+                                MAX_GALLERY_IMAGES
+                            }
+                            onChange={handleGalleryUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
+                      {galleryError && (
+                        <p className="mt-3 text-sm text-red-400">
+                          {galleryError}
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -2537,7 +3199,16 @@ export default function Home() {
                 </nav>
 
                 <section
-                  className={`${getPreviewBackground()} px-8 py-24 text-center text-white`}
+                  className={`${getPreviewBackground()} relative overflow-hidden px-8 py-24 text-center text-white`}
+                  style={
+                    site.heroImageUrl
+                      ? {
+                          backgroundImage: `linear-gradient(rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.72)), url("${site.heroImageUrl}")`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : undefined
+                  }
                 >
                   <p
                     style={{
@@ -2630,6 +3301,42 @@ export default function Home() {
                     )}
                   </div>
                 </section>
+
+                {(site.gallery ?? []).length > 0 && (
+                  <section className="bg-slate-50 px-8 py-16">
+                    <div className="text-center">
+                      <p
+                        style={{
+                          color:
+                            accentColor,
+                        }}
+                        className="text-sm font-bold uppercase tracking-[0.2em]"
+                      >
+                        Galerie
+                      </p>
+
+                      <h2 className="mt-4 text-3xl font-black">
+                        Galerie de l&apos;entreprise
+                      </h2>
+                    </div>
+
+                    <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {(site.gallery ?? []).map(
+                        (
+                          imageUrl,
+                          index,
+                        ) => (
+                          <img
+                            key={`${imageUrl}-${index}`}
+                            src={imageUrl}
+                            alt={`Photo ${index + 1} de ${site.businessName}`}
+                            className="h-56 w-full rounded-2xl object-cover"
+                          />
+                        ),
+                      )}
+                    </div>
+                  </section>
+                )}
 
                 <section className="bg-slate-50 px-8 py-16 text-center">
                   <h2 className="text-3xl font-black">

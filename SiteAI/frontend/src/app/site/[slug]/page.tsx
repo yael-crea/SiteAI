@@ -15,6 +15,9 @@ type GeneratedSite = {
   heroTitle: string;
   heroText: string;
   phone: string;
+  logoUrl: string;
+  heroImageUrl: string;
+  gallery: string[];
   sections: SiteSection[];
 };
 
@@ -69,7 +72,6 @@ const getPublicSite = cache(
           "Erreur chargement site public :",
           response.status,
         );
-
         return null;
       }
 
@@ -84,13 +86,23 @@ const getPublicSite = cache(
         return null;
       }
 
-      return result;
+      return {
+        ...result,
+        site: {
+          ...result.site,
+          logoUrl:
+            result.site.logoUrl ?? "",
+          heroImageUrl:
+            result.site.heroImageUrl ?? "",
+          gallery:
+            result.site.gallery ?? [],
+        },
+      };
     } catch (error) {
       console.error(
         "Impossible de charger le site public :",
         error,
       );
-
       return null;
     }
   },
@@ -101,10 +113,8 @@ function createFallbackTitle(
 ) {
   const businessName =
     site.businessName?.trim();
-
   const activity =
     site.activity?.trim();
-
   const city =
     site.city?.trim();
 
@@ -134,10 +144,8 @@ function createFallbackDescription(
 ) {
   const businessName =
     site.businessName?.trim();
-
   const activity =
     site.activity?.trim();
-
   const city =
     site.city?.trim();
 
@@ -174,10 +182,8 @@ export async function generateMetadata(
     return {
       title:
         "Site indisponible | SiteAI",
-
       description:
         "Ce site n'existe pas ou n'est plus publié.",
-
       robots: {
         index: false,
         follow: false,
@@ -207,7 +213,6 @@ export async function generateMetadata(
 
   return {
     title,
-
     description,
 
     alternates: {
@@ -218,7 +223,6 @@ export async function generateMetadata(
     robots: {
       index: true,
       follow: true,
-
       googleBot: {
         index: true,
         follow: true,
@@ -232,26 +236,58 @@ export async function generateMetadata(
 
     openGraph: {
       type: "website",
-
       locale: "fr_FR",
-
-      url:
-        canonicalUrl,
-
+      url: canonicalUrl,
       title,
-
       description,
-
       siteName:
         publicSite.businessName,
+      ...(generatedSite.heroImageUrl
+        ? {
+            images: [
+              {
+                url:
+                  generatedSite.heroImageUrl,
+                alt:
+                  publicSite.businessName,
+              },
+            ],
+          }
+        : generatedSite.logoUrl
+          ? {
+              images: [
+                {
+                  url:
+                    generatedSite.logoUrl,
+                  alt:
+                    `Logo ${publicSite.businessName}`,
+                },
+              ],
+            }
+          : {}),
     },
 
     twitter: {
-      card: "summary",
-
+      card:
+        generatedSite.heroImageUrl ||
+        generatedSite.logoUrl
+          ? "summary_large_image"
+          : "summary",
       title,
-
       description,
+      ...(generatedSite.heroImageUrl
+        ? {
+            images: [
+              generatedSite.heroImageUrl,
+            ],
+          }
+        : generatedSite.logoUrl
+          ? {
+              images: [
+                generatedSite.logoUrl,
+              ],
+            }
+          : {}),
     },
   };
 }
@@ -337,34 +373,39 @@ export default async function PublicSitePage(
   const structuredData = {
     "@context":
       "https://schema.org",
-
     "@type":
       "LocalBusiness",
-
     name:
       publicSite.businessName,
-
     url:
       canonicalUrl,
-
     description,
-
+    ...(site.logoUrl
+      ? {
+          logo: site.logoUrl,
+        }
+      : {}),
+    ...(site.heroImageUrl ||
+    site.logoUrl
+      ? {
+          image:
+            site.heroImageUrl ||
+            site.logoUrl,
+        }
+      : {}),
     ...(publicSite.phone
       ? {
           telephone:
             publicSite.phone,
         }
       : {}),
-
     ...(publicSite.city
       ? {
           address: {
             "@type":
               "PostalAddress",
-
             addressLocality:
               publicSite.city,
-
             addressCountry:
               "FR",
           },
@@ -389,11 +430,21 @@ export default async function PublicSitePage(
 
       <main className="min-h-screen bg-white text-slate-950">
         <nav className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-            <div className="text-xl font-black">
-              {
-                publicSite.businessName
-              }
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-5">
+            <div className="flex min-w-0 items-center gap-3">
+              {site.logoUrl && (
+                <img
+                  src={site.logoUrl}
+                  alt={`Logo ${publicSite.businessName}`}
+                  className="h-12 w-12 shrink-0 rounded-xl object-contain"
+                />
+              )}
+
+              <div className="truncate text-xl font-black">
+                {
+                  publicSite.businessName
+                }
+              </div>
             </div>
 
             <div className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
@@ -404,6 +455,12 @@ export default async function PublicSitePage(
               <a href="#services">
                 Services
               </a>
+
+              {(site.gallery ?? []).length > 0 && (
+                <a href="#galerie">
+                  Galerie
+                </a>
+              )}
 
               <a href="#contact">
                 Contact
@@ -417,7 +474,7 @@ export default async function PublicSitePage(
                   color:
                     accentColor,
                 }}
-                className="font-bold"
+                className="shrink-0 font-bold"
               >
                 {
                   publicSite.phone
@@ -429,9 +486,26 @@ export default async function PublicSitePage(
 
         <section
           id="accueil"
-          className={`${heroBackground} px-6 py-28 text-center text-white`}
+          className={`${heroBackground} relative overflow-hidden px-6 py-28 text-center text-white`}
+          style={
+            site.heroImageUrl
+              ? {
+                  backgroundImage: `linear-gradient(rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.72)), url("${site.heroImageUrl}")`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }
+              : undefined
+          }
         >
           <div className="mx-auto max-w-5xl">
+            {site.logoUrl && (
+              <img
+                src={site.logoUrl}
+                alt={`Logo ${publicSite.businessName}`}
+                className="mx-auto mb-8 h-24 w-24 rounded-2xl bg-white/95 object-contain p-2"
+              />
+            )}
+
             <p
               style={{
                 color:
@@ -543,6 +617,53 @@ export default async function PublicSitePage(
           </div>
         </section>
 
+        {(site.gallery ?? []).length > 0 && (
+          <section
+            id="galerie"
+            className="bg-slate-50 px-6 py-24"
+          >
+            <div className="mx-auto max-w-6xl">
+              <div className="text-center">
+                <p
+                  style={{
+                    color:
+                      accentColor,
+                  }}
+                  className="text-sm font-bold uppercase tracking-[0.2em]"
+                >
+                  Galerie
+                </p>
+
+                <h2 className="mt-4 text-4xl font-black md:text-5xl">
+                  Découvrez notre univers
+                </h2>
+
+                <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+                  Quelques images de{" "}
+                  {publicSite.businessName}.
+                </p>
+              </div>
+
+              <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {(site.gallery ?? []).map(
+                  (
+                    imageUrl,
+                    index,
+                  ) => (
+                    <img
+                      key={`${imageUrl}-${index}`}
+                      src={imageUrl}
+                      alt={`Photo ${index + 1} de ${publicSite.businessName}`}
+                      loading="lazy"
+                      className="h-72 w-full rounded-2xl object-cover shadow-sm"
+                    />
+                  ),
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
         <section
           id="contact"
           className="bg-slate-50 px-6 py-24"
@@ -596,22 +717,32 @@ export default async function PublicSitePage(
 
         <footer className="bg-slate-950 px-6 py-12 text-white">
           <div className="mx-auto flex max-w-6xl flex-col justify-between gap-5 md:flex-row">
-            <div>
-              <p className="text-xl font-black">
-                {
-                  publicSite.businessName
-                }
-              </p>
+            <div className="flex items-center gap-3">
+              {site.logoUrl && (
+                <img
+                  src={site.logoUrl}
+                  alt=""
+                  className="h-12 w-12 rounded-xl bg-white object-contain p-1"
+                />
+              )}
 
-              <p className="mt-2 text-sm text-slate-400">
-                {
-                  publicSite.activity
-                }{" "}
-                à{" "}
-                {
-                  publicSite.city
-                }
-              </p>
+              <div>
+                <p className="text-xl font-black">
+                  {
+                    publicSite.businessName
+                  }
+                </p>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  {
+                    publicSite.activity
+                  }{" "}
+                  à{" "}
+                  {
+                    publicSite.city
+                  }
+                </p>
+              </div>
             </div>
 
             <p className="text-sm text-slate-500">

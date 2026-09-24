@@ -77,6 +77,10 @@ type GeneratedSite struct {
 
 	LogoURL string `json:"logoUrl"`
 
+	HeroImageURL string `json:"heroImageUrl"`
+
+	Gallery []string `json:"gallery"`
+
 	Sections []SiteSection `json:"sections"`
 }
 
@@ -2954,6 +2958,8 @@ DEMANDE :
 	// Le logo est géré par l'utilisateur dans Supabase Storage.
 	// L'IA ne doit jamais le supprimer ou le remplacer.
 	result.Site.LogoURL = input.Site.LogoURL
+	result.Site.HeroImageURL = input.Site.HeroImageURL
+	result.Site.Gallery = input.Site.Gallery
 
 	result.Site.Slug = slugify(
 
