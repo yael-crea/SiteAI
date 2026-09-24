@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ChangeEvent,
   FormEvent,
   useEffect,
   useState,
@@ -22,6 +23,7 @@ type GeneratedSite = {
   heroTitle: string;
   heroText: string;
   phone: string;
+  logoUrl: string;
   sections: SiteSection[];
 };
 
@@ -150,6 +152,15 @@ export default function Home() {
     useState("");
 
   const [saveError, setSaveError] =
+    useState("");
+
+  const [manualEditorOpen, setManualEditorOpen] =
+    useState(false);
+
+  const [logoUploading, setLogoUploading] =
+    useState(false);
+
+  const [logoError, setLogoError] =
     useState("");
 
   useEffect(() => {
@@ -334,6 +345,7 @@ export default function Home() {
     setSaveError("");
     setSavedSiteID(null);
     setChatMessages([]);
+    setManualEditorOpen(false);
 
     const serviceList =
       services
@@ -375,7 +387,22 @@ export default function Home() {
       const data: GeneratedSite =
         await response.json();
 
-      setSite(data);
+      const generatedSite: GeneratedSite = {
+        ...data,
+        logoUrl:
+          data.logoUrl ?? "",
+      };
+
+      setSite(generatedSite);
+      setBusinessName(
+        generatedSite.businessName ||
+          businessName,
+      );
+      setPhone(
+        generatedSite.phone ||
+          phone,
+      );
+      setManualEditorOpen(true);
     } catch (err) {
       console.error(err);
 
@@ -448,7 +475,23 @@ export default function Home() {
       const data: ModifyResponse =
         await response.json();
 
-      setSite(data.site);
+      const modifiedSite: GeneratedSite = {
+        ...data.site,
+        logoUrl:
+          data.site.logoUrl ||
+          site.logoUrl ||
+          "",
+      };
+
+      setSite(modifiedSite);
+
+      setBusinessName(
+        modifiedSite.businessName,
+      );
+
+      setPhone(
+        modifiedSite.phone,
+      );
 
       setDesignStyle(
         data.designStyle,
@@ -488,8 +531,20 @@ export default function Home() {
     setSaveError("");
     setSaveMessage("");
 
+    const synchronizedSite: GeneratedSite = {
+      ...site,
+      businessName:
+        businessName.trim() ||
+        site.businessName,
+      phone:
+        phone.trim() ||
+        site.phone,
+    };
+
+    setSite(synchronizedSite);
+
     const body = {
-      site,
+      site: synchronizedSite,
       activity,
       city,
       designStyle,
@@ -530,8 +585,12 @@ export default function Home() {
       }
 
       if (!response.ok) {
+        const message =
+          await response.text();
+
         throw new Error(
-          "Erreur sauvegarde",
+          message ||
+            "Erreur sauvegarde",
         );
       }
 
@@ -542,10 +601,40 @@ export default function Home() {
         saved.id,
       );
 
+      setBusinessName(
+        saved.businessName,
+      );
+
+      setActivity(
+        saved.activity,
+      );
+
+      setCity(
+        saved.city,
+      );
+
+      setPhone(
+        saved.phone,
+      );
+
+      setDesignStyle(
+        saved.designStyle,
+      );
+
+      setAccentColor(
+        saved.accentColor,
+      );
+
+      setSite(
+        saved.site,
+      );
+
       setSaveMessage(
-        savedSiteID === null
-          ? "Site sauvegardé."
-          : "Modifications enregistrées.",
+        saved.published
+          ? "✅ Modifications enregistrées et visibles sur le site public."
+          : savedSiteID === null
+            ? "✅ Site sauvegardé."
+            : "✅ Modifications enregistrées.",
       );
 
       await loadSavedSites();
@@ -567,6 +656,7 @@ export default function Home() {
       setSaveError(
         "Sauvegarde le site avant de le publier.",
       );
+
       return;
     }
 
@@ -657,6 +747,9 @@ export default function Home() {
   async function openSavedSite(
     id: number,
   ) {
+    setSaveError("");
+    setSaveMessage("");
+
     try {
       const response =
         await authenticatedFetch(
@@ -676,9 +769,11 @@ export default function Home() {
         saved.id,
       );
 
-      setSite(
-        saved.site,
-      );
+      setSite({
+        ...saved.site,
+        logoUrl:
+          saved.site.logoUrl ?? "",
+      });
 
       setBusinessName(
         saved.businessName,
@@ -714,6 +809,7 @@ export default function Home() {
       );
 
       setChatMessages([]);
+      setManualEditorOpen(true);
 
       setSaveMessage(
         `Site "${saved.businessName}" ouvert.`,
@@ -800,6 +896,350 @@ export default function Home() {
 
     setEditPrompt("");
     setEditError("");
+    setError("");
+
+    setManualEditorOpen(false);
+  }
+
+  function getLogoExtension(
+    file: File,
+  ) {
+    const byMime: Record<
+      string,
+      string
+    > = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+      "image/avif": "avif",
+    };
+
+    return (
+      byMime[file.type] ||
+      file.name
+        .split(".")
+        .pop()
+        ?.toLowerCase() ||
+      "jpg"
+    );
+  }
+
+  async function handleLogoUpload(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file =
+      event.target.files?.[0];
+
+    event.target.value = "";
+
+    if (!file || !site) {
+      return;
+    }
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/avif",
+    ];
+
+    if (
+      !allowedTypes.includes(
+        file.type,
+      )
+    ) {
+      setLogoError(
+        "Format non autorisé. Utilise JPG, PNG, WebP ou AVIF.",
+      );
+      return;
+    }
+
+    if (
+      file.size >
+      5 * 1024 * 1024
+    ) {
+      setLogoError(
+        "Le logo doit faire 5 Mo maximum.",
+      );
+      return;
+    }
+
+    setLogoUploading(true);
+    setLogoError("");
+    setSaveMessage("");
+    setSaveError("");
+
+    try {
+      const {
+        data: userData,
+        error: userError,
+      } =
+        await supabase.auth.getUser();
+
+      if (
+        userError ||
+        !userData.user
+      ) {
+        throw new Error(
+          "Utilisateur non connecté",
+        );
+      }
+
+      const extension =
+        getLogoExtension(file);
+
+      const path =
+        `${userData.user.id}/logos/${crypto.randomUUID()}.${extension}`;
+
+      const {
+        error: uploadError,
+      } =
+        await supabase.storage
+          .from("site-images")
+          .upload(
+            path,
+            file,
+            {
+              cacheControl:
+                "3600",
+              upsert: false,
+              contentType:
+                file.type,
+            },
+          );
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const {
+        data: publicData,
+      } =
+        supabase.storage
+          .from("site-images")
+          .getPublicUrl(path);
+
+      if (
+        !publicData.publicUrl
+      ) {
+        throw new Error(
+          "URL publique introuvable",
+        );
+      }
+
+      updateSiteField(
+        "logoUrl",
+        publicData.publicUrl,
+      );
+
+      setSaveMessage(
+        "✅ Logo envoyé. Pense à enregistrer les modifications.",
+      );
+    } catch (err) {
+      console.error(err);
+
+      setLogoError(
+        "Impossible d'envoyer le logo.",
+      );
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
+  function removeLogo() {
+    updateSiteField(
+      "logoUrl",
+      "",
+    );
+
+    setLogoError("");
+    setSaveMessage(
+      "Logo retiré de la page. Enregistre les modifications pour appliquer ce changement.",
+    );
+  }
+
+  function updateSiteField<
+    K extends keyof GeneratedSite,
+  >(
+    field: K,
+    value: GeneratedSite[K],
+  ) {
+    setSite(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          [field]: value,
+        };
+      },
+    );
+
+    if (
+      field === "businessName"
+    ) {
+      setBusinessName(
+        String(value),
+      );
+    }
+
+    if (
+      field === "phone"
+    ) {
+      setPhone(
+        String(value),
+      );
+    }
+
+    setSaveMessage("");
+  }
+
+  function updateSection(
+    index: number,
+    field: keyof SiteSection,
+    value: string,
+  ) {
+    setSite(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        const sections =
+          current.sections.map(
+            (section, sectionIndex) =>
+              sectionIndex === index
+                ? {
+                    ...section,
+                    [field]: value,
+                  }
+                : section,
+          );
+
+        return {
+          ...current,
+          sections,
+        };
+      },
+    );
+
+    setSaveMessage("");
+  }
+
+  function addSection() {
+    setSite(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          sections: [
+            ...current.sections,
+            {
+              title:
+                "Nouveau service",
+              text:
+                "Décrivez ici ce service.",
+            },
+          ],
+        };
+      },
+    );
+
+    setSaveMessage("");
+  }
+
+  function removeSection(
+    index: number,
+  ) {
+    if (!site) {
+      return;
+    }
+
+    if (
+      site.sections.length <= 1
+    ) {
+      setSaveError(
+        "Le site doit conserver au moins une section.",
+      );
+
+      return;
+    }
+
+    setSite(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          sections:
+            current.sections.filter(
+              (_, sectionIndex) =>
+                sectionIndex !==
+                index,
+            ),
+        };
+      },
+    );
+
+    setSaveMessage("");
+    setSaveError("");
+  }
+
+  function moveSection(
+    index: number,
+    direction: "up" | "down",
+  ) {
+    if (!site) {
+      return;
+    }
+
+    const targetIndex =
+      direction === "up"
+        ? index - 1
+        : index + 1;
+
+    if (
+      targetIndex < 0 ||
+      targetIndex >=
+        site.sections.length
+    ) {
+      return;
+    }
+
+    setSite(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        const sections = [
+          ...current.sections,
+        ];
+
+        const temporary =
+          sections[index];
+
+        sections[index] =
+          sections[targetIndex];
+
+        sections[targetIndex] =
+          temporary;
+
+        return {
+          ...current,
+          sections,
+        };
+      },
+    );
+
+    setSaveMessage("");
   }
 
   function getPreviewBackground() {
@@ -934,7 +1374,7 @@ export default function Home() {
           </h1>
         </div>
 
-        <div className="grid gap-8 xl:grid-cols-[420px_1fr]">
+        <div className="grid gap-8 xl:grid-cols-[440px_1fr]">
           <div className="space-y-8">
             <form
               onSubmit={
@@ -945,6 +1385,10 @@ export default function Home() {
               <h2 className="text-2xl font-bold">
                 Ton entreprise
               </h2>
+
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Utilise ces informations pour créer un nouveau site avec l&apos;IA.
+              </p>
 
               <div className="mt-7 space-y-5">
                 <div>
@@ -1058,56 +1502,47 @@ export default function Home() {
                   </p>
 
                   <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setDesignStyle(
+                    {(
+                      [
+                        [
                           "moderne",
-                        )
-                      }
-                      className={`rounded-xl border px-3 py-3 text-sm ${
-                        designStyle ===
-                        "moderne"
-                          ? "border-blue-500 bg-blue-500/10"
-                          : "border-slate-700"
-                      }`}
-                    >
-                      Moderne
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setDesignStyle(
+                          "Moderne",
+                        ],
+                        [
                           "elegant",
-                        )
-                      }
-                      className={`rounded-xl border px-3 py-3 text-sm ${
-                        designStyle ===
-                        "elegant"
-                          ? "border-blue-500 bg-blue-500/10"
-                          : "border-slate-700"
-                      }`}
-                    >
-                      Élégant
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setDesignStyle(
+                          "Élégant",
+                        ],
+                        [
                           "artisan",
-                        )
-                      }
-                      className={`rounded-xl border px-3 py-3 text-sm ${
-                        designStyle ===
-                        "artisan"
-                          ? "border-blue-500 bg-blue-500/10"
-                          : "border-slate-700"
-                      }`}
-                    >
-                      Artisan
-                    </button>
+                          "Artisan",
+                        ],
+                      ] as const
+                    ).map(
+                      ([
+                        value,
+                        label,
+                      ]) => (
+                        <button
+                          key={
+                            value
+                          }
+                          type="button"
+                          onClick={() =>
+                            setDesignStyle(
+                              value,
+                            )
+                          }
+                          className={`rounded-xl border px-3 py-3 text-sm ${
+                            designStyle ===
+                            value
+                              ? "border-blue-500 bg-blue-500/10"
+                              : "border-slate-700"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -1116,7 +1551,7 @@ export default function Home() {
                     Couleur
                   </p>
 
-                  <div className="flex gap-3">
+                  <div className="flex flex-wrap gap-3">
                     {colors.map(
                       (color) => (
                         <button
@@ -1145,6 +1580,23 @@ export default function Home() {
                         />
                       ),
                     )}
+
+                    <input
+                      type="color"
+                      value={
+                        accentColor
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setAccentColor(
+                          event.target
+                            .value,
+                        )
+                      }
+                      title="Couleur personnalisée"
+                      className="h-9 w-12 cursor-pointer rounded-lg border border-slate-700 bg-slate-950 p-1"
+                    />
                   </div>
                 </div>
 
@@ -1169,6 +1621,577 @@ export default function Home() {
                 )}
               </div>
             </form>
+
+            {site && (
+              <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold">
+                      ✍️ Éditeur manuel
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-400">
+                      Modifie directement le contenu puis enregistre.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setManualEditorOpen(
+                        (open) =>
+                          !open,
+                      )
+                    }
+                    className="rounded-lg border border-slate-700 px-3 py-2 text-sm"
+                  >
+                    {manualEditorOpen
+                      ? "Fermer"
+                      : "Ouvrir"}
+                  </button>
+                </div>
+
+                {manualEditorOpen && (
+                  <div className="mt-6 space-y-6">
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+                      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-700 bg-white">
+                          {site.logoUrl ? (
+                            <img
+                              src={site.logoUrl}
+                              alt={`Logo ${site.businessName}`}
+                              className="h-full w-full object-contain p-2"
+                            />
+                          ) : (
+                            <span className="px-2 text-center text-xs text-slate-500">
+                              Aucun logo
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex-1">
+                          <p className="font-bold">
+                            Logo de l&apos;entreprise
+                          </p>
+
+                          <p className="mt-1 text-sm leading-6 text-slate-500">
+                            JPG, PNG, WebP ou AVIF • 5 Mo maximum.
+                          </p>
+
+                          <div className="mt-4 flex flex-wrap gap-3">
+                            <label className="cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500">
+                              {logoUploading
+                                ? "Envoi..."
+                                : site.logoUrl
+                                  ? "Remplacer le logo"
+                                  : "Ajouter un logo"}
+
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/avif"
+                                disabled={logoUploading}
+                                onChange={handleLogoUpload}
+                                className="hidden"
+                              />
+                            </label>
+
+                            {site.logoUrl && (
+                              <button
+                                type="button"
+                                onClick={removeLogo}
+                                disabled={logoUploading}
+                                className="rounded-xl border border-red-900 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-950 disabled:opacity-50"
+                              >
+                                Retirer le logo
+                              </button>
+                            )}
+                          </div>
+
+                          {logoError && (
+                            <p className="mt-3 text-sm text-red-400">
+                              {logoError}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm text-slate-400">
+                        Nom affiché
+                      </label>
+
+                      <input
+                        value={
+                          site.businessName
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          updateSiteField(
+                            "businessName",
+                            event.target
+                              .value,
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-sm text-slate-400">
+                          Activité
+                        </label>
+
+                        <input
+                          value={
+                            activity
+                          }
+                          onChange={(
+                            event,
+                          ) => {
+                            setActivity(
+                              event.target
+                                .value,
+                            );
+                            setSaveMessage(
+                              "",
+                            );
+                          }}
+                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm text-slate-400">
+                          Ville
+                        </label>
+
+                        <input
+                          value={city}
+                          onChange={(
+                            event,
+                          ) => {
+                            setCity(
+                              event.target
+                                .value,
+                            );
+                            setSaveMessage(
+                              "",
+                            );
+                          }}
+                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm text-slate-400">
+                        Téléphone
+                      </label>
+
+                      <input
+                        value={
+                          site.phone
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          updateSiteField(
+                            "phone",
+                            event.target
+                              .value,
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm text-slate-400">
+                        Grand titre
+                      </label>
+
+                      <textarea
+                        value={
+                          site.heroTitle
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          updateSiteField(
+                            "heroTitle",
+                            event.target
+                              .value,
+                          )
+                        }
+                        rows={2}
+                        className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm text-slate-400">
+                        Texte d&apos;accueil
+                      </label>
+
+                      <textarea
+                        value={
+                          site.heroText
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          updateSiteField(
+                            "heroText",
+                            event.target
+                              .value,
+                          )
+                        }
+                        rows={4}
+                        className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div className="border-t border-slate-800 pt-6">
+                      <p className="font-bold">
+                        SEO Google
+                      </p>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        Ces textes sont utilisés pour le titre et la description Google du site public.
+                      </p>
+
+                      <div className="mt-4">
+                        <label className="mb-2 block text-sm text-slate-400">
+                          Titre SEO
+                        </label>
+
+                        <input
+                          value={
+                            site.metaTitle
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            updateSiteField(
+                              "metaTitle",
+                              event.target
+                                .value,
+                            )
+                          }
+                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                        />
+
+                        <p className="mt-2 text-right text-xs text-slate-500">
+                          {
+                            site.metaTitle
+                              .length
+                          }{" "}
+                          caractères
+                        </p>
+                      </div>
+
+                      <div className="mt-4">
+                        <label className="mb-2 block text-sm text-slate-400">
+                          Description SEO
+                        </label>
+
+                        <textarea
+                          value={
+                            site.metaDescription
+                          }
+                          onChange={(
+                            event,
+                          ) =>
+                            updateSiteField(
+                              "metaDescription",
+                              event.target
+                                .value,
+                            )
+                          }
+                          rows={4}
+                          className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
+                        />
+
+                        <p className="mt-2 text-right text-xs text-slate-500">
+                          {
+                            site.metaDescription
+                              .length
+                          }{" "}
+                          caractères
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-800 pt-6">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="font-bold">
+                            Sections / services
+                          </p>
+
+                          <p className="mt-1 text-sm text-slate-500">
+                            Tu peux modifier, supprimer, ajouter ou déplacer les blocs.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={
+                            addSection
+                          }
+                          className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold"
+                        >
+                          + Ajouter
+                        </button>
+                      </div>
+
+                      <div className="mt-5 space-y-5">
+                        {site.sections.map(
+                          (
+                            section,
+                            index,
+                          ) => (
+                            <div
+                              key={
+                                index
+                              }
+                              className="rounded-2xl border border-slate-800 bg-slate-950 p-4"
+                            >
+                              <div className="mb-4 flex items-center justify-between gap-3">
+                                <p className="text-sm font-bold text-slate-300">
+                                  Section{" "}
+                                  {
+                                    index +
+                                    1
+                                  }
+                                </p>
+
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      index ===
+                                      0
+                                    }
+                                    onClick={() =>
+                                      moveSection(
+                                        index,
+                                        "up",
+                                      )
+                                    }
+                                    className="rounded-lg border border-slate-700 px-2 py-1 text-xs disabled:opacity-30"
+                                  >
+                                    ↑
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      index ===
+                                      site
+                                        .sections
+                                        .length -
+                                        1
+                                    }
+                                    onClick={() =>
+                                      moveSection(
+                                        index,
+                                        "down",
+                                      )
+                                    }
+                                    className="rounded-lg border border-slate-700 px-2 py-1 text-xs disabled:opacity-30"
+                                  >
+                                    ↓
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      removeSection(
+                                        index,
+                                      )
+                                    }
+                                    className="rounded-lg border border-red-900 px-2 py-1 text-xs text-red-400"
+                                  >
+                                    Supprimer
+                                  </button>
+                                </div>
+                              </div>
+
+                              <input
+                                value={
+                                  section.title
+                                }
+                                onChange={(
+                                  event,
+                                ) =>
+                                  updateSection(
+                                    index,
+                                    "title",
+                                    event
+                                      .target
+                                      .value,
+                                  )
+                                }
+                                placeholder="Titre"
+                                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
+                              />
+
+                              <textarea
+                                value={
+                                  section.text
+                                }
+                                onChange={(
+                                  event,
+                                ) =>
+                                  updateSection(
+                                    index,
+                                    "text",
+                                    event
+                                      .target
+                                      .value,
+                                  )
+                                }
+                                placeholder="Texte"
+                                rows={4}
+                                className="mt-3 w-full resize-none rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
+                              />
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-800 pt-6">
+                      <p className="mb-3 font-bold">
+                        Apparence
+                      </p>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        {(
+                          [
+                            [
+                              "moderne",
+                              "Moderne",
+                            ],
+                            [
+                              "elegant",
+                              "Élégant",
+                            ],
+                            [
+                              "artisan",
+                              "Artisan",
+                            ],
+                          ] as const
+                        ).map(
+                          ([
+                            value,
+                            label,
+                          ]) => (
+                            <button
+                              key={
+                                value
+                              }
+                              type="button"
+                              onClick={() => {
+                                setDesignStyle(
+                                  value,
+                                );
+                                setSaveMessage(
+                                  "",
+                                );
+                              }}
+                              className={`rounded-xl border px-3 py-3 text-sm ${
+                                designStyle ===
+                                value
+                                  ? "border-blue-500 bg-blue-500/10"
+                                  : "border-slate-700"
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ),
+                        )}
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        {colors.map(
+                          (color) => (
+                            <button
+                              key={
+                                color.value
+                              }
+                              type="button"
+                              title={
+                                color.name
+                              }
+                              onClick={() => {
+                                setAccentColor(
+                                  color.value,
+                                );
+                                setSaveMessage(
+                                  "",
+                                );
+                              }}
+                              style={{
+                                backgroundColor:
+                                  color.value,
+                              }}
+                              className={`h-9 w-9 rounded-full border-2 ${
+                                accentColor ===
+                                color.value
+                                  ? "border-white"
+                                  : "border-transparent"
+                              }`}
+                            />
+                          ),
+                        )}
+
+                        <input
+                          type="color"
+                          value={
+                            accentColor
+                          }
+                          onChange={(
+                            event,
+                          ) => {
+                            setAccentColor(
+                              event.target
+                                .value,
+                            );
+                            setSaveMessage(
+                              "",
+                            );
+                          }}
+                          className="h-9 w-12 cursor-pointer rounded-lg border border-slate-700 bg-slate-950 p-1"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={
+                        saveCurrentSite
+                      }
+                      disabled={saving}
+                      className="w-full rounded-xl bg-green-600 px-6 py-4 font-bold hover:bg-green-500 disabled:opacity-50"
+                    >
+                      {saving
+                        ? "Enregistrement..."
+                        : openedSite?.published
+                          ? "💾 Enregistrer et mettre à jour le site public"
+                          : savedSiteID ===
+                              null
+                            ? "💾 Sauvegarder le site"
+                            : "💾 Enregistrer les modifications"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {site && (
               <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
@@ -1270,6 +2293,10 @@ export default function Home() {
                   ✨ Modifier avec l&apos;IA
                 </h2>
 
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  Exemple : « rends le titre plus professionnel », « ajoute un service dépannage » ou « passe le site en vert ».
+                </p>
+
                 <div className="mt-5 space-y-3">
                   {chatMessages.map(
                     (
@@ -1313,7 +2340,7 @@ export default function Home() {
                     }
                     placeholder="Mets le site en vert..."
                     rows={4}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-4 outline-none"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-4 outline-none focus:border-blue-500"
                   />
 
                   <button
@@ -1329,7 +2356,7 @@ export default function Home() {
                   >
                     {editLoading
                       ? "Modification..."
-                      : "Modifier"}
+                      : "Modifier avec l'IA"}
                   </button>
 
                   {editError && (
@@ -1471,16 +2498,30 @@ export default function Home() {
                   <h2 className="mt-5 text-3xl font-bold">
                     Aperçu du site
                   </h2>
+
+                  <p className="mt-3 text-slate-500">
+                    Crée ou ouvre un site pour commencer.
+                  </p>
                 </div>
               </div>
             ) : (
               <div className="bg-white text-slate-950">
                 <nav className="flex items-center justify-between border-b px-8 py-5">
-                  <strong>
-                    {
-                      site.businessName
-                    }
-                  </strong>
+                  <div className="flex items-center gap-3">
+                    {site.logoUrl && (
+                      <img
+                        src={site.logoUrl}
+                        alt={`Logo ${site.businessName}`}
+                        className="h-11 w-11 rounded-xl object-contain"
+                      />
+                    )}
+
+                    <strong>
+                      {
+                        site.businessName
+                      }
+                    </strong>
+                  </div>
 
                   {site.phone && (
                     <a
@@ -1537,6 +2578,22 @@ export default function Home() {
                 </section>
 
                 <section className="px-8 py-20">
+                  <div className="mb-12 text-center">
+                    <p
+                      style={{
+                        color:
+                          accentColor,
+                      }}
+                      className="text-sm font-bold uppercase tracking-[0.2em]"
+                    >
+                      Nos services
+                    </p>
+
+                    <h2 className="mt-4 text-4xl font-black">
+                      Comment pouvons-nous vous aider ?
+                    </h2>
+                  </div>
+
                   <div className="grid gap-6 md:grid-cols-2">
                     {site.sections.map(
                       (
@@ -1572,6 +2629,31 @@ export default function Home() {
                       ),
                     )}
                   </div>
+                </section>
+
+                <section className="bg-slate-50 px-8 py-16 text-center">
+                  <h2 className="text-3xl font-black">
+                    Besoin d&apos;un professionnel ?
+                  </h2>
+
+                  <p className="mx-auto mt-4 max-w-xl text-slate-600">
+                    Contactez{" "}
+                    {site.businessName} pour discuter de votre besoin à{" "}
+                    {city}.
+                  </p>
+
+                  {site.phone && (
+                    <a
+                      href={`tel:${site.phone}`}
+                      style={{
+                        backgroundColor:
+                          accentColor,
+                      }}
+                      className="mt-7 inline-block rounded-xl px-7 py-4 font-bold text-white"
+                    >
+                      {site.phone}
+                    </a>
+                  )}
                 </section>
 
                 <footer className="bg-slate-950 px-8 py-10 text-white">
