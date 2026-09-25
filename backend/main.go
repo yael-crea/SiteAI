@@ -17,6 +17,8 @@ import (
 
 	"net/http"
 
+	"net/url"
+
 	"os"
 
 	"regexp"
@@ -178,6 +180,49 @@ type PublicSite struct {
 	PublishedAt *time.Time `json:"publishedAt"`
 }
 
+type DomainInput struct {
+	Domain string `json:"domain"`
+}
+
+type VercelVerification struct {
+	Type   string `json:"type,omitempty"`
+	Domain string `json:"domain,omitempty"`
+	Value  string `json:"value,omitempty"`
+	Reason string `json:"reason,omitempty"`
+}
+
+type VercelProjectDomain struct {
+	Name         string               `json:"name"`
+	ApexName     string               `json:"apexName"`
+	ProjectID    string               `json:"projectId"`
+	Verified     bool                 `json:"verified"`
+	Verification []VercelVerification `json:"verification,omitempty"`
+}
+
+type VercelRecommendedRecord struct {
+	Rank  string      `json:"rank"`
+	Value interface{} `json:"value"`
+}
+
+type VercelDomainConfig struct {
+	AcceptedChallenges []string                  `json:"acceptedChallenges"`
+	ConfiguredBy       *string                   `json:"configuredBy"`
+	RecommendedCNAME   []VercelRecommendedRecord `json:"recommendedCNAME"`
+	RecommendedIPv4    []VercelRecommendedRecord `json:"recommendedIPv4"`
+	Misconfigured      bool                      `json:"misconfigured"`
+}
+
+type DomainStatus struct {
+	Domain           string                    `json:"domain"`
+	Verified         bool                      `json:"verified"`
+	Configured       bool                      `json:"configured"`
+	ConfiguredBy     string                    `json:"configuredBy,omitempty"`
+	Verification     []VercelVerification      `json:"verification,omitempty"`
+	RecommendedCNAME []VercelRecommendedRecord `json:"recommendedCNAME,omitempty"`
+	RecommendedIPv4  []VercelRecommendedRecord `json:"recommendedIPv4,omitempty"`
+	Message          string                    `json:"message,omitempty"`
+}
+
 type OpenAIResponse struct {
 	Output []struct {
 		Type string `json:"type"`
@@ -192,7 +237,13 @@ type OpenAIResponse struct {
 
 func main() {
 
-	_ = godotenv.Load()
+	err := godotenv.Load()
+
+	if err != nil {
+
+		log.Println("Attention : fichier .env introuvable")
+
+	}
 
 	required := []string{
 
@@ -209,13 +260,13 @@ func main() {
 
 		if os.Getenv(variable) == "" {
 
-			log.Fatalf("%s est manquante dans les variables d’environnement", variable)
+			log.Fatalf("%s est manquante dans .env", variable)
 
 		}
 
 	}
 
-	err := initDatabase()
+	err = initDatabase()
 
 	if err != nil {
 
@@ -236,6 +287,8 @@ func main() {
 	http.HandleFunc("/sites/", siteByIDHandler)
 
 	http.HandleFunc("/public-sites/", publicSiteHandler)
+
+	http.HandleFunc("/public-domains/", publicDomainHandler)
 
 	port := os.Getenv("PORT")
 
@@ -325,159 +378,121 @@ func createTables(ctx context.Context) error {
 
 		`
 
-
-
         CREATE TABLE IF NOT EXISTS sites (
-
-
 
             id BIGSERIAL PRIMARY KEY,
 
-
-
             user_id UUID,
-
-
 
             business_name TEXT NOT NULL,
 
-
-
             activity TEXT NOT NULL DEFAULT '',
-
-
 
             city TEXT NOT NULL DEFAULT '',
 
-
-
             phone TEXT NOT NULL DEFAULT '',
-
-
 
             design_style TEXT NOT NULL DEFAULT 'moderne',
 
-
-
             accent_color TEXT NOT NULL DEFAULT '#2563eb',
-
-
 
             site_data JSONB NOT NULL,
 
-
-
             published BOOLEAN NOT NULL DEFAULT FALSE,
-
-
 
             public_slug TEXT,
 
-
-
             published_at TIMESTAMPTZ,
-
-
 
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-
-
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-
-
 
         );
 
-
-
         `,
 
 		`
 
-
-
         ALTER TABLE sites
-
-
 
         ADD COLUMN IF NOT EXISTS user_id UUID;
 
-
-
         `,
 
 		`
 
-
-
         ALTER TABLE sites
-
-
 
         ADD COLUMN IF NOT EXISTS published BOOLEAN NOT NULL DEFAULT FALSE;
 
-
-
         `,
 
 		`
 
-
-
         ALTER TABLE sites
-
-
 
         ADD COLUMN IF NOT EXISTS public_slug TEXT;
 
-
-
         `,
 
 		`
-
-
 
         ALTER TABLE sites
 
-
-
         ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
-
-
 
         `,
 
 		`
-
-
 
         CREATE INDEX IF NOT EXISTS idx_sites_user_id
 
-
-
         ON sites(user_id);
-
-
 
         `,
 
 		`
 
-
-
         CREATE UNIQUE INDEX IF NOT EXISTS idx_sites_public_slug
-
-
 
         ON sites(public_slug)
 
-
-
         WHERE public_slug IS NOT NULL;
 
+        `,
 
+		`
+
+        ALTER TABLE sites
+
+        ADD COLUMN IF NOT EXISTS custom_domain TEXT;
+
+        `,
+
+		`
+
+        ALTER TABLE sites
+
+        ADD COLUMN IF NOT EXISTS custom_domain_verified BOOLEAN NOT NULL DEFAULT FALSE;
+
+        `,
+
+		`
+
+        ALTER TABLE sites
+
+        ADD COLUMN IF NOT EXISTS custom_domain_updated_at TIMESTAMPTZ;
+
+        `,
+
+		`
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_sites_custom_domain
+
+        ON sites(LOWER(custom_domain))
+
+        WHERE custom_domain IS NOT NULL AND custom_domain <> '';
 
         `,
 	}
@@ -640,7 +655,7 @@ func healthHandler(
 
 ) {
 
-	enableCORS(w, r)
+	enableCORS(w)
 
 	if r.Method == http.MethodOptions {
 
@@ -682,6 +697,8 @@ func healthHandler(
 			"auth": "enabled",
 
 			"publication": "enabled",
+
+			"customDomains": domainIntegrationStatus(),
 		},
 	)
 
@@ -695,7 +712,7 @@ func generateHandler(
 
 ) {
 
-	enableCORS(w, r)
+	enableCORS(w)
 
 	if r.Method == http.MethodOptions {
 
@@ -812,7 +829,7 @@ func modifyHandler(
 
 ) {
 
-	enableCORS(w, r)
+	enableCORS(w)
 
 	if r.Method == http.MethodOptions {
 
@@ -919,7 +936,7 @@ func sitesHandler(
 
 ) {
 
-	enableCORS(w, r)
+	enableCORS(w)
 
 	if r.Method == http.MethodOptions {
 
@@ -984,7 +1001,7 @@ func siteByIDHandler(
 
 ) {
 
-	enableCORS(w, r)
+	enableCORS(w)
 
 	if r.Method == http.MethodOptions {
 
@@ -1050,6 +1067,56 @@ func siteByIDHandler(
 
 			http.StatusBadRequest,
 		)
+
+		return
+
+	}
+
+	if len(parts) >= 2 && parts[1] == "domain" {
+
+		if len(parts) == 2 {
+
+			switch r.Method {
+
+			case http.MethodGet:
+
+				getDomainHandler(w, r, id, user.ID)
+
+			case http.MethodPost:
+
+				addDomainHandler(w, r, id, user.ID)
+
+			case http.MethodDelete:
+
+				deleteDomainHandler(w, r, id, user.ID)
+
+			default:
+
+				http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+
+			}
+
+			return
+
+		}
+
+		if len(parts) == 3 && parts[2] == "verify" {
+
+			if r.Method != http.MethodPost {
+
+				http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+
+				return
+
+			}
+
+			verifyDomainHandler(w, r, id, user.ID)
+
+			return
+
+		}
+
+		http.Error(w, "URL domaine invalide", http.StatusBadRequest)
 
 		return
 
@@ -1217,7 +1284,7 @@ func publicSiteHandler(
 
 ) {
 
-	enableCORS(w, r)
+	enableCORS(w)
 
 	if r.Method == http.MethodOptions {
 
@@ -1271,63 +1338,33 @@ func publicSiteHandler(
 
 	query := `
 
-
-
     SELECT
-
-
 
         business_name,
 
-
-
         activity,
-
-
 
         city,
 
-
-
         phone,
-
-
 
         design_style,
 
-
-
         accent_color,
-
-
 
         site_data,
 
-
-
         public_slug,
-
-
 
         published_at
 
-
-
     FROM sites
-
-
 
     WHERE
 
-
-
         public_slug = $1
 
-
-
         AND published = TRUE;
-
-
 
     `
 
@@ -1438,6 +1475,391 @@ func publicSiteHandler(
 
 }
 
+func publicDomainHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+
+	domain := normalizeDomain(strings.Trim(strings.TrimPrefix(r.URL.Path, "/public-domains/"), "/"))
+
+	if domain == "" {
+		http.Error(w, "Domaine manquant", http.StatusBadRequest)
+		return
+	}
+
+	query := `
+	SELECT
+		business_name,
+		activity,
+		city,
+		phone,
+		design_style,
+		accent_color,
+		site_data,
+		public_slug,
+		published_at
+	FROM sites
+	WHERE LOWER(custom_domain) = LOWER($1)
+	  AND published = TRUE
+	LIMIT 1;
+	`
+
+	var publicSite PublicSite
+	var siteJSON []byte
+
+	err := db.QueryRow(r.Context(), query, domain).Scan(
+		&publicSite.BusinessName,
+		&publicSite.Activity,
+		&publicSite.City,
+		&publicSite.Phone,
+		&publicSite.DesignStyle,
+		&publicSite.AccentColor,
+		&siteJSON,
+		&publicSite.PublicSlug,
+		&publicSite.PublishedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Site introuvable", http.StatusNotFound)
+			return
+		}
+
+		log.Println("Erreur site public par domaine :", err)
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.Unmarshal(siteJSON, &publicSite.Site); err != nil {
+		http.Error(w, "Site invalide", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, publicSite)
+}
+
+func getDomainHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	id int64,
+	userID string,
+) {
+	domain, localVerified, err := getStoredDomain(r.Context(), id, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Site introuvable", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+		return
+	}
+
+	if domain == "" {
+		writeJSON(w, http.StatusOK, DomainStatus{
+			Domain:     "",
+			Verified:   false,
+			Configured: false,
+			Message:    "Aucun domaine personnalisé configuré.",
+		})
+		return
+	}
+
+	projectDomain, err := getVercelProjectDomain(r.Context(), domain)
+	if err != nil {
+		writeJSON(w, http.StatusOK, DomainStatus{
+			Domain:     domain,
+			Verified:   localVerified,
+			Configured: false,
+			Message:    err.Error(),
+		})
+		return
+	}
+
+	config, configErr := getVercelDomainConfig(r.Context(), domain)
+	configured := false
+	configuredBy := ""
+	var recommendedCNAME []VercelRecommendedRecord
+	var recommendedIPv4 []VercelRecommendedRecord
+
+	if configErr == nil {
+		configured = !config.Misconfigured
+		if config.ConfiguredBy != nil {
+			configuredBy = *config.ConfiguredBy
+		}
+		recommendedCNAME = config.RecommendedCNAME
+		recommendedIPv4 = config.RecommendedIPv4
+	}
+
+	verified := projectDomain.Verified
+	if verified != localVerified {
+		_ = updateStoredDomainVerification(r.Context(), id, userID, verified)
+	}
+
+	status := DomainStatus{
+		Domain:           domain,
+		Verified:         verified,
+		Configured:       configured,
+		ConfiguredBy:     configuredBy,
+		Verification:     projectDomain.Verification,
+		RecommendedCNAME: recommendedCNAME,
+		RecommendedIPv4:  recommendedIPv4,
+	}
+
+	if configErr != nil {
+		status.Message = configErr.Error()
+	}
+
+	writeJSON(w, http.StatusOK, status)
+}
+
+func addDomainHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	id int64,
+	userID string,
+) {
+	if !domainIntegrationConfigured() {
+		http.Error(w, "Intégration Vercel non configurée", http.StatusServiceUnavailable)
+		return
+	}
+
+	var input DomainInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "JSON invalide", http.StatusBadRequest)
+		return
+	}
+
+	domain := normalizeDomain(input.Domain)
+	if !isValidDomain(domain) {
+		http.Error(w, "Domaine invalide", http.StatusBadRequest)
+		return
+	}
+
+	storedDomain, _, err := getStoredDomain(r.Context(), id, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Site introuvable", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+		return
+	}
+
+	if storedDomain != "" && !strings.EqualFold(storedDomain, domain) {
+		http.Error(w, "Supprime d'abord le domaine actuel avant d'en ajouter un autre", http.StatusConflict)
+		return
+	}
+
+	var projectDomain VercelProjectDomain
+	projectDomain, err = addVercelProjectDomain(r.Context(), domain)
+	if err != nil {
+		projectDomain, err = getVercelProjectDomain(r.Context(), domain)
+		if err != nil {
+			http.Error(w, "Vercel : "+err.Error(), http.StatusBadGateway)
+			return
+		}
+	}
+
+	_, err = db.Exec(
+		r.Context(),
+		`UPDATE sites
+		 SET custom_domain = $1,
+		     custom_domain_verified = $2,
+		     custom_domain_updated_at = NOW(),
+		     updated_at = NOW()
+		 WHERE id = $3 AND user_id = $4::uuid`,
+		domain,
+		projectDomain.Verified,
+		id,
+		userID,
+	)
+	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "idx_sites_custom_domain") || strings.Contains(strings.ToLower(err.Error()), "unique") {
+			http.Error(w, "Ce domaine est déjà utilisé par un autre site", http.StatusConflict)
+			return
+		}
+		http.Error(w, "Impossible d'enregistrer le domaine", http.StatusInternalServerError)
+		return
+	}
+
+	config, configErr := getVercelDomainConfig(r.Context(), domain)
+	status := DomainStatus{
+		Domain:       domain,
+		Verified:     projectDomain.Verified,
+		Verification: projectDomain.Verification,
+	}
+
+	if configErr == nil {
+		status.Configured = !config.Misconfigured
+		if config.ConfiguredBy != nil {
+			status.ConfiguredBy = *config.ConfiguredBy
+		}
+		status.RecommendedCNAME = config.RecommendedCNAME
+		status.RecommendedIPv4 = config.RecommendedIPv4
+	} else {
+		status.Message = configErr.Error()
+	}
+
+	writeJSON(w, http.StatusOK, status)
+}
+
+func verifyDomainHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	id int64,
+	userID string,
+) {
+	if !domainIntegrationConfigured() {
+		http.Error(w, "Intégration Vercel non configurée", http.StatusServiceUnavailable)
+		return
+	}
+
+	domain, _, err := getStoredDomain(r.Context(), id, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Site introuvable", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+		return
+	}
+
+	if domain == "" {
+		http.Error(w, "Aucun domaine configuré", http.StatusBadRequest)
+		return
+	}
+
+	projectDomain, err := verifyVercelProjectDomain(r.Context(), domain)
+	if err != nil {
+		projectDomain, getErr := getVercelProjectDomain(r.Context(), domain)
+		if getErr != nil {
+			http.Error(w, "Vercel : "+err.Error(), http.StatusBadGateway)
+			return
+		}
+		_ = projectDomain
+	}
+
+	_ = updateStoredDomainVerification(r.Context(), id, userID, projectDomain.Verified)
+
+	config, configErr := getVercelDomainConfig(r.Context(), domain)
+	status := DomainStatus{
+		Domain:       domain,
+		Verified:     projectDomain.Verified,
+		Verification: projectDomain.Verification,
+	}
+
+	if configErr == nil {
+		status.Configured = !config.Misconfigured
+		if config.ConfiguredBy != nil {
+			status.ConfiguredBy = *config.ConfiguredBy
+		}
+		status.RecommendedCNAME = config.RecommendedCNAME
+		status.RecommendedIPv4 = config.RecommendedIPv4
+	} else {
+		status.Message = configErr.Error()
+	}
+
+	writeJSON(w, http.StatusOK, status)
+}
+
+func deleteDomainHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	id int64,
+	userID string,
+) {
+	domain, _, err := getStoredDomain(r.Context(), id, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Site introuvable", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+		return
+	}
+
+	if domain == "" {
+		writeJSON(w, http.StatusOK, DomainStatus{Message: "Aucun domaine à supprimer."})
+		return
+	}
+
+	if domainIntegrationConfigured() {
+		if err := deleteVercelProjectDomain(r.Context(), domain); err != nil && !strings.Contains(strings.ToLower(err.Error()), "404") {
+			http.Error(w, "Vercel : "+err.Error(), http.StatusBadGateway)
+			return
+		}
+	}
+
+	_, err = db.Exec(
+		r.Context(),
+		`UPDATE sites
+		 SET custom_domain = NULL,
+		     custom_domain_verified = FALSE,
+		     custom_domain_updated_at = NOW(),
+		     updated_at = NOW()
+		 WHERE id = $1 AND user_id = $2::uuid`,
+		id,
+		userID,
+	)
+	if err != nil {
+		http.Error(w, "Impossible de supprimer le domaine", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, DomainStatus{Message: "Domaine supprimé."})
+}
+
+func getStoredDomain(
+	ctx context.Context,
+	id int64,
+	userID string,
+) (string, bool, error) {
+	var domain string
+	var verified bool
+
+	err := db.QueryRow(
+		ctx,
+		`SELECT COALESCE(custom_domain, ''), custom_domain_verified
+		 FROM sites
+		 WHERE id = $1 AND user_id = $2::uuid`,
+		id,
+		userID,
+	).Scan(&domain, &verified)
+
+	return domain, verified, err
+}
+
+func updateStoredDomainVerification(
+	ctx context.Context,
+	id int64,
+	userID string,
+	verified bool,
+) error {
+	_, err := db.Exec(
+		ctx,
+		`UPDATE sites
+		 SET custom_domain_verified = $1,
+		     custom_domain_updated_at = NOW()
+		 WHERE id = $2 AND user_id = $3::uuid`,
+		verified,
+		id,
+		userID,
+	)
+	return err
+}
+
 func createSiteHandler(
 
 	w http.ResponseWriter,
@@ -1516,103 +1938,53 @@ func createSiteHandler(
 
 	query := `
 
-
-
     INSERT INTO sites (
-
-
 
         user_id,
 
-
-
         business_name,
-
-
 
         activity,
 
-
-
         city,
-
-
 
         phone,
 
-
-
         design_style,
-
-
 
         accent_color,
 
-
-
         site_data
 
-
-
     )
-
-
 
     VALUES (
 
-
-
         $1::uuid,
-
-
 
         $2,
 
-
-
         $3,
-
-
 
         $4,
 
-
-
         $5,
-
-
 
         $6,
 
-
-
         $7,
-
-
 
         $8::jsonb
 
-
-
     )
-
-
 
     RETURNING
 
-
-
         id,
-
-
 
         created_at,
 
-
-
         updated_at;
-
-
 
     `
 
@@ -1713,75 +2085,39 @@ func listSitesHandler(
 
 	query := `
 
-
-
     SELECT
-
-
 
         id,
 
-
-
         business_name,
-
-
 
         activity,
 
-
-
         city,
-
-
 
         phone,
 
-
-
         design_style,
-
-
 
         accent_color,
 
-
-
         site_data,
-
-
 
         published,
 
-
-
         COALESCE(public_slug, ''),
-
-
 
         published_at,
 
-
-
         created_at,
-
-
 
         updated_at
 
-
-
     FROM sites
-
-
 
     WHERE user_id = $1::uuid
 
-
-
     ORDER BY updated_at DESC;
-
-
 
     `
 
@@ -2049,59 +2385,31 @@ func updateSiteHandler(
 
 	query := `
 
-
-
     UPDATE sites
-
-
 
     SET
 
-
-
         business_name = $1,
-
-
 
         activity = $2,
 
-
-
         city = $3,
-
-
 
         phone = $4,
 
-
-
         design_style = $5,
-
-
 
         accent_color = $6,
 
-
-
         site_data = $7::jsonb,
-
-
 
         updated_at = NOW()
 
-
-
     WHERE
-
-
 
         id = $8
 
-
-
         AND user_id = $9::uuid;
-
-
 
     `
 
@@ -2213,23 +2521,13 @@ func deleteSiteHandler(
 
 		`
 
-
-
         DELETE FROM sites
-
-
 
         WHERE
 
-
-
             id = $1
 
-
-
             AND user_id = $2::uuid;
-
-
 
         `,
 
@@ -2381,43 +2679,23 @@ func publishSiteHandler(
 
 	query := `
 
-
-
     UPDATE sites
-
-
 
     SET
 
-
-
         published = TRUE,
-
-
 
         public_slug = $1,
 
-
-
         published_at = NOW(),
-
-
 
         updated_at = NOW()
 
-
-
     WHERE
-
-
 
         id = $2
 
-
-
         AND user_id = $3::uuid;
-
-
 
     `
 
@@ -2527,39 +2805,21 @@ func unpublishSiteHandler(
 
 	query := `
 
-
-
     UPDATE sites
-
-
 
     SET
 
-
-
         published = FALSE,
-
-
 
         published_at = NULL,
 
-
-
         updated_at = NOW()
-
-
 
     WHERE
 
-
-
         id = $1
 
-
-
         AND user_id = $2::uuid;
-
-
 
     `
 
@@ -2661,23 +2921,13 @@ func createUniquePublicSlug(
 
 			`
 
-
-
             SELECT id
-
-
 
             FROM sites
 
-
-
             WHERE public_slug = $1
 
-
-
             LIMIT 1;
-
-
 
             `,
 
@@ -2754,79 +3004,41 @@ func getSavedSiteByID(
 
 	query := `
 
-
-
     SELECT
-
-
 
         id,
 
-
-
         business_name,
-
-
 
         activity,
 
-
-
         city,
-
-
 
         phone,
 
-
-
         design_style,
-
-
 
         accent_color,
 
-
-
         site_data,
-
-
 
         published,
 
-
-
         COALESCE(public_slug, ''),
-
-
 
         published_at,
 
-
-
         created_at,
-
-
 
         updated_at
 
-
-
     FROM sites
-
-
 
     WHERE
 
-
-
         id = $1
 
-
-
         AND user_id = $2::uuid;
-
-
 
     `
 
@@ -2916,13 +3128,7 @@ func generateSiteWithAI(
 
 	instructions := `
 
-
-
 Tu es le moteur de création de SiteAI.
-
-
-
-
 
 
 
@@ -2930,61 +3136,31 @@ Crée le contenu professionnel d'un site vitrine pour une TPE ou PME française.
 
 
 
-
-
-
-
 Règles :
-
-
 
 - français uniquement
 
-
-
 - ton professionnel et naturel
-
-
 
 - référencement local naturel
 
-
-
 - ne jamais inventer de certifications
-
-
 
 - ne jamais inventer d'années d'expérience
 
-
-
 - ne jamais inventer de tarifs
-
-
 
 - ne jamais inventer d'avis clients
 
-
-
 - ne jamais inventer de garanties
 
-
-
 - ne jamais inventer de disponibilité 24h/24
-
-
 
 - ne jamais inventer d'informations factuelles
 
 
 
-
-
-
-
 Crée entre 3 et 5 sections.
-
-
 
 `
 
@@ -2994,15 +3170,7 @@ Crée entre 3 et 5 sections.
 
 
 
-
-
-
-
 Activité : %s
-
-
-
-
 
 
 
@@ -3010,15 +3178,7 @@ Ville : %s
 
 
 
-
-
-
-
 Téléphone : %s
-
-
-
-
 
 
 
@@ -3123,13 +3283,7 @@ func modifySiteWithAI(
 
 	instructions := `
 
-
-
 Tu es l'éditeur intelligent de SiteAI.
-
-
-
-
 
 
 
@@ -3137,49 +3291,25 @@ Modifie uniquement ce que l'utilisateur demande.
 
 
 
-
-
-
-
 Règles :
-
-
 
 - français uniquement
 
-
-
 - conserver les informations non demandées
-
-
 
 - ne pas inventer de faits
 
-
-
 - aucun faux avis
-
-
 
 - aucune fausse certification
 
-
-
 - aucun faux prix
-
-
 
 - aucune fausse expérience
 
-
-
 - designStyle doit être moderne, elegant ou artisan
 
-
-
 - accentColor doit être une couleur hexadécimale
-
-
 
 `
 
@@ -3189,69 +3319,35 @@ Règles :
 
 
 
-
-
-
-
 %s
-
-
-
-
 
 
 
 ACTIVITÉ :
 
-
-
 %s
-
-
-
-
 
 
 
 VILLE :
 
-
-
 %s
-
-
-
-
 
 
 
 STYLE :
 
-
-
 %s
-
-
-
-
 
 
 
 COULEUR :
 
-
-
 %s
 
 
 
-
-
-
-
 DEMANDE :
-
-
 
 %s`,
 
@@ -3378,13 +3474,9 @@ DEMANDE :
 	}
 
 	// Le logo est géré par l'utilisateur dans Supabase Storage.
-
 	// L'IA ne doit jamais le supprimer ou le remplacer.
-
 	result.Site.LogoURL = input.Site.LogoURL
-
 	result.Site.HeroImageURL = input.Site.HeroImageURL
-
 	result.Site.Gallery = input.Site.Gallery
 
 	result.Site.Slug = slugify(
@@ -3887,6 +3979,238 @@ func slugify(value string) string {
 
 }
 
+func domainIntegrationConfigured() bool {
+	return strings.TrimSpace(os.Getenv("VERCEL_ACCESS_TOKEN")) != "" &&
+		strings.TrimSpace(os.Getenv("VERCEL_PROJECT_ID")) != ""
+}
+
+func domainIntegrationStatus() string {
+	if domainIntegrationConfigured() {
+		return "enabled"
+	}
+	return "disabled"
+}
+
+func normalizeDomain(value string) string {
+	value = strings.TrimSpace(strings.ToLower(value))
+	value = strings.TrimPrefix(value, "https://")
+	value = strings.TrimPrefix(value, "http://")
+
+	if slash := strings.Index(value, "/"); slash >= 0 {
+		value = value[:slash]
+	}
+
+	if colon := strings.Index(value, ":"); colon >= 0 {
+		value = value[:colon]
+	}
+
+	return strings.TrimSuffix(value, ".")
+}
+
+func isValidDomain(value string) bool {
+	if len(value) < 3 || len(value) > 253 || strings.Contains(value, " ") {
+		return false
+	}
+
+	if value == "localhost" || strings.HasSuffix(value, ".localhost") {
+		return false
+	}
+
+	labels := strings.Split(value, ".")
+	if len(labels) < 2 {
+		return false
+	}
+
+	labelPattern := regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$`)
+	for _, label := range labels {
+		if !labelPattern.MatchString(label) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func vercelProjectDomainURL(domain string) (string, error) {
+	projectID := strings.TrimSpace(os.Getenv("VERCEL_PROJECT_ID"))
+	if projectID == "" {
+		return "", errors.New("VERCEL_PROJECT_ID manquant")
+	}
+
+	base := "https://api.vercel.com/v9/projects/" + url.PathEscape(projectID) + "/domains"
+	if domain != "" {
+		base += "/" + url.PathEscape(domain)
+	}
+
+	return withVercelTeamID(base), nil
+}
+
+func withVercelTeamID(rawURL string) string {
+	teamID := strings.TrimSpace(os.Getenv("VERCEL_TEAM_ID"))
+	if teamID == "" {
+		return rawURL
+	}
+
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+
+	query := parsed.Query()
+	query.Set("teamId", teamID)
+	parsed.RawQuery = query.Encode()
+	return parsed.String()
+}
+
+func doVercelRequest(
+	ctx context.Context,
+	method string,
+	rawURL string,
+	body any,
+	out any,
+) error {
+	token := strings.TrimSpace(os.Getenv("VERCEL_ACCESS_TOKEN"))
+	if token == "" {
+		return errors.New("VERCEL_ACCESS_TOKEN manquant")
+	}
+
+	var reader io.Reader
+	if body != nil {
+		payload, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+		reader = bytes.NewReader(payload)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, rawURL, reader)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 20 * time.Second}
+	response, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		message := strings.TrimSpace(string(data))
+		if message == "" {
+			message = response.Status
+		}
+		return fmt.Errorf("Vercel %d: %s", response.StatusCode, message)
+	}
+
+	if out != nil && len(data) > 0 {
+		if err := json.Unmarshal(data, out); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func addVercelProjectDomain(
+	ctx context.Context,
+	domain string,
+) (VercelProjectDomain, error) {
+	rawURL, err := vercelProjectDomainURL("")
+	if err != nil {
+		return VercelProjectDomain{}, err
+	}
+
+	var result VercelProjectDomain
+	err = doVercelRequest(
+		ctx,
+		http.MethodPost,
+		rawURL,
+		map[string]string{"name": domain},
+		&result,
+	)
+	return result, err
+}
+
+func getVercelProjectDomain(
+	ctx context.Context,
+	domain string,
+) (VercelProjectDomain, error) {
+	rawURL, err := vercelProjectDomainURL(domain)
+	if err != nil {
+		return VercelProjectDomain{}, err
+	}
+
+	var result VercelProjectDomain
+	err = doVercelRequest(ctx, http.MethodGet, rawURL, nil, &result)
+	return result, err
+}
+
+func verifyVercelProjectDomain(
+	ctx context.Context,
+	domain string,
+) (VercelProjectDomain, error) {
+	rawURL, err := vercelProjectDomainURL(domain)
+	if err != nil {
+		return VercelProjectDomain{}, err
+	}
+
+	if parsed, parseErr := url.Parse(rawURL); parseErr == nil {
+		parsed.Path += "/verify"
+		rawURL = parsed.String()
+	} else {
+		rawURL += "/verify"
+	}
+
+	var result VercelProjectDomain
+	err = doVercelRequest(ctx, http.MethodPost, rawURL, nil, &result)
+	return result, err
+}
+
+func deleteVercelProjectDomain(
+	ctx context.Context,
+	domain string,
+) error {
+	rawURL, err := vercelProjectDomainURL(domain)
+	if err != nil {
+		return err
+	}
+
+	return doVercelRequest(ctx, http.MethodDelete, rawURL, nil, nil)
+}
+
+func getVercelDomainConfig(
+	ctx context.Context,
+	domain string,
+) (VercelDomainConfig, error) {
+	projectID := strings.TrimSpace(os.Getenv("VERCEL_PROJECT_ID"))
+	if projectID == "" {
+		return VercelDomainConfig{}, errors.New("VERCEL_PROJECT_ID manquant")
+	}
+
+	rawURL := "https://api.vercel.com/v6/domains/" + url.PathEscape(domain) + "/config"
+	parsed, err := url.Parse(withVercelTeamID(rawURL))
+	if err != nil {
+		return VercelDomainConfig{}, err
+	}
+
+	query := parsed.Query()
+	query.Set("projectIdOrName", projectID)
+	parsed.RawQuery = query.Encode()
+
+	var result VercelDomainConfig
+	err = doVercelRequest(ctx, http.MethodGet, parsed.String(), nil, &result)
+	return result, err
+}
+
 func normalizeDesignStyle(value string) string {
 
 	switch value {
@@ -3930,21 +4254,29 @@ func normalizeAccentColor(
 
 }
 
-func enableCORS(w http.ResponseWriter, r *http.Request) {
-	origin := strings.TrimSpace(r.Header.Get("Origin"))
-	frontendURL := strings.TrimRight(strings.TrimSpace(os.Getenv("FRONTEND_URL")), "/")
+func enableCORS(w http.ResponseWriter) {
 
-	allowed := origin == "http://localhost:3000" ||
-		origin == "http://127.0.0.1:3000" ||
-		(frontendURL != "" && origin == frontendURL)
+	w.Header().Set(
 
-	if allowed {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Vary", "Origin")
-	}
+		"Access-Control-Allow-Origin",
 
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		"http://localhost:3000",
+	)
+
+	w.Header().Set(
+
+		"Access-Control-Allow-Methods",
+
+		"GET, POST, PUT, DELETE, OPTIONS",
+	)
+
+	w.Header().Set(
+
+		"Access-Control-Allow-Headers",
+
+		"Content-Type, Authorization",
+	)
+
 }
 
 func writeJSON(
