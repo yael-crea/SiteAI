@@ -9,6 +9,7 @@ import {
 
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import SitePreview from "@/components/SitePreview";
 
 type SiteSection = {
   title: string;
@@ -928,7 +929,19 @@ export default function Home() {
     }
   }
 
+  function returnToDashboard() {
+    sessionStorage.removeItem(
+      "siteai_site_to_open",
+    );
+
+    router.push("/dashboard");
+  }
+
   function createNewSite() {
+    sessionStorage.removeItem(
+      "siteai_site_to_open",
+    );
+
     setSavedSiteID(null);
     setSite(null);
 
@@ -1817,12 +1830,16 @@ export default function Home() {
     <main className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <div className="text-2xl font-black">
+          <button
+            type="button"
+            onClick={returnToDashboard}
+            className="text-2xl font-black"
+          >
             Site
             <span className="text-blue-500">
               AI
             </span>
-          </div>
+          </button>
 
           <div className="flex items-center gap-4">
             <div className="hidden text-right md:block">
@@ -1834,6 +1851,14 @@ export default function Home() {
                 {userEmail}
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={returnToDashboard}
+              className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold hover:border-blue-500"
+            >
+              ← Dashboard
+            </button>
 
             <button
               type="button"
@@ -3189,215 +3214,13 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white text-slate-950">
-                <nav className="flex items-center justify-between border-b px-8 py-5">
-                  <div className="flex items-center gap-3">
-                    {site.logoUrl && (
-                      <img
-                        src={site.logoUrl}
-                        alt={`Logo ${site.businessName}`}
-                        className="h-11 w-11 rounded-xl object-contain"
-                      />
-                    )}
-
-                    <strong>
-                      {
-                        site.businessName
-                      }
-                    </strong>
-                  </div>
-
-                  {site.phone && (
-                    <a
-                      href={`tel:${site.phone}`}
-                      style={{
-                        color:
-                          accentColor,
-                      }}
-                    >
-                      {site.phone}
-                    </a>
-                  )}
-                </nav>
-
-                <section
-                  className={`${getPreviewBackground()} relative overflow-hidden px-8 py-24 text-center text-white`}
-                  style={
-                    site.heroImageUrl
-                      ? {
-                          backgroundImage: `linear-gradient(rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.72)), url("${site.heroImageUrl}")`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        }
-                      : undefined
-                  }
-                >
-                  <p
-                    style={{
-                      color:
-                        accentColor,
-                    }}
-                    className="font-bold uppercase tracking-widest"
-                  >
-                    {
-                      site.businessName
-                    }
-                  </p>
-
-                  <h2 className="mx-auto mt-4 max-w-3xl text-5xl font-black">
-                    {
-                      site.heroTitle
-                    }
-                  </h2>
-
-                  <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-300">
-                    {
-                      site.heroText
-                    }
-                  </p>
-
-                  {site.phone && (
-                    <a
-                      href={`tel:${site.phone}`}
-                      style={{
-                        backgroundColor:
-                          accentColor,
-                      }}
-                      className="mt-8 inline-block rounded-xl px-7 py-4 font-bold text-white"
-                    >
-                      Appeler
-                    </a>
-                  )}
-                </section>
-
-                <section className="px-8 py-20">
-                  <div className="mb-12 text-center">
-                    <p
-                      style={{
-                        color:
-                          accentColor,
-                      }}
-                      className="text-sm font-bold uppercase tracking-[0.2em]"
-                    >
-                      Nos services
-                    </p>
-
-                    <h2 className="mt-4 text-4xl font-black">
-                      Comment pouvons-nous vous aider ?
-                    </h2>
-                  </div>
-
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {site.sections.map(
-                      (
-                        section,
-                        index,
-                      ) => (
-                        <article
-                          key={index}
-                          className={`border p-7 ${getCardStyle()}`}
-                        >
-                          <div
-                            style={{
-                              backgroundColor:
-                                accentColor,
-                            }}
-                            className="mb-5 flex h-10 w-10 items-center justify-center rounded-lg font-bold text-white"
-                          >
-                            {index + 1}
-                          </div>
-
-                          <h3 className="text-xl font-bold">
-                            {
-                              section.title
-                            }
-                          </h3>
-
-                          <p className="mt-3 leading-7 text-slate-600">
-                            {
-                              section.text
-                            }
-                          </p>
-                        </article>
-                      ),
-                    )}
-                  </div>
-                </section>
-
-                {(site.gallery ?? []).length > 0 && (
-                  <section className="bg-slate-50 px-8 py-16">
-                    <div className="text-center">
-                      <p
-                        style={{
-                          color:
-                            accentColor,
-                        }}
-                        className="text-sm font-bold uppercase tracking-[0.2em]"
-                      >
-                        Galerie
-                      </p>
-
-                      <h2 className="mt-4 text-3xl font-black">
-                        Galerie de l&apos;entreprise
-                      </h2>
-                    </div>
-
-                    <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {(site.gallery ?? []).map(
-                        (
-                          imageUrl,
-                          index,
-                        ) => (
-                          <img
-                            key={`${imageUrl}-${index}`}
-                            src={imageUrl}
-                            alt={`Photo ${index + 1} de ${site.businessName}`}
-                            className="h-56 w-full rounded-2xl object-cover"
-                          />
-                        ),
-                      )}
-                    </div>
-                  </section>
-                )}
-
-                <section className="bg-slate-50 px-8 py-16 text-center">
-                  <h2 className="text-3xl font-black">
-                    Besoin d&apos;un professionnel ?
-                  </h2>
-
-                  <p className="mx-auto mt-4 max-w-xl text-slate-600">
-                    Contactez{" "}
-                    {site.businessName} pour discuter de votre besoin à{" "}
-                    {city}.
-                  </p>
-
-                  {site.phone && (
-                    <a
-                      href={`tel:${site.phone}`}
-                      style={{
-                        backgroundColor:
-                          accentColor,
-                      }}
-                      className="mt-7 inline-block rounded-xl px-7 py-4 font-bold text-white"
-                    >
-                      {site.phone}
-                    </a>
-                  )}
-                </section>
-
-                <footer className="bg-slate-950 px-8 py-10 text-white">
-                  <p className="font-bold">
-                    {
-                      site.businessName
-                    }
-                  </p>
-
-                  <p className="mt-2 text-sm text-slate-500">
-                    {activity} à{" "}
-                    {city}
-                  </p>
-                </footer>
-              </div>
+              <SitePreview
+                site={site}
+                designStyle={designStyle}
+                accentColor={accentColor}
+                activity={activity}
+                city={city}
+              />
             )}
           </div>
         </div>
