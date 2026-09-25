@@ -256,12 +256,12 @@ export default function DashboardPage() {
 
   function createSite() {
     sessionStorage.removeItem("siteai_site_to_open");
-    router.push("/");
+    router.push("/builder");
   }
 
   function editSite(id: number) {
     sessionStorage.setItem("siteai_site_to_open", String(id));
-    router.push("/");
+    router.push("/builder");
   }
 
   function viewPublicSite(slug: string) {
