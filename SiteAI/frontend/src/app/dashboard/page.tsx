@@ -218,6 +218,15 @@ export default function DashboardPage() {
       }
 
       const data: SavedSite[] = await response.json();
+
+      const onboardingSkipped =
+        sessionStorage.getItem("siteai_onboarding_skipped") === "true";
+
+      if (data.length === 0 && !onboardingSkipped) {
+        router.replace("/onboarding");
+        return;
+      }
+
       setSites(data);
     } catch (err) {
       console.error(err);
