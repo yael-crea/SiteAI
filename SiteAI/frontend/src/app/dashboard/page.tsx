@@ -60,6 +60,8 @@ type BillingStatus = {
   cancelAtPeriodEnd: boolean;
   currentPeriodEnd?: string;
   canManage: boolean;
+  maxPublishedSites?: number;
+  customDomainAllowed?: boolean;
 };
 
 function readablePlan(plan: string) {
@@ -531,6 +533,9 @@ export default function DashboardPage() {
   const subscriptionActive =
     billing?.status === "active" || billing?.status === "trialing";
 
+  const customDomainAllowed =
+    subscriptionActive && billing?.customDomainAllowed === true;
+
   if (authLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
@@ -889,13 +894,31 @@ export default function DashboardPage() {
                         </button>
                       )}
 
-                      <button
-                        type="button"
-                        onClick={() => openDomainPanel(savedSite.id)}
-                        className="rounded-xl border border-blue-800 px-3 py-3 text-sm font-semibold text-blue-400 hover:bg-blue-950"
-                      >
-                        🌐 Domaine
-                      </button>
+                      {billingLoading ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-semibold text-slate-500 opacity-60"
+                        >
+                          🌐 Domaine
+                        </button>
+                      ) : customDomainAllowed ? (
+                        <button
+                          type="button"
+                          onClick={() => openDomainPanel(savedSite.id)}
+                          className="rounded-xl border border-blue-800 px-3 py-3 text-sm font-semibold text-blue-400 hover:bg-blue-950"
+                        >
+                          🌐 Domaine
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => router.push("/pricing")}
+                          className="rounded-xl border border-violet-800 px-3 py-3 text-sm font-semibold text-violet-300 hover:bg-violet-950"
+                        >
+                          🔒 Domaine Pro
+                        </button>
+                      )}
 
                       <button
                         type="button"
@@ -909,7 +932,27 @@ export default function DashboardPage() {
                       </button>
                     </div>
 
-                    {domainPanelOpen && (
+                    {!billingLoading && !customDomainAllowed && (
+                      <div className="mt-4 rounded-xl border border-violet-900/70 bg-violet-950/20 p-4">
+                        <p className="text-sm font-bold text-violet-300">
+                          🔒 Domaine personnalisé
+                        </p>
+
+                        <p className="mt-2 text-xs leading-5 text-slate-400">
+                          Disponible avec les formules Pro ou Agence.
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() => router.push("/pricing")}
+                          className="mt-3 rounded-lg bg-violet-600 px-4 py-2 text-xs font-bold text-white hover:bg-violet-500"
+                        >
+                          Voir les formules
+                        </button>
+                      </div>
+                    )}
+
+                    {domainPanelOpen && customDomainAllowed && (
                       <div className="mt-6 border-t border-slate-800 pt-6">
                         <div className="flex items-center justify-between gap-3">
                           <div>
