@@ -192,13 +192,7 @@ type OpenAIResponse struct {
 
 func main() {
 
-	err := godotenv.Load()
-
-	if err != nil {
-
-		log.Println("Attention : fichier .env introuvable")
-
-	}
+	_ = godotenv.Load()
 
 	required := []string{
 
@@ -215,13 +209,13 @@ func main() {
 
 		if os.Getenv(variable) == "" {
 
-			log.Fatalf("%s est manquante dans .env", variable)
+			log.Fatalf("%s est manquante dans les variables d’environnement", variable)
 
 		}
 
 	}
 
-	err = initDatabase()
+	err := initDatabase()
 
 	if err != nil {
 
@@ -331,87 +325,159 @@ func createTables(ctx context.Context) error {
 
 		`
 
+
+
         CREATE TABLE IF NOT EXISTS sites (
+
+
 
             id BIGSERIAL PRIMARY KEY,
 
+
+
             user_id UUID,
+
+
 
             business_name TEXT NOT NULL,
 
+
+
             activity TEXT NOT NULL DEFAULT '',
+
+
 
             city TEXT NOT NULL DEFAULT '',
 
+
+
             phone TEXT NOT NULL DEFAULT '',
+
+
 
             design_style TEXT NOT NULL DEFAULT 'moderne',
 
+
+
             accent_color TEXT NOT NULL DEFAULT '#2563eb',
+
+
 
             site_data JSONB NOT NULL,
 
+
+
             published BOOLEAN NOT NULL DEFAULT FALSE,
+
+
 
             public_slug TEXT,
 
+
+
             published_at TIMESTAMPTZ,
+
+
 
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
+
+
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+
 
         );
 
+
+
         `,
 
 		`
 
+
+
         ALTER TABLE sites
+
+
 
         ADD COLUMN IF NOT EXISTS user_id UUID;
 
+
+
         `,
 
 		`
 
+
+
         ALTER TABLE sites
+
+
 
         ADD COLUMN IF NOT EXISTS published BOOLEAN NOT NULL DEFAULT FALSE;
 
+
+
         `,
 
 		`
 
+
+
         ALTER TABLE sites
+
+
 
         ADD COLUMN IF NOT EXISTS public_slug TEXT;
 
+
+
         `,
 
 		`
+
+
 
         ALTER TABLE sites
 
+
+
         ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
+
+
 
         `,
 
 		`
+
+
 
         CREATE INDEX IF NOT EXISTS idx_sites_user_id
 
+
+
         ON sites(user_id);
+
+
 
         `,
 
 		`
 
+
+
         CREATE UNIQUE INDEX IF NOT EXISTS idx_sites_public_slug
+
+
 
         ON sites(public_slug)
 
+
+
         WHERE public_slug IS NOT NULL;
+
+
 
         `,
 	}
@@ -574,7 +640,7 @@ func healthHandler(
 
 ) {
 
-	enableCORS(w)
+	enableCORS(w, r)
 
 	if r.Method == http.MethodOptions {
 
@@ -629,7 +695,7 @@ func generateHandler(
 
 ) {
 
-	enableCORS(w)
+	enableCORS(w, r)
 
 	if r.Method == http.MethodOptions {
 
@@ -746,7 +812,7 @@ func modifyHandler(
 
 ) {
 
-	enableCORS(w)
+	enableCORS(w, r)
 
 	if r.Method == http.MethodOptions {
 
@@ -853,7 +919,7 @@ func sitesHandler(
 
 ) {
 
-	enableCORS(w)
+	enableCORS(w, r)
 
 	if r.Method == http.MethodOptions {
 
@@ -918,7 +984,7 @@ func siteByIDHandler(
 
 ) {
 
-	enableCORS(w)
+	enableCORS(w, r)
 
 	if r.Method == http.MethodOptions {
 
@@ -1151,7 +1217,7 @@ func publicSiteHandler(
 
 ) {
 
-	enableCORS(w)
+	enableCORS(w, r)
 
 	if r.Method == http.MethodOptions {
 
@@ -1205,33 +1271,63 @@ func publicSiteHandler(
 
 	query := `
 
+
+
     SELECT
+
+
 
         business_name,
 
+
+
         activity,
+
+
 
         city,
 
+
+
         phone,
+
+
 
         design_style,
 
+
+
         accent_color,
+
+
 
         site_data,
 
+
+
         public_slug,
+
+
 
         published_at
 
+
+
     FROM sites
+
+
 
     WHERE
 
+
+
         public_slug = $1
 
+
+
         AND published = TRUE;
+
+
 
     `
 
@@ -1420,53 +1516,103 @@ func createSiteHandler(
 
 	query := `
 
+
+
     INSERT INTO sites (
+
+
 
         user_id,
 
+
+
         business_name,
+
+
 
         activity,
 
+
+
         city,
+
+
 
         phone,
 
+
+
         design_style,
+
+
 
         accent_color,
 
+
+
         site_data
 
+
+
     )
+
+
 
     VALUES (
 
+
+
         $1::uuid,
+
+
 
         $2,
 
+
+
         $3,
+
+
 
         $4,
 
+
+
         $5,
+
+
 
         $6,
 
+
+
         $7,
+
+
 
         $8::jsonb
 
+
+
     )
+
+
 
     RETURNING
 
+
+
         id,
+
+
 
         created_at,
 
+
+
         updated_at;
+
+
 
     `
 
@@ -1567,39 +1713,75 @@ func listSitesHandler(
 
 	query := `
 
+
+
     SELECT
+
+
 
         id,
 
+
+
         business_name,
+
+
 
         activity,
 
+
+
         city,
+
+
 
         phone,
 
+
+
         design_style,
+
+
 
         accent_color,
 
+
+
         site_data,
+
+
 
         published,
 
+
+
         COALESCE(public_slug, ''),
+
+
 
         published_at,
 
+
+
         created_at,
+
+
 
         updated_at
 
+
+
     FROM sites
+
+
 
     WHERE user_id = $1::uuid
 
+
+
     ORDER BY updated_at DESC;
+
+
 
     `
 
@@ -1867,31 +2049,59 @@ func updateSiteHandler(
 
 	query := `
 
+
+
     UPDATE sites
+
+
 
     SET
 
+
+
         business_name = $1,
+
+
 
         activity = $2,
 
+
+
         city = $3,
+
+
 
         phone = $4,
 
+
+
         design_style = $5,
+
+
 
         accent_color = $6,
 
+
+
         site_data = $7::jsonb,
+
+
 
         updated_at = NOW()
 
+
+
     WHERE
+
+
 
         id = $8
 
+
+
         AND user_id = $9::uuid;
+
+
 
     `
 
@@ -2003,13 +2213,23 @@ func deleteSiteHandler(
 
 		`
 
+
+
         DELETE FROM sites
+
+
 
         WHERE
 
+
+
             id = $1
 
+
+
             AND user_id = $2::uuid;
+
+
 
         `,
 
@@ -2161,23 +2381,43 @@ func publishSiteHandler(
 
 	query := `
 
+
+
     UPDATE sites
+
+
 
     SET
 
+
+
         published = TRUE,
+
+
 
         public_slug = $1,
 
+
+
         published_at = NOW(),
+
+
 
         updated_at = NOW()
 
+
+
     WHERE
+
+
 
         id = $2
 
+
+
         AND user_id = $3::uuid;
+
+
 
     `
 
@@ -2287,21 +2527,39 @@ func unpublishSiteHandler(
 
 	query := `
 
+
+
     UPDATE sites
+
+
 
     SET
 
+
+
         published = FALSE,
+
+
 
         published_at = NULL,
 
+
+
         updated_at = NOW()
+
+
 
     WHERE
 
+
+
         id = $1
 
+
+
         AND user_id = $2::uuid;
+
+
 
     `
 
@@ -2403,13 +2661,23 @@ func createUniquePublicSlug(
 
 			`
 
+
+
             SELECT id
+
+
 
             FROM sites
 
+
+
             WHERE public_slug = $1
 
+
+
             LIMIT 1;
+
+
 
             `,
 
@@ -2486,41 +2754,79 @@ func getSavedSiteByID(
 
 	query := `
 
+
+
     SELECT
+
+
 
         id,
 
+
+
         business_name,
+
+
 
         activity,
 
+
+
         city,
+
+
 
         phone,
 
+
+
         design_style,
+
+
 
         accent_color,
 
+
+
         site_data,
+
+
 
         published,
 
+
+
         COALESCE(public_slug, ''),
+
+
 
         published_at,
 
+
+
         created_at,
+
+
 
         updated_at
 
+
+
     FROM sites
+
+
 
     WHERE
 
+
+
         id = $1
 
+
+
         AND user_id = $2::uuid;
+
+
 
     `
 
@@ -2610,7 +2916,13 @@ func generateSiteWithAI(
 
 	instructions := `
 
+
+
 Tu es le moteur de création de SiteAI.
+
+
+
+
 
 
 
@@ -2618,31 +2930,61 @@ Crée le contenu professionnel d'un site vitrine pour une TPE ou PME française.
 
 
 
+
+
+
+
 Règles :
+
+
 
 - français uniquement
 
+
+
 - ton professionnel et naturel
+
+
 
 - référencement local naturel
 
+
+
 - ne jamais inventer de certifications
+
+
 
 - ne jamais inventer d'années d'expérience
 
+
+
 - ne jamais inventer de tarifs
+
+
 
 - ne jamais inventer d'avis clients
 
+
+
 - ne jamais inventer de garanties
 
+
+
 - ne jamais inventer de disponibilité 24h/24
+
+
 
 - ne jamais inventer d'informations factuelles
 
 
 
+
+
+
+
 Crée entre 3 et 5 sections.
+
+
 
 `
 
@@ -2652,7 +2994,15 @@ Crée entre 3 et 5 sections.
 
 
 
+
+
+
+
 Activité : %s
+
+
+
+
 
 
 
@@ -2660,7 +3010,15 @@ Ville : %s
 
 
 
+
+
+
+
 Téléphone : %s
+
+
+
+
 
 
 
@@ -2765,7 +3123,13 @@ func modifySiteWithAI(
 
 	instructions := `
 
+
+
 Tu es l'éditeur intelligent de SiteAI.
+
+
+
+
 
 
 
@@ -2773,25 +3137,49 @@ Modifie uniquement ce que l'utilisateur demande.
 
 
 
+
+
+
+
 Règles :
+
+
 
 - français uniquement
 
+
+
 - conserver les informations non demandées
+
+
 
 - ne pas inventer de faits
 
+
+
 - aucun faux avis
+
+
 
 - aucune fausse certification
 
+
+
 - aucun faux prix
+
+
 
 - aucune fausse expérience
 
+
+
 - designStyle doit être moderne, elegant ou artisan
 
+
+
 - accentColor doit être une couleur hexadécimale
+
+
 
 `
 
@@ -2801,35 +3189,69 @@ Règles :
 
 
 
+
+
+
+
 %s
+
+
+
+
 
 
 
 ACTIVITÉ :
 
+
+
 %s
+
+
+
+
 
 
 
 VILLE :
 
+
+
 %s
+
+
+
+
 
 
 
 STYLE :
 
+
+
 %s
+
+
+
+
 
 
 
 COULEUR :
 
+
+
 %s
 
 
 
+
+
+
+
 DEMANDE :
+
+
 
 %s`,
 
@@ -2956,9 +3378,13 @@ DEMANDE :
 	}
 
 	// Le logo est géré par l'utilisateur dans Supabase Storage.
+
 	// L'IA ne doit jamais le supprimer ou le remplacer.
+
 	result.Site.LogoURL = input.Site.LogoURL
+
 	result.Site.HeroImageURL = input.Site.HeroImageURL
+
 	result.Site.Gallery = input.Site.Gallery
 
 	result.Site.Slug = slugify(
@@ -3504,29 +3930,21 @@ func normalizeAccentColor(
 
 }
 
-func enableCORS(w http.ResponseWriter) {
+func enableCORS(w http.ResponseWriter, r *http.Request) {
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	frontendURL := strings.TrimRight(strings.TrimSpace(os.Getenv("FRONTEND_URL")), "/")
 
-	w.Header().Set(
+	allowed := origin == "http://localhost:3000" ||
+		origin == "http://127.0.0.1:3000" ||
+		(frontendURL != "" && origin == frontendURL)
 
-		"Access-Control-Allow-Origin",
+	if allowed {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Vary", "Origin")
+	}
 
-		"http://localhost:3000",
-	)
-
-	w.Header().Set(
-
-		"Access-Control-Allow-Methods",
-
-		"GET, POST, PUT, DELETE, OPTIONS",
-	)
-
-	w.Header().Set(
-
-		"Access-Control-Allow-Headers",
-
-		"Content-Type, Authorization",
-	)
-
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 }
 
 func writeJSON(

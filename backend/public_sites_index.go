@@ -1,24 +1,17 @@
 package main
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
-	"time"
 )
-
-type PublicSiteIndexItem struct {
-	PublicSlug string    `json:"publicSlug"`
-	UpdatedAt  time.Time `json:"updatedAt"`
-}
 
 func init() {
 	http.HandleFunc("/public-sites", publicSitesIndexHandler)
 }
 
-func publicSitesIndexHandler(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-	enableCORS(w)
+func publicSitesIndexHandler(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w, r)
 
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusNoContent)
@@ -36,14 +29,20 @@ func publicSitesIndexHandler(
 
 	query := `
 		SELECT
+			business_name,
+			activity,
+			city,
+			phone,
+			design_style,
+			accent_color,
+			site_data,
 			public_slug,
-			updated_at
+			published_at
 		FROM sites
 		WHERE
 			published = TRUE
 			AND public_slug IS NOT NULL
-			AND public_slug <> ''
-		ORDER BY updated_at DESC;
+		ORDER BY published_at DESC;
 	`
 
 	rows, err := db.Query(
@@ -52,6 +51,11 @@ func publicSitesIndexHandler(
 	)
 
 	if err != nil {
+		log.Println(
+			"Erreur récupération sites publics :",
+			err,
+		)
+
 		http.Error(
 			w,
 			"Impossible de récupérer les sites publics",
@@ -62,35 +66,72 @@ func publicSitesIndexHandler(
 
 	defer rows.Close()
 
-	sites := []PublicSiteIndexItem{}
+	publicSites := []PublicSite{}
 
 	for rows.Next() {
-		var site PublicSiteIndexItem
+		var publicSite PublicSite
+		var siteJSON []byte
 
 		err = rows.Scan(
-			&site.PublicSlug,
-			&site.UpdatedAt,
+			&publicSite.BusinessName,
+			&publicSite.Activity,
+			&publicSite.City,
+			&publicSite.Phone,
+			&publicSite.DesignStyle,
+			&publicSite.AccentColor,
+			&siteJSON,
+			&publicSite.PublicSlug,
+			&publicSite.PublishedAt,
 		)
 
 		if err != nil {
+			log.Println(
+				"Erreur lecture site public :",
+				err,
+			)
+
 			http.Error(
 				w,
-				"Erreur lecture site public",
+				"Erreur lecture des sites publics",
 				http.StatusInternalServerError,
 			)
 			return
 		}
 
-		sites = append(
-			sites,
-			site,
+		err = json.Unmarshal(
+			siteJSON,
+			&publicSite.Site,
+		)
+
+		if err != nil {
+			log.Println(
+				"Erreur JSON site public :",
+				err,
+			)
+
+			http.Error(
+				w,
+				"Site public invalide",
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		publicSites = append(
+			publicSites,
+			publicSite,
 		)
 	}
 
 	if err := rows.Err(); err != nil {
+		log.Println(
+			"Erreur PostgreSQL sites publics :",
+			err,
+		)
+
 		http.Error(
 			w,
-			"Erreur lecture PostgreSQL",
+			"Erreur PostgreSQL",
 			http.StatusInternalServerError,
 		)
 		return
@@ -99,6 +140,6 @@ func publicSitesIndexHandler(
 	writeJSON(
 		w,
 		http.StatusOK,
-		sites,
+		publicSites,
 	)
 }
