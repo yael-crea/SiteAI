@@ -190,8 +190,7 @@ export default function Home() {
         const {
           data,
           error: sessionError,
-        } =
-          await supabase.auth.getSession();
+        } = await supabase.auth.getSession();
 
         if (
           sessionError ||
@@ -216,6 +215,29 @@ export default function Home() {
         setAuthLoading(false);
 
         await loadSavedSites();
+
+        const siteToOpen =
+          sessionStorage.getItem(
+            "siteai_site_to_open",
+          );
+
+        if (siteToOpen) {
+          sessionStorage.removeItem(
+            "siteai_site_to_open",
+          );
+
+          const siteID =
+            Number(siteToOpen);
+
+          if (
+            Number.isInteger(siteID) &&
+            siteID > 0
+          ) {
+            await openSavedSite(
+              siteID,
+            );
+          }
+        }
       } catch (err) {
         console.error(err);
 

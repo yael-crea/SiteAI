@@ -30,8 +30,10 @@ export default function AuthPage() {
   const [loading, setLoading] =
     useState(false);
 
-  const [checkingSession, setCheckingSession] =
-    useState(true);
+  const [
+    checkingSession,
+    setCheckingSession,
+  ] = useState(true);
 
   const [error, setError] =
     useState("");
@@ -43,21 +45,42 @@ export default function AuthPage() {
     let active = true;
 
     async function checkSession() {
-      const {
-        data,
-      } =
-        await supabase.auth.getSession();
+      try {
+        const {
+          data,
+          error: sessionError,
+        } =
+          await supabase.auth.getSession();
 
-      if (!active) {
-        return;
+        if (!active) {
+          return;
+        }
+
+        if (sessionError) {
+          console.error(
+            sessionError,
+          );
+
+          setCheckingSession(false);
+          return;
+        }
+
+        if (data.session) {
+          router.replace(
+            "/dashboard",
+          );
+
+          return;
+        }
+
+        setCheckingSession(false);
+      } catch (err) {
+        console.error(err);
+
+        if (active) {
+          setCheckingSession(false);
+        }
       }
-
-      if (data.session) {
-        router.replace("/");
-        return;
-      }
-
-      setCheckingSession(false);
     }
 
     checkSession();
@@ -85,6 +108,7 @@ export default function AuthPage() {
       setError(
         "Entre ton adresse e-mail et ton mot de passe.",
       );
+
       return;
     }
 
@@ -95,6 +119,7 @@ export default function AuthPage() {
       setError(
         "Le mot de passe doit contenir au moins 6 caractères.",
       );
+
       return;
     }
 
@@ -105,6 +130,7 @@ export default function AuthPage() {
       setError(
         "Les mots de passe ne correspondent pas.",
       );
+
       return;
     }
 
@@ -126,8 +152,12 @@ export default function AuthPage() {
           throw loginError;
         }
 
-        router.replace("/");
+        router.replace(
+          "/dashboard",
+        );
+
         router.refresh();
+
         return;
       }
 
@@ -145,8 +175,12 @@ export default function AuthPage() {
       }
 
       if (data.session) {
-        router.replace("/");
+        router.replace(
+          "/dashboard",
+        );
+
         router.refresh();
+
         return;
       }
 
@@ -173,6 +207,7 @@ export default function AuthPage() {
           setError(
             "Adresse e-mail ou mot de passe incorrect.",
           );
+
           return;
         }
 
@@ -184,10 +219,26 @@ export default function AuthPage() {
           setError(
             "Un compte existe déjà avec cette adresse e-mail.",
           );
+
           return;
         }
 
-        setError(err.message);
+        if (
+          text.includes(
+            "email not confirmed",
+          )
+        ) {
+          setError(
+            "Confirme d'abord ton adresse e-mail.",
+          );
+
+          return;
+        }
+
+        setError(
+          err.message,
+        );
+
         return;
       }
 
@@ -200,9 +251,12 @@ export default function AuthPage() {
   }
 
   function switchMode(
-    newMode: "login" | "signup",
+    newMode:
+      | "login"
+      | "signup",
   ) {
     setMode(newMode);
+
     setError("");
     setMessage("");
     setPassword("");
@@ -212,9 +266,15 @@ export default function AuthPage() {
   if (checkingSession) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <p className="text-slate-400">
-          Vérification de la session...
-        </p>
+        <div className="text-center">
+          <div className="text-5xl">
+            ✨
+          </div>
+
+          <p className="mt-4 text-slate-400">
+            Vérification de la session...
+          </p>
+        </div>
       </main>
     );
   }
@@ -242,7 +302,9 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() =>
-                switchMode("login")
+                switchMode(
+                  "login",
+                )
               }
               className={`rounded-lg px-4 py-3 text-sm font-bold transition ${
                 mode === "login"
@@ -256,7 +318,9 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() =>
-                switchMode("signup")
+                switchMode(
+                  "signup",
+                )
               }
               className={`rounded-lg px-4 py-3 text-sm font-bold transition ${
                 mode === "signup"
@@ -269,7 +333,9 @@ export default function AuthPage() {
           </div>
 
           <form
-            onSubmit={handleSubmit}
+            onSubmit={
+              handleSubmit
+            }
             className="space-y-5"
           >
             <div>
@@ -285,9 +351,12 @@ export default function AuthPage() {
                 type="email"
                 autoComplete="email"
                 value={email}
-                onChange={(event) =>
+                onChange={(
+                  event,
+                ) =>
                   setEmail(
-                    event.target.value,
+                    event.target
+                      .value,
                   )
                 }
                 placeholder="ton@email.com"
@@ -313,9 +382,12 @@ export default function AuthPage() {
                     : "new-password"
                 }
                 value={password}
-                onChange={(event) =>
+                onChange={(
+                  event,
+                ) =>
                   setPassword(
-                    event.target.value,
+                    event.target
+                      .value,
                   )
                 }
                 placeholder="••••••••"
@@ -324,7 +396,8 @@ export default function AuthPage() {
               />
             </div>
 
-            {mode === "signup" && (
+            {mode ===
+              "signup" && (
               <div>
                 <label
                   htmlFor="confirmPassword"
@@ -340,7 +413,9 @@ export default function AuthPage() {
                   value={
                     confirmPassword
                   }
-                  onChange={(event) =>
+                  onChange={(
+                    event,
+                  ) =>
                     setConfirmPassword(
                       event.target
                         .value,
@@ -372,7 +447,8 @@ export default function AuthPage() {
             >
               {loading
                 ? "Chargement..."
-                : mode === "login"
+                : mode ===
+                    "login"
                   ? "Se connecter"
                   : "Créer mon compte"}
             </button>
