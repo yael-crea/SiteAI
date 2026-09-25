@@ -728,9 +728,17 @@ export default function Home() {
         );
 
       if (!response.ok) {
-        throw new Error(
-          "Erreur publication",
+        const message =
+          (
+            await response.text()
+          ).trim();
+
+        setSaveError(
+          message ||
+            "Impossible de publier le site.",
         );
+
+        return;
       }
 
       const saved: SavedSite =
@@ -746,10 +754,13 @@ export default function Home() {
         `/site/${saved.publicSlug}`,
       );
     } catch (err) {
-      console.error(err);
+      console.error(
+        "Erreur réseau pendant la publication :",
+        err,
+      );
 
       setSaveError(
-        "Impossible de publier le site.",
+        "Impossible de contacter le serveur pour publier le site.",
       );
     } finally {
       setPublishing(false);
@@ -2989,9 +3000,35 @@ export default function Home() {
                 )}
 
                 {saveError && (
-                  <p className="mt-4 text-sm text-red-400">
-                    {saveError}
-                  </p>
+                  <div className="mt-4 rounded-xl border border-red-900 bg-red-950/30 p-4">
+                    <p className="text-sm leading-6 text-red-300">
+                      {saveError}
+                    </p>
+
+                    {[
+                      "abonnement",
+                      "formule",
+                      "limite",
+                      "pro",
+                      "agence",
+                    ].some((word) =>
+                      saveError
+                        .toLowerCase()
+                        .includes(word),
+                    ) && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            "/pricing",
+                          )
+                        }
+                        className="mt-3 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white hover:bg-violet-500"
+                      >
+                        💳 Voir les formules
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )}

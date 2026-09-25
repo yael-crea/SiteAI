@@ -279,12 +279,19 @@ type StripeEvent struct {
 }
 
 type BillingStatus struct {
-	Plan              string     `json:"plan"`
-	Status            string     `json:"status"`
-	HasSubscription   bool       `json:"hasSubscription"`
-	CancelAtPeriodEnd bool       `json:"cancelAtPeriodEnd"`
-	CurrentPeriodEnd  *time.Time `json:"currentPeriodEnd,omitempty"`
-	CanManage         bool       `json:"canManage"`
+	Plan                string     `json:"plan"`
+	Status              string     `json:"status"`
+	HasSubscription     bool       `json:"hasSubscription"`
+	CancelAtPeriodEnd   bool       `json:"cancelAtPeriodEnd"`
+	CurrentPeriodEnd    *time.Time `json:"currentPeriodEnd,omitempty"`
+	CanManage           bool       `json:"canManage"`
+	MaxPublishedSites   int        `json:"maxPublishedSites"`
+	CustomDomainAllowed bool       `json:"customDomainAllowed"`
+}
+
+type PlanEntitlements struct {
+	MaxPublishedSites   int
+	CustomDomainAllowed bool
 }
 
 type OpenAIResponse struct {
@@ -1759,6 +1766,31 @@ func addDomainHandler(
 		return
 	}
 
+	billingStatus, _, _, err := getBillingStatus(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Impossible de vérifier l'abonnement", http.StatusInternalServerError)
+		return
+	}
+
+	entitlements := billingEntitlements(billingStatus)
+	if !entitlements.CustomDomainAllowed {
+		if !isActiveBillingStatus(billingStatus.Status) {
+			http.Error(
+				w,
+				"Un abonnement Pro ou Agence actif est nécessaire pour utiliser un domaine personnalisé.",
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		http.Error(
+			w,
+			"Les domaines personnalisés sont disponibles avec les formules Pro ou Agence.",
+			http.StatusForbidden,
+		)
+		return
+	}
+
 	var input DomainInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "JSON invalide", http.StatusBadRequest)
@@ -1847,6 +1879,31 @@ func verifyDomainHandler(
 ) {
 	if !domainIntegrationConfigured() {
 		http.Error(w, "Intégration Vercel non configurée", http.StatusServiceUnavailable)
+		return
+	}
+
+	billingStatus, _, _, err := getBillingStatus(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Impossible de vérifier l'abonnement", http.StatusInternalServerError)
+		return
+	}
+
+	entitlements := billingEntitlements(billingStatus)
+	if !entitlements.CustomDomainAllowed {
+		if !isActiveBillingStatus(billingStatus.Status) {
+			http.Error(
+				w,
+				"Un abonnement Pro ou Agence actif est nécessaire pour vérifier un domaine personnalisé.",
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		http.Error(
+			w,
+			"Les domaines personnalisés sont disponibles avec les formules Pro ou Agence.",
+			http.StatusForbidden,
+		)
 		return
 	}
 
@@ -2758,6 +2815,60 @@ func publishSiteHandler(
 
 		return
 
+	}
+
+	if !saved.Published {
+		billingStatus, _, _, billingErr := getBillingStatus(r.Context(), userID)
+		if billingErr != nil {
+			http.Error(
+				w,
+				"Impossible de vérifier l'abonnement",
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		entitlements := billingEntitlements(billingStatus)
+		if entitlements.MaxPublishedSites == 0 {
+			http.Error(
+				w,
+				"Un abonnement actif est nécessaire pour publier un site.",
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		var publishedCount int
+		countErr := db.QueryRow(
+			r.Context(),
+			`
+			SELECT COUNT(*)
+			FROM sites
+			WHERE
+				user_id = $1::uuid
+				AND published = TRUE
+				AND id <> $2;
+			`,
+			userID,
+			id,
+		).Scan(&publishedCount)
+		if countErr != nil {
+			http.Error(
+				w,
+				"Impossible de vérifier la limite de publication",
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		if publishedCount >= entitlements.MaxPublishedSites {
+			http.Error(
+				w,
+				publishedSiteLimitMessage(billingStatus.Plan, entitlements.MaxPublishedSites),
+				http.StatusForbidden,
+			)
+			return
+		}
 	}
 
 	publicSlug := saved.PublicSlug
@@ -4504,12 +4615,16 @@ func getBillingStatus(
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return BillingStatus{
+		status := BillingStatus{
 			Plan:            "free",
 			Status:          "inactive",
 			HasSubscription: false,
 			CanManage:       false,
-		}, "", "", nil
+		}
+
+		applyBillingEntitlements(&status)
+
+		return status, "", "", nil
 	}
 
 	if err != nil {
@@ -4520,14 +4635,79 @@ func getBillingStatus(
 		status != "canceled" &&
 		status != "incomplete_expired"
 
-	return BillingStatus{
+	billingStatus := BillingStatus{
 		Plan:              plan,
 		Status:            status,
 		HasSubscription:   hasSubscription,
 		CancelAtPeriodEnd: cancelAtPeriodEnd,
 		CurrentPeriodEnd:  currentPeriodEnd,
 		CanManage:         customerID != "",
-	}, customerID, subscriptionID, nil
+	}
+
+	applyBillingEntitlements(&billingStatus)
+
+	return billingStatus, customerID, subscriptionID, nil
+}
+
+func isActiveBillingStatus(status string) bool {
+	status = strings.ToLower(strings.TrimSpace(status))
+
+	return status == "active" || status == "trialing"
+}
+
+func billingEntitlements(status BillingStatus) PlanEntitlements {
+	if !isActiveBillingStatus(status.Status) {
+		return PlanEntitlements{}
+	}
+
+	switch strings.ToLower(strings.TrimSpace(status.Plan)) {
+	case "essentiel":
+		return PlanEntitlements{
+			MaxPublishedSites:   1,
+			CustomDomainAllowed: false,
+		}
+
+	case "pro":
+		return PlanEntitlements{
+			MaxPublishedSites:   3,
+			CustomDomainAllowed: true,
+		}
+
+	case "agence":
+		return PlanEntitlements{
+			MaxPublishedSites:   10,
+			CustomDomainAllowed: true,
+		}
+
+	default:
+		return PlanEntitlements{}
+	}
+}
+
+func applyBillingEntitlements(status *BillingStatus) {
+	if status == nil {
+		return
+	}
+
+	entitlements := billingEntitlements(*status)
+	status.MaxPublishedSites = entitlements.MaxPublishedSites
+	status.CustomDomainAllowed = entitlements.CustomDomainAllowed
+}
+
+func publishedSiteLimitMessage(plan string, maxSites int) string {
+	switch strings.ToLower(strings.TrimSpace(plan)) {
+	case "essentiel":
+		return "Limite de la formule Essentiel atteinte : 1 site publié maximum. Passe à Pro pour publier jusqu'à 3 sites."
+
+	case "pro":
+		return "Limite de la formule Pro atteinte : 3 sites publiés maximum. Passe à Agence pour publier jusqu'à 10 sites."
+
+	case "agence":
+		return "Limite de la formule Agence atteinte : 10 sites publiés maximum."
+
+	default:
+		return fmt.Sprintf("Limite de publication atteinte : %d site(s) publié(s) maximum.", maxSites)
+	}
 }
 
 func ensureStripeCustomer(
