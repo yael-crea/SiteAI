@@ -453,7 +453,9 @@ export default function Home() {
       console.error(err);
 
       setError(
-        "Impossible de générer le site.",
+        err instanceof Error
+          ? err.message
+          : "Impossible de générer le site.",
       );
     } finally {
       setLoading(false);
@@ -513,8 +515,14 @@ export default function Home() {
         );
 
       if (!response.ok) {
+        const message =
+          (
+            await response.text()
+          ).trim();
+
         throw new Error(
-          "Erreur modification",
+          message ||
+            "Impossible de modifier le site.",
         );
       }
 
@@ -569,7 +577,9 @@ export default function Home() {
       console.error(err);
 
       setEditError(
-        "Impossible de modifier le site.",
+        err instanceof Error
+          ? err.message
+          : "Impossible de modifier le site.",
       );
     } finally {
       setEditLoading(false);

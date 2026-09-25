@@ -44,6 +44,9 @@ import (
 
 var db *pgxpool.Pool
 
+const currentCGVVersion = "2026-09-25"
+const aiHourlyLimit = 20
+
 type SupabaseUser struct {
 	ID string `json:"id"`
 
@@ -233,6 +236,18 @@ type StripeCheckoutInput struct {
 	Plan string `json:"plan"`
 }
 
+type CGVAcceptanceInput struct {
+	Plan    string `json:"plan"`
+	Version string `json:"version"`
+}
+
+type CGVAcceptanceResponse struct {
+	DocumentType    string    `json:"documentType"`
+	DocumentVersion string    `json:"documentVersion"`
+	Plan            string    `json:"plan"`
+	AcceptedAt      time.Time `json:"acceptedAt"`
+}
+
 type StripeCheckoutSession struct {
 	ID           string            `json:"id"`
 	URL          string            `json:"url"`
@@ -360,6 +375,8 @@ func main() {
 	http.HandleFunc("/public-sites/", publicSiteHandler)
 
 	http.HandleFunc("/public-domains/", publicDomainHandler)
+
+	http.HandleFunc("/legal/cgv/accept", cgvAcceptanceHandler)
 
 	http.HandleFunc("/stripe/checkout", stripeCheckoutHandler)
 
@@ -624,6 +641,71 @@ func createTables(ctx context.Context) error {
         WHERE stripe_subscription_id IS NOT NULL AND stripe_subscription_id <> '';
 
         `,
+
+		`
+
+        CREATE TABLE IF NOT EXISTS legal_acceptances (
+
+            id BIGSERIAL PRIMARY KEY,
+
+            user_id UUID NOT NULL,
+
+            document_type TEXT NOT NULL,
+
+            document_version TEXT NOT NULL,
+
+            plan TEXT NOT NULL,
+
+            accepted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+        );
+
+        `,
+
+		`
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_legal_acceptances_unique
+
+        ON legal_acceptances(
+            user_id,
+            document_type,
+            document_version,
+            plan
+        );
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_legal_acceptances_user
+
+        ON legal_acceptances(user_id, accepted_at DESC);
+
+        `,
+
+		`
+
+        CREATE TABLE IF NOT EXISTS ai_usage (
+
+            id BIGSERIAL PRIMARY KEY,
+
+            user_id UUID NOT NULL,
+
+            action TEXT NOT NULL,
+
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+        );
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_ai_usage_user_created_at
+
+        ON ai_usage(user_id, created_at DESC);
+
+        `,
 	}
 
 	for _, query := range queries {
@@ -835,6 +917,124 @@ func healthHandler(
 
 }
 
+func consumeAIUsage(
+	ctx context.Context,
+	userID string,
+	action string,
+) (int, bool, error) {
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return 0, false, err
+	}
+
+	defer tx.Rollback(ctx)
+
+	_, err = tx.Exec(
+		ctx,
+		`SELECT pg_advisory_xact_lock(hashtextextended($1, 0));`,
+		userID,
+	)
+	if err != nil {
+		return 0, false, err
+	}
+
+	var used int
+
+	err = tx.QueryRow(
+		ctx,
+		`
+		SELECT COUNT(*)
+		FROM ai_usage
+		WHERE user_id = $1::uuid
+		  AND created_at >= NOW() - INTERVAL '1 hour';
+		`,
+		userID,
+	).Scan(&used)
+	if err != nil {
+		return 0, false, err
+	}
+
+	if used >= aiHourlyLimit {
+		return 0, false, nil
+	}
+
+	_, err = tx.Exec(
+		ctx,
+		`
+		INSERT INTO ai_usage (
+			user_id,
+			action,
+			created_at
+		)
+		VALUES (
+			$1::uuid,
+			$2,
+			NOW()
+		);
+		`,
+		userID,
+		action,
+	)
+	if err != nil {
+		return 0, false, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, false, err
+	}
+
+	return aiHourlyLimit - used - 1, true, nil
+}
+
+func enforceAIRateLimit(
+	w http.ResponseWriter,
+	r *http.Request,
+	userID string,
+	action string,
+) bool {
+	remaining, allowed, err := consumeAIUsage(
+		r.Context(),
+		userID,
+		action,
+	)
+
+	if err != nil {
+		log.Println("Erreur rate limit IA :", err)
+
+		http.Error(
+			w,
+			"Impossible de vérifier la limite IA",
+			http.StatusInternalServerError,
+		)
+
+		return false
+	}
+
+	w.Header().Set(
+		"X-RateLimit-Limit",
+		strconv.Itoa(aiHourlyLimit),
+	)
+
+	w.Header().Set(
+		"X-RateLimit-Remaining",
+		strconv.Itoa(remaining),
+	)
+
+	if !allowed {
+		w.Header().Set("Retry-After", "3600")
+
+		http.Error(
+			w,
+			"Limite temporaire atteinte : 20 utilisations de l'IA maximum par heure. Réessaie un peu plus tard.",
+			http.StatusTooManyRequests,
+		)
+
+		return false
+	}
+
+	return true
+}
+
 func generateHandler(
 
 	w http.ResponseWriter,
@@ -868,7 +1068,7 @@ func generateHandler(
 
 	}
 
-	_, authenticated := requireUser(w, r)
+	user, authenticated := requireUser(w, r)
 
 	if !authenticated {
 
@@ -920,6 +1120,15 @@ func generateHandler(
 
 		return
 
+	}
+
+	if !enforceAIRateLimit(
+		w,
+		r,
+		user.ID,
+		"generate",
+	) {
+		return
 	}
 
 	site, err := generateSiteWithAI(input)
@@ -985,7 +1194,7 @@ func modifyHandler(
 
 	}
 
-	_, authenticated := requireUser(w, r)
+	user, authenticated := requireUser(w, r)
 
 	if !authenticated {
 
@@ -1027,6 +1236,15 @@ func modifyHandler(
 
 		return
 
+	}
+
+	if !enforceAIRateLimit(
+		w,
+		r,
+		user.ID,
+		"modify",
+	) {
+		return
 	}
 
 	result, err := modifySiteWithAI(input)
@@ -4773,6 +4991,184 @@ func ensureStripeCustomer(
 	return customer.ID, nil
 }
 
+func normalizePaidPlan(plan string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(plan)) {
+	case "essentiel":
+		return "essentiel", nil
+	case "pro":
+		return "pro", nil
+	case "agence":
+		return "agence", nil
+	default:
+		return "", errors.New("formule invalide")
+	}
+}
+
+func recordCGVAcceptance(
+	ctx context.Context,
+	userID string,
+	plan string,
+) (time.Time, error) {
+	var acceptedAt time.Time
+
+	err := db.QueryRow(
+		ctx,
+		`
+		INSERT INTO legal_acceptances (
+			user_id,
+			document_type,
+			document_version,
+			plan,
+			accepted_at
+		)
+		VALUES (
+			$1::uuid,
+			'cgv',
+			$2,
+			$3,
+			NOW()
+		)
+		ON CONFLICT (
+			user_id,
+			document_type,
+			document_version,
+			plan
+		)
+		DO UPDATE SET
+			accepted_at = legal_acceptances.accepted_at
+		RETURNING accepted_at;
+		`,
+		userID,
+		currentCGVVersion,
+		plan,
+	).Scan(&acceptedAt)
+
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return acceptedAt, nil
+}
+
+func getCurrentCGVAcceptance(
+	ctx context.Context,
+	userID string,
+	plan string,
+) (time.Time, bool, error) {
+	var acceptedAt time.Time
+
+	err := db.QueryRow(
+		ctx,
+		`
+		SELECT accepted_at
+		FROM legal_acceptances
+		WHERE user_id = $1::uuid
+		  AND document_type = 'cgv'
+		  AND document_version = $2
+		  AND plan = $3
+		LIMIT 1;
+		`,
+		userID,
+		currentCGVVersion,
+		plan,
+	).Scan(&acceptedAt)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return time.Time{}, false, nil
+		}
+
+		return time.Time{}, false, err
+	}
+
+	return acceptedAt, true, nil
+}
+
+func cgvAcceptanceHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(
+			w,
+			"Méthode non autorisée",
+			http.StatusMethodNotAllowed,
+		)
+		return
+	}
+
+	user, authenticated := requireUser(w, r)
+	if !authenticated {
+		return
+	}
+
+	var input CGVAcceptanceInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(
+			w,
+			"JSON invalide",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	plan, err := normalizePaidPlan(input.Plan)
+	if err != nil {
+		http.Error(
+			w,
+			err.Error(),
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	if strings.TrimSpace(input.Version) != currentCGVVersion {
+		http.Error(
+			w,
+			"La version des CGV n'est plus à jour. Recharge la page avant de continuer.",
+			http.StatusConflict,
+		)
+		return
+	}
+
+	acceptedAt, err := recordCGVAcceptance(
+		r.Context(),
+		user.ID,
+		plan,
+	)
+	if err != nil {
+		log.Println(
+			"Erreur enregistrement acceptation CGV :",
+			err,
+		)
+
+		http.Error(
+			w,
+			"Impossible d'enregistrer l'acceptation des CGV",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	writeJSON(
+		w,
+		http.StatusOK,
+		CGVAcceptanceResponse{
+			DocumentType:    "cgv",
+			DocumentVersion: currentCGVVersion,
+			Plan:            plan,
+			AcceptedAt:      acceptedAt,
+		},
+	)
+}
+
 func stripeCheckoutHandler(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -4808,6 +5204,30 @@ func stripeCheckoutHandler(
 	plan, priceID, err := stripePriceForPlan(input.Plan)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	acceptedAt, accepted, err := getCurrentCGVAcceptance(
+		r.Context(),
+		user.ID,
+		plan,
+	)
+	if err != nil {
+		log.Println("Erreur vérification acceptation CGV :", err)
+		http.Error(
+			w,
+			"Impossible de vérifier l'acceptation des CGV",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	if !accepted {
+		http.Error(
+			w,
+			"Tu dois accepter la version actuelle des CGV avant le paiement.",
+			http.StatusPreconditionRequired,
+		)
 		return
 	}
 
@@ -4848,8 +5268,15 @@ func stripeCheckoutHandler(
 	values.Set("locale", "fr")
 	values.Set("metadata[user_id]", user.ID)
 	values.Set("metadata[plan]", plan)
+	values.Set("metadata[cgv_version]", currentCGVVersion)
+	values.Set("metadata[cgv_accepted_at]", acceptedAt.UTC().Format(time.RFC3339))
 	values.Set("subscription_data[metadata][user_id]", user.ID)
 	values.Set("subscription_data[metadata][plan]", plan)
+	values.Set("subscription_data[metadata][cgv_version]", currentCGVVersion)
+	values.Set(
+		"subscription_data[metadata][cgv_accepted_at]",
+		acceptedAt.UTC().Format(time.RFC3339),
+	)
 
 	var session StripeCheckoutSession
 	if err := doStripeForm(

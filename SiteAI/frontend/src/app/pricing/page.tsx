@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -30,6 +31,8 @@ type Plan = {
   highlighted?: boolean;
   features: string[];
 };
+
+const CGV_VERSION = "2026-09-25";
 
 const plans: Plan[] = [
   {
@@ -152,6 +155,11 @@ export default function PricingPage() {
     useState<BillingStatus | null>(
       null,
     );
+
+  const [
+    cgvAccepted,
+    setCgvAccepted,
+  ] = useState(false);
 
   const [
     userEmail,
@@ -396,6 +404,13 @@ export default function PricingPage() {
   async function startCheckout(
     plan: PlanName,
   ) {
+    if (!cgvAccepted) {
+      setError(
+        "Tu dois accepter les CGV avant de continuer vers le paiement.",
+      );
+      return;
+    }
+
     setCheckoutLoading(
       plan,
     );
@@ -404,6 +419,30 @@ export default function PricingPage() {
     setMessage("");
 
     try {
+      const acceptanceResponse =
+        await authenticatedFetch(
+          "/legal/cgv/accept",
+          {
+            method: "POST",
+            body: JSON.stringify(
+              {
+                plan,
+                version: CGV_VERSION,
+              },
+            ),
+          },
+        );
+
+      if (!acceptanceResponse.ok) {
+        const acceptanceText =
+          await acceptanceResponse.text();
+
+        throw new Error(
+          acceptanceText ||
+            "Impossible d'enregistrer l'acceptation des CGV.",
+        );
+      }
+
       const response =
         await authenticatedFetch(
           "/stripe/checkout",
@@ -700,6 +739,39 @@ export default function PricingPage() {
           )}
         </div>
 
+        {!activeSubscription && (
+          <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={cgvAccepted}
+                onChange={(event) => {
+                  setCgvAccepted(event.target.checked);
+                  setError("");
+                }}
+                className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-950"
+              />
+
+              <span className="text-sm leading-6 text-slate-300">
+                J&apos;ai lu et j&apos;accepte les{" "}
+                <Link
+                  href="/cgv"
+                  target="_blank"
+                  className="font-bold text-blue-400 underline hover:text-blue-300"
+                >
+                  Conditions générales de vente
+                </Link>
+                .
+              </span>
+            </label>
+
+            <p className="mt-3 text-xs leading-5 text-slate-500">
+              Tu dois accepter les CGV avant d&apos;être redirigé vers Stripe.
+              Version enregistrée : 25/09/2026.
+            </p>
+          </div>
+        )}
+
         <div className="mt-12 grid gap-7 lg:grid-cols-3">
           {plans.map(
             (plan) => {
@@ -795,8 +867,8 @@ export default function PricingPage() {
                     <button
                       type="button"
                       disabled={
-                        checkoutLoading !==
-                        null
+                        checkoutLoading !== null ||
+                        !cgvAccepted
                       }
                       onClick={() =>
                         startCheckout(
