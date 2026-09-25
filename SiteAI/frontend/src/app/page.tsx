@@ -728,10 +728,66 @@ export default function Home() {
         );
 
       if (!response.ok) {
-        const message =
+        let message =
           (
             await response.text()
           ).trim();
+
+        if (
+          response.status === 403 &&
+          message === ""
+        ) {
+          try {
+            const statusResponse =
+              await authenticatedFetch(
+                "/stripe/status",
+              );
+
+            if (statusResponse.ok) {
+              const billingStatus:
+                {
+                  plan?: string;
+                  status?: string;
+                  maxPublishedSites?: number;
+                } =
+                await statusResponse.json();
+
+              const plan =
+                (
+                  billingStatus.plan ??
+                  ""
+                )
+                  .trim()
+                  .toLowerCase();
+
+              if (
+                billingStatus.status !== "active" &&
+                billingStatus.status !== "trialing"
+              ) {
+                message =
+                  "Un abonnement actif est nécessaire pour publier un site.";
+              } else if (
+                plan === "essentiel"
+              ) {
+                message =
+                  "Limite de la formule Essentiel atteinte : 1 site publié maximum. Passe à Pro pour publier jusqu'à 3 sites.";
+              } else if (
+                plan === "pro"
+              ) {
+                message =
+                  "Limite de la formule Pro atteinte : 3 sites publiés maximum. Passe à Agence pour publier jusqu'à 10 sites.";
+              } else if (
+                plan === "agence"
+              ) {
+                message =
+                  "Limite de la formule Agence atteinte : 10 sites publiés maximum.";
+              }
+            }
+          } catch {
+            // On garde le message générique ci-dessous si le statut Stripe
+            // ne peut pas être relu.
+          }
+        }
 
         setSaveError(
           message ||
@@ -3264,4 +3320,3 @@ export default function Home() {
       </section>
     </main>
   );
-}
