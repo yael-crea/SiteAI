@@ -4,6 +4,25 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+type SiteSection = {
+  title: string;
+  text: string;
+};
+
+type GeneratedSite = {
+  businessName: string;
+  slug: string;
+  metaTitle: string;
+  metaDescription: string;
+  heroTitle: string;
+  heroText: string;
+  phone: string;
+  logoUrl: string;
+  heroImageUrl: string;
+  gallery: string[];
+  sections: SiteSection[];
+};
+
 type SavedSite = {
   id: number;
 };
@@ -12,9 +31,12 @@ export default function OnboardingPage() {
   const router = useRouter();
 
   const [checking, setChecking] = useState(true);
+  const [creating, setCreating] = useState(false);
+
   const [businessName, setBusinessName] = useState("");
   const [activity, setActivity] = useState("");
   const [city, setCity] = useState("Montpellier");
+
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -74,7 +96,52 @@ export default function OnboardingPage() {
     };
   }, [router]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function getAccessToken() {
+    const {
+      data,
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !data.session) {
+      await supabase.auth.signOut();
+      router.replace("/auth");
+      throw new Error("Session absente");
+    }
+
+    return data.session.access_token;
+  }
+
+  async function authenticatedFetch(
+    path: string,
+    options: RequestInit = {},
+  ) {
+    const token = await getAccessToken();
+
+    const headers = new Headers(options.headers);
+
+    headers.set("Authorization", `Bearer ${token}`);
+
+    if (options.body && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+
+    const response = await fetch(`/api-backend${path}`, {
+      ...options,
+      headers,
+      cache: "no-store",
+    });
+
+    if (response.status === 401) {
+      await supabase.auth.signOut();
+      router.replace("/auth");
+    }
+
+    return response;
+  }
+
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
     const cleanBusinessName = businessName.trim();
@@ -98,32 +165,130 @@ export default function OnboardingPage() {
       return;
     }
 
-    sessionStorage.removeItem("siteai_site_to_open");
+    setCreating(true);
 
-    sessionStorage.setItem(
-      "siteai_onboarding_business_name",
-      cleanBusinessName,
-    );
-    sessionStorage.setItem(
-      "siteai_onboarding_activity",
-      cleanActivity,
-    );
-    sessionStorage.setItem(
-      "siteai_onboarding_city",
-      cleanCity,
-    );
+    try {
+      const generateResponse = await authenticatedFetch(
+        "/generate",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            businessName: cleanBusinessName,
+            activity: cleanActivity,
+            city: cleanCity,
+            phone: "",
+            services: [],
+          }),
+        },
+      );
 
-    sessionStorage.removeItem("siteai_onboarding_skipped");
+      if (!generateResponse.ok) {
+        const message = (
+          await generateResponse.text()
+        ).trim();
 
-    router.push("/builder");
+        throw new Error(
+          message ||
+            "Impossible de générer ton premier site.",
+        );
+      }
+
+      const generatedData: GeneratedSite =
+        await generateResponse.json();
+
+      const generatedSite: GeneratedSite = {
+        ...generatedData,
+        businessName:
+          generatedData.businessName ||
+          cleanBusinessName,
+        phone: generatedData.phone ?? "",
+        logoUrl: generatedData.logoUrl ?? "",
+        heroImageUrl:
+          generatedData.heroImageUrl ?? "",
+        gallery: generatedData.gallery ?? [],
+        sections: generatedData.sections ?? [],
+      };
+
+      const saveResponse = await authenticatedFetch(
+        "/sites",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            site: generatedSite,
+            activity: cleanActivity,
+            city: cleanCity,
+            designStyle: "moderne",
+            accentColor: "#2563eb",
+          }),
+        },
+      );
+
+      if (!saveResponse.ok) {
+        const message = (
+          await saveResponse.text()
+        ).trim();
+
+        throw new Error(
+          message ||
+            "Le site a été généré mais n'a pas pu être sauvegardé.",
+        );
+      }
+
+      const savedSite: SavedSite =
+        await saveResponse.json();
+
+      sessionStorage.removeItem(
+        "siteai_onboarding_skipped",
+      );
+
+      sessionStorage.removeItem(
+        "siteai_onboarding_business_name",
+      );
+
+      sessionStorage.removeItem(
+        "siteai_onboarding_activity",
+      );
+
+      sessionStorage.removeItem(
+        "siteai_onboarding_city",
+      );
+
+      sessionStorage.setItem(
+        "siteai_site_to_open",
+        String(savedSite.id),
+      );
+
+      router.push("/builder");
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de créer ton premier site.",
+      );
+    } finally {
+      setCreating(false);
+    }
   }
 
   function skipOnboarding() {
-    sessionStorage.setItem("siteai_onboarding_skipped", "true");
+    sessionStorage.setItem(
+      "siteai_onboarding_skipped",
+      "true",
+    );
 
-    sessionStorage.removeItem("siteai_onboarding_business_name");
-    sessionStorage.removeItem("siteai_onboarding_activity");
-    sessionStorage.removeItem("siteai_onboarding_city");
+    sessionStorage.removeItem(
+      "siteai_onboarding_business_name",
+    );
+
+    sessionStorage.removeItem(
+      "siteai_onboarding_activity",
+    );
+
+    sessionStorage.removeItem(
+      "siteai_onboarding_city",
+    );
 
     router.push("/dashboard");
   }
@@ -137,7 +302,10 @@ export default function OnboardingPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
         <div className="text-center">
-          <div className="text-5xl">✨</div>
+          <div className="text-5xl">
+            ✨
+          </div>
+
           <p className="mt-4 text-slate-400">
             Préparation de ton espace...
           </p>
@@ -151,13 +319,17 @@ export default function OnboardingPage() {
       <header className="border-b border-slate-800">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div className="text-2xl font-black">
-            Site<span className="text-blue-500">AI</span>
+            Site
+            <span className="text-blue-500">
+              AI
+            </span>
           </div>
 
           <button
             type="button"
             onClick={handleLogout}
-            className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-400 transition hover:border-red-800 hover:text-red-400"
+            disabled={creating}
+            className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-400 transition hover:border-red-800 hover:text-red-400 disabled:opacity-40"
           >
             Déconnexion
           </button>
@@ -170,11 +342,15 @@ export default function OnboardingPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 font-black">
               1
             </div>
+
             <div className="h-1 w-14 rounded-full bg-blue-600" />
+
             <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-900 font-black text-slate-400">
               2
             </div>
+
             <div className="h-1 w-14 rounded-full bg-slate-800" />
+
             <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-900 font-black text-slate-400">
               3
             </div>
@@ -186,13 +362,14 @@ export default function OnboardingPage() {
             </p>
 
             <h1 className="mt-4 text-4xl font-black md:text-5xl">
-              Parle-nous de ton entreprise.
+              Créons ton premier site.
             </h1>
 
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-400">
-              Ces informations seront envoyées directement dans l&apos;éditeur
-              pour te faire gagner du temps lors de la création de ton premier
-              site.
+              Renseigne simplement ton entreprise.
+              SiteAI va générer automatiquement ton
+              premier site, le sauvegarder puis l&apos;ouvrir
+              directement dans l&apos;éditeur.
             </p>
           </div>
 
@@ -208,11 +385,16 @@ export default function OnboardingPage() {
 
                 <input
                   value={businessName}
-                  onChange={(event) => setBusinessName(event.target.value)}
+                  onChange={(event) =>
+                    setBusinessName(
+                      event.target.value,
+                    )
+                  }
                   placeholder="Exemple : Dupont Plomberie"
                   autoFocus
                   required
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 outline-none transition focus:border-blue-500"
+                  disabled={creating}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 outline-none transition focus:border-blue-500 disabled:opacity-50"
                 />
               </div>
 
@@ -223,10 +405,15 @@ export default function OnboardingPage() {
 
                 <input
                   value={activity}
-                  onChange={(event) => setActivity(event.target.value)}
+                  onChange={(event) =>
+                    setActivity(
+                      event.target.value,
+                    )
+                  }
                   placeholder="Exemple : Plombier"
                   required
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 outline-none transition focus:border-blue-500"
+                  disabled={creating}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 outline-none transition focus:border-blue-500 disabled:opacity-50"
                 />
               </div>
 
@@ -237,30 +424,53 @@ export default function OnboardingPage() {
 
                 <input
                   value={city}
-                  onChange={(event) => setCity(event.target.value)}
+                  onChange={(event) =>
+                    setCity(
+                      event.target.value,
+                    )
+                  }
                   placeholder="Montpellier"
                   required
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 outline-none transition focus:border-blue-500"
+                  disabled={creating}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 outline-none transition focus:border-blue-500 disabled:opacity-50"
                 />
               </div>
 
+              {creating && (
+                <div className="rounded-xl border border-blue-900 bg-blue-950/30 p-4">
+                  <p className="font-bold text-blue-300">
+                    ✨ SiteAI crée ton site...
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    Génération du contenu puis sauvegarde
+                    de ton premier site. Cela peut prendre
+                    quelques secondes.
+                  </p>
+                </div>
+              )}
+
               {error && (
-                <div className="rounded-xl border border-red-900 bg-red-950/30 p-4 text-sm text-red-300">
+                <div className="rounded-xl border border-red-900 bg-red-950/30 p-4 text-sm leading-6 text-red-300">
                   {error}
                 </div>
               )}
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-blue-600 px-6 py-4 font-black transition hover:bg-blue-500"
+                disabled={creating}
+                className="w-full rounded-xl bg-blue-600 px-6 py-4 font-black transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Continuer vers mon premier site →
+                {creating
+                  ? "✨ Création de ton site..."
+                  : "✨ Créer automatiquement mon site"}
               </button>
 
               <button
                 type="button"
                 onClick={skipOnboarding}
-                className="w-full rounded-xl border border-slate-700 px-6 py-4 text-sm font-bold text-slate-400 transition hover:border-slate-500 hover:text-white"
+                disabled={creating}
+                className="w-full rounded-xl border border-slate-700 px-6 py-4 text-sm font-bold text-slate-400 transition hover:border-slate-500 hover:text-white disabled:opacity-40"
               >
                 Passer pour l&apos;instant
               </button>
@@ -270,8 +480,8 @@ export default function OnboardingPage() {
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {[
               ["1", "Ton entreprise"],
-              ["2", "Personnalisation"],
-              ["3", "Publication"],
+              ["2", "Création par l’IA"],
+              ["3", "Personnalisation"],
             ].map(([number, label]) => (
               <div
                 key={number}
@@ -280,7 +490,10 @@ export default function OnboardingPage() {
                 <div className="text-xs font-black uppercase tracking-[0.2em] text-blue-400">
                   Étape {number}
                 </div>
-                <div className="mt-2 font-bold">{label}</div>
+
+                <div className="mt-2 font-bold">
+                  {label}
+                </div>
               </div>
             ))}
           </div>
