@@ -17,9 +17,13 @@ import (
 
 	"fmt"
 
+	"html"
+
 	"io"
 
 	"log"
+
+	"net"
 
 	"net/http"
 
@@ -32,6 +36,8 @@ import (
 	"strconv"
 
 	"strings"
+
+	"sync"
 
 	"time"
 
@@ -46,6 +52,21 @@ var db *pgxpool.Pool
 
 const currentCGVVersion = "2026-09-25"
 const aiHourlyLimit = 20
+
+const leadRateLimit = 5
+const leadRateWindow = 15 * time.Minute
+
+type leadRateEntry struct {
+	Count   int
+	ResetAt time.Time
+}
+
+var leadRateLimiter = struct {
+	sync.Mutex
+	Entries map[string]leadRateEntry
+}{
+	Entries: make(map[string]leadRateEntry),
+}
 
 type SupabaseUser struct {
 	ID string `json:"id"`
@@ -310,33 +331,106 @@ type PlanEntitlements struct {
 }
 
 type AdminStatsSummary struct {
-	TotalUsers         int64   `json:"totalUsers"`
-	TotalSites         int64   `json:"totalSites"`
-	PublishedSites     int64   `json:"publishedSites"`
-	AICallsToday       int64   `json:"aiCallsToday"`
-	AICallsMonth       int64   `json:"aiCallsMonth"`
-	GenerationsMonth   int64   `json:"generationsMonth"`
-	ModificationsMonth int64   `json:"modificationsMonth"`
-	TokensToday        int64   `json:"tokensToday"`
-	TokensMonth        int64   `json:"tokensMonth"`
-	CostTodayUSD       float64 `json:"costTodayUsd"`
-	CostMonthUSD       float64 `json:"costMonthUsd"`
+	TotalUsers             int64   `json:"totalUsers"`
+	TotalSites             int64   `json:"totalSites"`
+	PublishedSites         int64   `json:"publishedSites"`
+	AICallsToday           int64   `json:"aiCallsToday"`
+	AICallsMonth           int64   `json:"aiCallsMonth"`
+	GenerationsMonth       int64   `json:"generationsMonth"`
+	ModificationsMonth     int64   `json:"modificationsMonth"`
+	TokensToday            int64   `json:"tokensToday"`
+	TokensMonth            int64   `json:"tokensMonth"`
+	CostTodayUSD           float64 `json:"costTodayUsd"`
+	CostMonthUSD           float64 `json:"costMonthUsd"`
+	ActiveSubscriptions    int64   `json:"activeSubscriptions"`
+	EssentielSubscriptions int64   `json:"essentielSubscriptions"`
+	ProSubscriptions       int64   `json:"proSubscriptions"`
+	AgenceSubscriptions    int64   `json:"agenceSubscriptions"`
+	ScheduledCancellations int64   `json:"scheduledCancellations"`
+	CanceledSubscriptions  int64   `json:"canceledSubscriptions"`
+	MRREUR                 float64 `json:"mrrEur"`
 }
 
 type AdminUserUsage struct {
-	UserID           string     `json:"userId"`
-	Email            string     `json:"email"`
-	AICalls          int64      `json:"aiCalls"`
-	Generations      int64      `json:"generations"`
-	Modifications    int64      `json:"modifications"`
-	TotalTokens      int64      `json:"totalTokens"`
-	EstimatedCostUSD float64    `json:"estimatedCostUsd"`
-	LastAIUseAt      *time.Time `json:"lastAiUseAt,omitempty"`
+	UserID             string     `json:"userId"`
+	Email              string     `json:"email"`
+	AICalls            int64      `json:"aiCalls"`
+	Generations        int64      `json:"generations"`
+	Modifications      int64      `json:"modifications"`
+	TotalTokens        int64      `json:"totalTokens"`
+	EstimatedCostUSD   float64    `json:"estimatedCostUsd"`
+	LastAIUseAt        *time.Time `json:"lastAiUseAt,omitempty"`
+	Plan               string     `json:"plan"`
+	SubscriptionStatus string     `json:"subscriptionStatus"`
+	CancelAtPeriodEnd  bool       `json:"cancelAtPeriodEnd"`
+	CurrentPeriodEnd   *time.Time `json:"currentPeriodEnd,omitempty"`
+	MonthlyRevenueEUR  float64    `json:"monthlyRevenueEur"`
 }
 
 type AdminStatsResponse struct {
 	Summary AdminStatsSummary `json:"summary"`
 	Users   []AdminUserUsage  `json:"users"`
+}
+
+type LeadInput struct {
+	PublicSlug string `json:"publicSlug"`
+	Name       string `json:"name"`
+	Email      string `json:"email"`
+	Phone      string `json:"phone"`
+	Message    string `json:"message"`
+	Consent    bool   `json:"consent"`
+
+	// Champ invisible pour bloquer une partie des robots.
+	Website string `json:"website"`
+}
+
+type Lead struct {
+	ID           int64      `json:"id"`
+	SiteID       int64      `json:"siteId"`
+	PublicSlug   string     `json:"publicSlug"`
+	BusinessName string     `json:"businessName"`
+	Name         string     `json:"name"`
+	Email        string     `json:"email"`
+	Phone        string     `json:"phone"`
+	Message      string     `json:"message"`
+	Status       string     `json:"status"`
+	Note         string     `json:"note"`
+	FollowUpAt   *time.Time `json:"followUpAt"`
+	CreatedAt    time.Time  `json:"createdAt"`
+}
+
+type LeadUpdateInput struct {
+	Status     string  `json:"status"`
+	Note       string  `json:"note"`
+	FollowUpAt *string `json:"followUpAt"`
+}
+
+type PageViewInput struct {
+	PublicSlug string `json:"publicSlug"`
+	VisitorID  string `json:"visitorId"`
+}
+
+type SiteAnalyticsSummary struct {
+	SiteID         int64   `json:"siteId"`
+	PublicSlug     string  `json:"publicSlug"`
+	BusinessName   string  `json:"businessName"`
+	Views30d       int64   `json:"views30d"`
+	Visitors30d    int64   `json:"visitors30d"`
+	Leads30d       int64   `json:"leads30d"`
+	ConversionRate float64 `json:"conversionRate"`
+}
+
+type AnalyticsSummary struct {
+	Views30d       int64                  `json:"views30d"`
+	Visitors30d    int64                  `json:"visitors30d"`
+	Leads30d       int64                  `json:"leads30d"`
+	ConversionRate float64                `json:"conversionRate"`
+	Sites          []SiteAnalyticsSummary `json:"sites"`
+}
+
+type PublicSitemapSite struct {
+	PublicSlug string    `json:"publicSlug"`
+	UpdatedAt  time.Time `json:"updatedAt"`
 }
 
 type OpenAIResponse struct {
@@ -420,11 +514,19 @@ func main() {
 
 	http.HandleFunc("/public-sites/", publicSiteHandler)
 
+	http.HandleFunc("/public-sitemap-sites", publicSitemapSitesHandler)
+
 	http.HandleFunc("/public-domains/", publicDomainHandler)
 
 	http.HandleFunc("/legal/cgv/accept", cgvAcceptanceHandler)
 
 	http.HandleFunc("/admin/stats", adminStatsHandler)
+
+	http.HandleFunc("/leads", leadsHandler)
+	http.HandleFunc("/leads/", leadByIDHandler)
+
+	http.HandleFunc("/analytics/pageview", analyticsPageViewHandler)
+	http.HandleFunc("/analytics/summary", analyticsSummaryHandler)
 
 	http.HandleFunc("/stripe/checkout", stripeCheckoutHandler)
 
@@ -459,6 +561,8 @@ func main() {
 	fmt.Println("Publication : activée")
 
 	fmt.Println("Stripe :", stripeIntegrationStatus())
+
+	fmt.Println("Notifications email :", leadEmailStatus())
 
 	fmt.Println("======================================")
 
@@ -538,6 +642,8 @@ func createTables(ctx context.Context) error {
 
             phone TEXT NOT NULL DEFAULT '',
 
+            notification_email TEXT NOT NULL DEFAULT '',
+
             design_style TEXT NOT NULL DEFAULT 'moderne',
 
             accent_color TEXT NOT NULL DEFAULT '#2563eb',
@@ -563,6 +669,14 @@ func createTables(ctx context.Context) error {
         ALTER TABLE sites
 
         ADD COLUMN IF NOT EXISTS user_id UUID;
+
+        `,
+
+		`
+
+        ALTER TABLE sites
+
+        ADD COLUMN IF NOT EXISTS notification_email TEXT NOT NULL DEFAULT '';
 
         `,
 
@@ -752,6 +866,117 @@ func createTables(ctx context.Context) error {
         CREATE INDEX IF NOT EXISTS idx_ai_usage_user_created_at
 
         ON ai_usage(user_id, created_at DESC);
+
+        `,
+
+		`
+
+        CREATE TABLE IF NOT EXISTS leads (
+
+            id BIGSERIAL PRIMARY KEY,
+
+            site_id BIGINT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+
+            user_id UUID NOT NULL,
+
+            public_slug TEXT NOT NULL,
+
+            name TEXT NOT NULL,
+
+            email TEXT NOT NULL DEFAULT '',
+
+            phone TEXT NOT NULL DEFAULT '',
+
+            message TEXT NOT NULL,
+
+            status TEXT NOT NULL DEFAULT 'new',
+
+            consent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+        );
+
+        `,
+
+		`
+
+        ALTER TABLE leads
+        ADD COLUMN IF NOT EXISTS note TEXT NOT NULL DEFAULT '';
+
+        `,
+
+		`
+
+        ALTER TABLE leads
+        ADD COLUMN IF NOT EXISTS follow_up_at TIMESTAMPTZ NULL;
+
+        `,
+
+		`
+
+        ALTER TABLE leads
+        ADD COLUMN IF NOT EXISTS notification_sent_at TIMESTAMPTZ NULL;
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_leads_user_created_at
+
+        ON leads(user_id, created_at DESC);
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_leads_site_created_at
+
+        ON leads(site_id, created_at DESC);
+
+        `,
+
+		`
+
+        CREATE TABLE IF NOT EXISTS site_pageviews (
+
+            id BIGSERIAL PRIMARY KEY,
+
+            site_id BIGINT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+
+            user_id UUID NOT NULL,
+
+            public_slug TEXT NOT NULL,
+
+            visitor_id TEXT NOT NULL,
+
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+        );
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_site_pageviews_site_created_at
+
+        ON site_pageviews(site_id, created_at DESC);
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_site_pageviews_user_created_at
+
+        ON site_pageviews(user_id, created_at DESC);
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_site_pageviews_unique_visitor
+
+        ON site_pageviews(site_id, visitor_id, created_at DESC);
 
         `,
 
@@ -1055,6 +1280,55 @@ func adminStatsHandler(
 					WHERE created_at >= date_trunc('month', NOW())
 				),
 				0
+			)::double precision,
+			(
+				SELECT COUNT(*)
+				FROM user_billing
+				WHERE LOWER(COALESCE(subscription_status, '')) IN ('active', 'trialing')
+			)::bigint,
+			(
+				SELECT COUNT(*)
+				FROM user_billing
+				WHERE LOWER(COALESCE(subscription_status, '')) IN ('active', 'trialing')
+				  AND LOWER(COALESCE(plan, '')) = 'essentiel'
+			)::bigint,
+			(
+				SELECT COUNT(*)
+				FROM user_billing
+				WHERE LOWER(COALESCE(subscription_status, '')) IN ('active', 'trialing')
+				  AND LOWER(COALESCE(plan, '')) = 'pro'
+			)::bigint,
+			(
+				SELECT COUNT(*)
+				FROM user_billing
+				WHERE LOWER(COALESCE(subscription_status, '')) IN ('active', 'trialing')
+				  AND LOWER(COALESCE(plan, '')) = 'agence'
+			)::bigint,
+			(
+				SELECT COUNT(*)
+				FROM user_billing
+				WHERE COALESCE(cancel_at_period_end, FALSE) = TRUE
+				  AND LOWER(COALESCE(subscription_status, '')) IN ('active', 'trialing')
+			)::bigint,
+			(
+				SELECT COUNT(*)
+				FROM user_billing
+				WHERE LOWER(COALESCE(subscription_status, '')) = 'canceled'
+			)::bigint,
+			COALESCE(
+				(
+					SELECT SUM(
+						CASE LOWER(COALESCE(plan, ''))
+							WHEN 'essentiel' THEN 19.90
+							WHEN 'pro' THEN 39.90
+							WHEN 'agence' THEN 79.90
+							ELSE 0
+						END
+					)
+					FROM user_billing
+					WHERE LOWER(COALESCE(subscription_status, '')) IN ('active', 'trialing')
+				),
+				0
 			)::double precision;
 		`,
 	).Scan(
@@ -1069,6 +1343,13 @@ func adminStatsHandler(
 		&summary.TokensMonth,
 		&summary.CostTodayUSD,
 		&summary.CostMonthUSD,
+		&summary.ActiveSubscriptions,
+		&summary.EssentielSubscriptions,
+		&summary.ProSubscriptions,
+		&summary.AgenceSubscriptions,
+		&summary.ScheduledCancellations,
+		&summary.CanceledSubscriptions,
+		&summary.MRREUR,
 	)
 	if err != nil {
 		log.Println("Erreur statistiques admin :", err)
@@ -1099,14 +1380,35 @@ func adminStatsHandler(
 				SUM(a.estimated_cost_usd),
 				0
 			)::double precision,
-			MAX(a.created_at)
+			MAX(a.created_at),
+			COALESCE(MAX(b.plan), 'free'),
+			COALESCE(MAX(b.subscription_status), 'inactive'),
+			COALESCE(BOOL_OR(b.cancel_at_period_end), FALSE),
+			MAX(b.current_period_end),
+			CASE
+				WHEN LOWER(COALESCE(MAX(b.subscription_status), '')) IN ('active', 'trialing')
+				THEN CASE LOWER(COALESCE(MAX(b.plan), ''))
+					WHEN 'essentiel' THEN 19.90
+					WHEN 'pro' THEN 39.90
+					WHEN 'agence' THEN 79.90
+					ELSE 0
+				END
+				ELSE 0
+			END::double precision
 		FROM auth.users u
 		LEFT JOIN ai_usage a
 			ON a.user_id = u.id
+		LEFT JOIN user_billing b
+			ON b.user_id = u.id
 		GROUP BY
 			u.id,
 			u.email
 		ORDER BY
+			CASE
+				WHEN LOWER(COALESCE(MAX(b.subscription_status), '')) IN ('active', 'trialing')
+				THEN 0
+				ELSE 1
+			END,
 			COALESCE(
 				SUM(a.estimated_cost_usd),
 				0
@@ -1140,6 +1442,11 @@ func adminStatsHandler(
 			&item.TotalTokens,
 			&item.EstimatedCostUSD,
 			&item.LastAIUseAt,
+			&item.Plan,
+			&item.SubscriptionStatus,
+			&item.CancelAtPeriodEnd,
+			&item.CurrentPeriodEnd,
+			&item.MonthlyRevenueEUR,
 		)
 		if err != nil {
 			log.Println("Erreur lecture utilisateur admin :", err)
@@ -1173,6 +1480,1171 @@ func adminStatsHandler(
 			Summary: summary,
 			Users:   users,
 		},
+	)
+}
+
+func analyticsPageViewHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(
+			w,
+			"Méthode non autorisée",
+			http.StatusMethodNotAllowed,
+		)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(
+		w,
+		r.Body,
+		8*1024,
+	)
+
+	var input PageViewInput
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(
+			w,
+			"Données invalides",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	input.PublicSlug = strings.TrimSpace(
+		input.PublicSlug,
+	)
+
+	input.VisitorID = strings.TrimSpace(
+		input.VisitorID,
+	)
+
+	if input.PublicSlug == "" ||
+		len(input.PublicSlug) > 200 {
+		http.Error(
+			w,
+			"Site invalide",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	if input.VisitorID == "" ||
+		len(input.VisitorID) > 120 {
+		http.Error(
+			w,
+			"Visiteur invalide",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	var siteID int64
+	var ownerUserID string
+
+	err := db.QueryRow(
+		r.Context(),
+		`
+		SELECT
+			id,
+			user_id::text
+		FROM sites
+		WHERE
+			public_slug = $1
+			AND published = TRUE
+		LIMIT 1;
+		`,
+		input.PublicSlug,
+	).Scan(
+		&siteID,
+		&ownerUserID,
+	)
+
+	if err != nil {
+		if errors.Is(
+			err,
+			pgx.ErrNoRows,
+		) {
+			http.Error(
+				w,
+				"Site introuvable",
+				http.StatusNotFound,
+			)
+			return
+		}
+
+		log.Println(
+			"Erreur analytics site :",
+			err,
+		)
+
+		http.Error(
+			w,
+			"Erreur serveur",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	_, err = db.Exec(
+		r.Context(),
+		`
+		INSERT INTO site_pageviews (
+			site_id,
+			user_id,
+			public_slug,
+			visitor_id,
+			created_at
+		)
+		VALUES (
+			$1,
+			$2::uuid,
+			$3,
+			$4,
+			NOW()
+		);
+		`,
+		siteID,
+		ownerUserID,
+		input.PublicSlug,
+		input.VisitorID,
+	)
+
+	if err != nil {
+		log.Println(
+			"Erreur enregistrement visite :",
+			err,
+		)
+
+		http.Error(
+			w,
+			"Impossible d'enregistrer la visite",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	writeJSON(
+		w,
+		http.StatusCreated,
+		map[string]bool{
+			"success": true,
+		},
+	)
+}
+
+func analyticsSummaryHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(
+			w,
+			"Méthode non autorisée",
+			http.StatusMethodNotAllowed,
+		)
+		return
+	}
+
+	user, authenticated :=
+		requireUser(w, r)
+
+	if !authenticated {
+		return
+	}
+
+	rows, err := db.Query(
+		r.Context(),
+		`
+		SELECT
+			s.id,
+			COALESCE(s.public_slug, ''),
+			s.business_name,
+			COALESCE((
+				SELECT COUNT(*)
+				FROM site_pageviews v
+				WHERE
+					v.site_id = s.id
+					AND v.created_at >= NOW() - INTERVAL '30 days'
+			), 0) AS views_30d,
+			COALESCE((
+				SELECT COUNT(DISTINCT v.visitor_id)
+				FROM site_pageviews v
+				WHERE
+					v.site_id = s.id
+					AND v.created_at >= NOW() - INTERVAL '30 days'
+			), 0) AS visitors_30d,
+			COALESCE((
+				SELECT COUNT(*)
+				FROM leads l
+				WHERE
+					l.site_id = s.id
+					AND l.created_at >= NOW() - INTERVAL '30 days'
+			), 0) AS leads_30d
+		FROM sites s
+		WHERE s.user_id = $1::uuid
+		ORDER BY s.updated_at DESC;
+		`,
+		user.ID,
+	)
+
+	if err != nil {
+		log.Println(
+			"Erreur analytics résumé :",
+			err,
+		)
+
+		http.Error(
+			w,
+			"Impossible de charger les statistiques",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	defer rows.Close()
+
+	summary := AnalyticsSummary{
+		Sites: make(
+			[]SiteAnalyticsSummary,
+			0,
+		),
+	}
+
+	for rows.Next() {
+		var site SiteAnalyticsSummary
+
+		if err := rows.Scan(
+			&site.SiteID,
+			&site.PublicSlug,
+			&site.BusinessName,
+			&site.Views30d,
+			&site.Visitors30d,
+			&site.Leads30d,
+		); err != nil {
+			log.Println(
+				"Erreur lecture analytics :",
+				err,
+			)
+
+			http.Error(
+				w,
+				"Impossible de charger les statistiques",
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		if site.Visitors30d > 0 {
+			site.ConversionRate =
+				float64(site.Leads30d) /
+					float64(site.Visitors30d) *
+					100
+		}
+
+		summary.Views30d +=
+			site.Views30d
+
+		summary.Visitors30d +=
+			site.Visitors30d
+
+		summary.Leads30d +=
+			site.Leads30d
+
+		summary.Sites = append(
+			summary.Sites,
+			site,
+		)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println(
+			"Erreur analytics rows :",
+			err,
+		)
+
+		http.Error(
+			w,
+			"Impossible de charger les statistiques",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	if summary.Visitors30d > 0 {
+		summary.ConversionRate =
+			float64(summary.Leads30d) /
+				float64(summary.Visitors30d) *
+				100
+	}
+
+	writeJSON(
+		w,
+		http.StatusOK,
+		summary,
+	)
+}
+
+func leadsHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodPost:
+		createLeadHandler(w, r)
+	case http.MethodGet:
+		listLeadsHandler(w, r)
+	default:
+		http.Error(
+			w,
+			"Méthode non autorisée",
+			http.StatusMethodNotAllowed,
+		)
+	}
+}
+
+func leadByIDHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if r.Method != http.MethodPatch {
+		http.Error(
+			w,
+			"Méthode non autorisée",
+			http.StatusMethodNotAllowed,
+		)
+		return
+	}
+
+	user, authenticated := requireUser(w, r)
+	if !authenticated {
+		return
+	}
+
+	rawID := strings.Trim(
+		strings.TrimPrefix(
+			r.URL.Path,
+			"/leads/",
+		),
+		"/",
+	)
+
+	leadID, err := strconv.ParseInt(
+		rawID,
+		10,
+		64,
+	)
+
+	if err != nil || leadID <= 0 {
+		http.Error(
+			w,
+			"Prospect invalide",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(
+		w,
+		r.Body,
+		16*1024,
+	)
+
+	var input LeadUpdateInput
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(
+			w,
+			"Données invalides",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	status := strings.TrimSpace(
+		strings.ToLower(input.Status),
+	)
+
+	allowedStatuses := map[string]bool{
+		"new":        true,
+		"contacted":  true,
+		"quote_sent": true,
+		"won":        true,
+		"lost":       true,
+	}
+
+	if !allowedStatuses[status] {
+		http.Error(
+			w,
+			"Statut invalide",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	note := strings.TrimSpace(input.Note)
+
+	if len(note) > 3000 {
+		http.Error(
+			w,
+			"La note est trop longue",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	var followUpAt *time.Time
+
+	if input.FollowUpAt != nil {
+		cleanFollowUp := strings.TrimSpace(*input.FollowUpAt)
+
+		if cleanFollowUp != "" {
+			parsed, parseErr := time.Parse(
+				time.RFC3339,
+				cleanFollowUp,
+			)
+
+			if parseErr != nil {
+				http.Error(
+					w,
+					"Date de relance invalide",
+					http.StatusBadRequest,
+				)
+				return
+			}
+
+			followUpAt = &parsed
+		}
+	}
+
+	result, err := db.Exec(
+		r.Context(),
+		`
+		UPDATE leads
+		SET
+			status = $1,
+			note = $2,
+			follow_up_at = $3
+		WHERE
+			id = $4
+			AND user_id = $5::uuid;
+		`,
+		status,
+		note,
+		followUpAt,
+		leadID,
+		user.ID,
+	)
+
+	if err != nil {
+		log.Println(
+			"Erreur mise à jour prospect :",
+			err,
+		)
+
+		http.Error(
+			w,
+			"Impossible de modifier le prospect",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	if result.RowsAffected() == 0 {
+		http.Error(
+			w,
+			"Prospect introuvable",
+			http.StatusNotFound,
+		)
+		return
+	}
+
+	writeJSON(
+		w,
+		http.StatusOK,
+		map[string]any{
+			"success":    true,
+			"status":     status,
+			"note":       note,
+			"followUpAt": followUpAt,
+		},
+	)
+}
+
+func syncNotificationEmail(
+	ctx context.Context,
+	userID string,
+	email string,
+) error {
+	email = strings.TrimSpace(email)
+
+	if userID == "" || email == "" {
+		return nil
+	}
+
+	_, err := db.Exec(
+		ctx,
+		`UPDATE sites
+		 SET notification_email = $1
+		 WHERE user_id = $2::uuid
+		   AND notification_email IS DISTINCT FROM $1`,
+		email,
+		userID,
+	)
+
+	return err
+}
+
+func leadEmailStatus() string {
+	if strings.TrimSpace(os.Getenv("RESEND_API_KEY")) == "" {
+		return "désactivées (RESEND_API_KEY absente)"
+	}
+
+	return "activées"
+}
+
+func sendLeadNotificationEmail(
+	ctx context.Context,
+	leadID int64,
+	toEmail string,
+	businessName string,
+	input LeadInput,
+) error {
+	apiKey := strings.TrimSpace(os.Getenv("RESEND_API_KEY"))
+	if apiKey == "" {
+		return errors.New("RESEND_API_KEY absente")
+	}
+
+	toEmail = strings.TrimSpace(toEmail)
+	if toEmail == "" {
+		return errors.New("email destinataire absent")
+	}
+
+	fromEmail := strings.TrimSpace(os.Getenv("RESEND_FROM_EMAIL"))
+	if fromEmail == "" {
+		fromEmail = "SiteAI <onboarding@resend.dev>"
+	}
+
+	appURL := strings.TrimRight(strings.TrimSpace(os.Getenv("SITEAI_APP_URL")), "/")
+	if appURL == "" {
+		appURL = "http://localhost:3000"
+	}
+
+	safeBusinessName := html.EscapeString(businessName)
+	safeName := html.EscapeString(input.Name)
+	safeEmail := html.EscapeString(input.Email)
+	safePhone := html.EscapeString(input.Phone)
+	safeMessage := html.EscapeString(input.Message)
+
+	if safeEmail == "" {
+		safeEmail = "Non renseigné"
+	}
+	if safePhone == "" {
+		safePhone = "Non renseigné"
+	}
+
+	messageHTML := strings.ReplaceAll(safeMessage, "\n", "<br>")
+	prospectsURL := appURL + "/prospects"
+
+	htmlBody := fmt.Sprintf(`<!doctype html>
+<html lang="fr">
+<body style="margin:0;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a;">
+  <div style="max-width:640px;margin:0 auto;padding:32px 20px;">
+    <div style="background:#0f172a;border-radius:20px;padding:28px;color:#ffffff;">
+      <div style="font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#60a5fa;">SiteAI</div>
+      <h1 style="margin:10px 0 0;font-size:26px;">Nouveau prospect reçu</h1>
+      <p style="margin:10px 0 0;color:#cbd5e1;line-height:1.6;">Une nouvelle demande a été envoyée depuis le site de %s.</p>
+    </div>
+    <div style="margin-top:18px;background:#ffffff;border:1px solid #e2e8f0;border-radius:20px;padding:28px;">
+      <p style="margin:0 0 18px;"><strong>Nom :</strong> %s</p>
+      <p style="margin:0 0 18px;"><strong>Email :</strong> %s</p>
+      <p style="margin:0 0 18px;"><strong>Téléphone :</strong> %s</p>
+      <p style="margin:24px 0 8px;font-weight:700;">Message</p>
+      <div style="padding:16px;background:#f8fafc;border-radius:12px;line-height:1.7;">%s</div>
+      <a href="%s" style="display:inline-block;margin-top:24px;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:700;padding:13px 18px;border-radius:10px;">Ouvrir mes prospects</a>
+    </div>
+    <p style="margin:18px 0 0;text-align:center;font-size:12px;color:#64748b;">Notification automatique SiteAI</p>
+  </div>
+</body>
+</html>`,
+		safeBusinessName,
+		safeName,
+		safeEmail,
+		safePhone,
+		messageHTML,
+		html.EscapeString(prospectsURL),
+	)
+
+	payload := map[string]any{
+		"from":    fromEmail,
+		"to":      []string{toEmail},
+		"subject": fmt.Sprintf("[SiteAI] Nouveau prospect pour %s", businessName),
+		"html":    htmlBody,
+	}
+
+	payloadJSON, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		"https://api.resend.com/emails",
+		bytes.NewReader(payloadJSON),
+	)
+	if err != nil {
+		return err
+	}
+
+	request.Header.Set("Authorization", "Bearer "+apiKey)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Idempotency-Key", fmt.Sprintf("siteai-lead-%d", leadID))
+
+	client := &http.Client{Timeout: 12 * time.Second}
+	response, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		body, _ := io.ReadAll(io.LimitReader(response.Body, 8*1024))
+		return fmt.Errorf("Resend HTTP %d : %s", response.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	_, err = db.Exec(
+		ctx,
+		`UPDATE leads
+		 SET notification_sent_at = NOW()
+		 WHERE id = $1`,
+		leadID,
+	)
+	return err
+}
+
+func getClientIP(r *http.Request) string {
+	if forwarded := strings.TrimSpace(
+		r.Header.Get("X-Forwarded-For"),
+	); forwarded != "" {
+		parts := strings.Split(
+			forwarded,
+			",",
+		)
+
+		if len(parts) > 0 {
+			ip := strings.TrimSpace(
+				parts[0],
+			)
+
+			if ip != "" {
+				return ip
+			}
+		}
+	}
+
+	if realIP := strings.TrimSpace(
+		r.Header.Get("X-Real-IP"),
+	); realIP != "" {
+		return realIP
+	}
+
+	host, _, err := net.SplitHostPort(
+		strings.TrimSpace(
+			r.RemoteAddr,
+		),
+	)
+
+	if err == nil &&
+		strings.TrimSpace(host) != "" {
+		return strings.TrimSpace(host)
+	}
+
+	return strings.TrimSpace(
+		r.RemoteAddr,
+	)
+}
+
+func allowLeadSubmission(
+	ip string,
+	publicSlug string,
+) (bool, time.Duration) {
+	now := time.Now()
+
+	ip = strings.TrimSpace(ip)
+	publicSlug = strings.TrimSpace(
+		publicSlug,
+	)
+
+	if ip == "" {
+		ip = "unknown"
+	}
+
+	key := ip + "|" + publicSlug
+
+	leadRateLimiter.Lock()
+	defer leadRateLimiter.Unlock()
+
+	if len(
+		leadRateLimiter.Entries,
+	) > 2000 {
+		for entryKey, entry := range leadRateLimiter.Entries {
+			if now.After(
+				entry.ResetAt,
+			) {
+				delete(
+					leadRateLimiter.Entries,
+					entryKey,
+				)
+			}
+		}
+	}
+
+	entry, exists :=
+		leadRateLimiter.Entries[key]
+
+	if !exists ||
+		now.After(entry.ResetAt) {
+		leadRateLimiter.Entries[key] =
+			leadRateEntry{
+				Count: 1,
+				ResetAt: now.Add(
+					leadRateWindow,
+				),
+			}
+
+		return true, 0
+	}
+
+	if entry.Count >=
+		leadRateLimit {
+		remaining :=
+			time.Until(
+				entry.ResetAt,
+			)
+
+		if remaining < 0 {
+			remaining = 0
+		}
+
+		return false, remaining
+	}
+
+	entry.Count++
+
+	leadRateLimiter.Entries[key] =
+		entry
+
+	return true, 0
+}
+
+func createLeadHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	r.Body = http.MaxBytesReader(
+		w,
+		r.Body,
+		64*1024,
+	)
+
+	var input LeadInput
+
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(
+			w,
+			"Formulaire invalide",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	input.PublicSlug = strings.TrimSpace(input.PublicSlug)
+	input.Name = strings.TrimSpace(input.Name)
+	input.Email = strings.TrimSpace(input.Email)
+	input.Phone = strings.TrimSpace(input.Phone)
+	input.Message = strings.TrimSpace(input.Message)
+	input.Website = strings.TrimSpace(input.Website)
+
+	// Honeypot : un vrai visiteur ne remplit jamais ce champ.
+	if input.Website != "" {
+		writeJSON(
+			w,
+			http.StatusCreated,
+			map[string]any{
+				"success": true,
+				"message": "Votre demande a bien été envoyée.",
+			},
+		)
+		return
+	}
+
+	if input.PublicSlug == "" ||
+		len(input.PublicSlug) > 200 {
+		http.Error(
+			w,
+			"Site invalide",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	if len(input.Name) < 2 ||
+		len(input.Name) > 100 {
+		http.Error(
+			w,
+			"Nom invalide",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	if input.Email == "" && input.Phone == "" {
+		http.Error(
+			w,
+			"Email ou téléphone obligatoire",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	if input.Email != "" {
+		if len(input.Email) > 254 {
+			http.Error(
+				w,
+				"Email invalide",
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		emailPattern := regexp.MustCompile(
+			`^[^@\s]+@[^@\s]+\.[^@\s]+$`,
+		)
+
+		if !emailPattern.MatchString(input.Email) {
+			http.Error(
+				w,
+				"Email invalide",
+				http.StatusBadRequest,
+			)
+			return
+		}
+	}
+
+	if len(input.Phone) > 40 {
+		http.Error(
+			w,
+			"Téléphone invalide",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	if len(input.Message) < 10 ||
+		len(input.Message) > 3000 {
+		http.Error(
+			w,
+			"Le message doit contenir entre 10 et 3000 caractères",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	if !input.Consent {
+		http.Error(
+			w,
+			"Le consentement est obligatoire",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	clientIP := getClientIP(r)
+
+	allowed, retryAfter :=
+		allowLeadSubmission(
+			clientIP,
+			input.PublicSlug,
+		)
+
+	if !allowed {
+		retrySeconds :=
+			int(
+				retryAfter.Seconds(),
+			)
+
+		if retrySeconds < 1 {
+			retrySeconds = 1
+		}
+
+		w.Header().Set(
+			"Retry-After",
+			strconv.Itoa(
+				retrySeconds,
+			),
+		)
+
+		http.Error(
+			w,
+			"Trop de demandes envoyées. Réessayez dans quelques minutes.",
+			http.StatusTooManyRequests,
+		)
+		return
+	}
+
+	var siteID int64
+	var ownerUserID string
+	var businessName string
+	var notificationEmail string
+
+	err := db.QueryRow(
+		r.Context(),
+		`
+		SELECT
+			id,
+			user_id::text,
+			business_name,
+			COALESCE(notification_email, '')
+		FROM sites
+		WHERE
+			public_slug = $1
+			AND published = TRUE
+		LIMIT 1;
+		`,
+		input.PublicSlug,
+	).Scan(
+		&siteID,
+		&ownerUserID,
+		&businessName,
+		&notificationEmail,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(
+				w,
+				"Site introuvable ou non publié",
+				http.StatusNotFound,
+			)
+			return
+		}
+
+		log.Println("Erreur recherche site pour prospect :", err)
+
+		http.Error(
+			w,
+			"Erreur serveur",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	var leadID int64
+
+	err = db.QueryRow(
+		r.Context(),
+		`
+		INSERT INTO leads (
+			site_id,
+			user_id,
+			public_slug,
+			name,
+			email,
+			phone,
+			message,
+			status,
+			consent_at,
+			created_at
+		)
+		VALUES (
+			$1,
+			$2::uuid,
+			$3,
+			$4,
+			$5,
+			$6,
+			$7,
+			'new',
+			NOW(),
+			NOW()
+		)
+		RETURNING id;
+		`,
+		siteID,
+		ownerUserID,
+		input.PublicSlug,
+		input.Name,
+		input.Email,
+		input.Phone,
+		input.Message,
+	).Scan(&leadID)
+
+	if err != nil {
+		log.Println("Erreur enregistrement prospect :", err)
+
+		http.Error(
+			w,
+			"Impossible d'enregistrer la demande",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	if strings.TrimSpace(notificationEmail) != "" && strings.TrimSpace(os.Getenv("RESEND_API_KEY")) != "" {
+		go func(leadID int64, toEmail string, businessName string, leadInput LeadInput) {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+
+			if err := sendLeadNotificationEmail(
+				ctx,
+				leadID,
+				toEmail,
+				businessName,
+				leadInput,
+			); err != nil {
+				log.Println("Notification prospect non envoyée :", err)
+			}
+		}(leadID, notificationEmail, businessName, input)
+	}
+
+	writeJSON(
+		w,
+		http.StatusCreated,
+		map[string]any{
+			"success": true,
+			"message": "Votre demande a bien été envoyée.",
+		},
+	)
+}
+
+func listLeadsHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	user, authenticated := requireUser(w, r)
+	if !authenticated {
+		return
+	}
+
+	rows, err := db.Query(
+		r.Context(),
+		`
+		SELECT
+			l.id,
+			l.site_id,
+			l.public_slug,
+			s.business_name,
+			l.name,
+			l.email,
+			l.phone,
+			l.message,
+			l.status,
+			COALESCE(l.note, ''),
+			l.follow_up_at,
+			l.created_at
+		FROM leads l
+		INNER JOIN sites s
+			ON s.id = l.site_id
+		WHERE l.user_id = $1::uuid
+		ORDER BY l.created_at DESC
+		LIMIT 500;
+		`,
+		user.ID,
+	)
+
+	if err != nil {
+		log.Println("Erreur liste prospects :", err)
+
+		http.Error(
+			w,
+			"Impossible de charger les prospects",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	defer rows.Close()
+
+	leads := make([]Lead, 0)
+
+	for rows.Next() {
+		var lead Lead
+
+		err = rows.Scan(
+			&lead.ID,
+			&lead.SiteID,
+			&lead.PublicSlug,
+			&lead.BusinessName,
+			&lead.Name,
+			&lead.Email,
+			&lead.Phone,
+			&lead.Message,
+			&lead.Status,
+			&lead.Note,
+			&lead.FollowUpAt,
+			&lead.CreatedAt,
+		)
+
+		if err != nil {
+			log.Println("Erreur lecture prospect :", err)
+
+			http.Error(
+				w,
+				"Impossible de charger les prospects",
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		leads = append(leads, lead)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Println("Erreur parcours prospects :", err)
+
+		http.Error(
+			w,
+			"Impossible de charger les prospects",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	writeJSON(
+		w,
+		http.StatusOK,
+		leads,
 	)
 }
 
@@ -1634,6 +3106,14 @@ func sitesHandler(
 
 	}
 
+	if err := syncNotificationEmail(
+		r.Context(),
+		user.ID,
+		user.Email,
+	); err != nil {
+		log.Println("Impossible de synchroniser l'email de notification :", err)
+	}
+
 	switch r.Method {
 
 	case http.MethodGet:
@@ -1656,6 +3136,8 @@ func sitesHandler(
 			r,
 
 			user.ID,
+
+			user.Email,
 		)
 
 	default:
@@ -1697,6 +3179,14 @@ func siteByIDHandler(
 
 		return
 
+	}
+
+	if err := syncNotificationEmail(
+		r.Context(),
+		user.ID,
+		user.Email,
+	); err != nil {
+		log.Println("Impossible de synchroniser l'email de notification :", err)
 	}
 
 	path := strings.Trim(
@@ -1954,6 +3444,109 @@ func siteByIDHandler(
 
 	}
 
+}
+
+func publicSitemapSitesHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(
+			w,
+			"Méthode non autorisée",
+			http.StatusMethodNotAllowed,
+		)
+		return
+	}
+
+	rows, err := db.Query(
+		r.Context(),
+		`
+		SELECT
+			public_slug,
+			updated_at
+		FROM sites
+		WHERE
+			published = TRUE
+			AND public_slug IS NOT NULL
+			AND public_slug <> ''
+		ORDER BY updated_at DESC;
+		`,
+	)
+
+	if err != nil {
+		log.Println(
+			"Erreur sitemap public :",
+			err,
+		)
+
+		http.Error(
+			w,
+			"Impossible de charger le sitemap",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	defer rows.Close()
+
+	sites := make(
+		[]PublicSitemapSite,
+		0,
+	)
+
+	for rows.Next() {
+		var site PublicSitemapSite
+
+		if err := rows.Scan(
+			&site.PublicSlug,
+			&site.UpdatedAt,
+		); err != nil {
+			log.Println(
+				"Erreur lecture sitemap public :",
+				err,
+			)
+
+			http.Error(
+				w,
+				"Impossible de charger le sitemap",
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		sites = append(
+			sites,
+			site,
+		)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println(
+			"Erreur rows sitemap public :",
+			err,
+		)
+
+		http.Error(
+			w,
+			"Impossible de charger le sitemap",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	writeJSON(
+		w,
+		http.StatusOK,
+		sites,
+	)
 }
 
 func publicSiteHandler(
@@ -2598,6 +4191,8 @@ func createSiteHandler(
 
 	userID string,
 
+	userEmail string,
+
 ) {
 
 	var input SaveSiteInput
@@ -2680,6 +4275,8 @@ func createSiteHandler(
 
         phone,
 
+        notification_email,
+
         design_style,
 
         accent_color,
@@ -2704,7 +4301,9 @@ func createSiteHandler(
 
         $7,
 
-        $8::jsonb
+        $8,
+
+        $9::jsonb
 
     )
 
@@ -2735,6 +4334,8 @@ func createSiteHandler(
 		input.City,
 
 		input.Site.Phone,
+
+		strings.TrimSpace(userEmail),
 
 		input.DesignStyle,
 
