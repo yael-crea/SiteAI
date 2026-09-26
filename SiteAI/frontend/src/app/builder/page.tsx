@@ -406,10 +406,17 @@ function ResponsiveSitePreview({
     }
 
     function updateScale() {
+      const currentContainer =
+        containerRef.current;
+
+      if (!currentContainer) {
+        return;
+      }
+
       const availableWidth =
         Math.max(
           1,
-          container.clientWidth - 8,
+          currentContainer.clientWidth - 8,
         );
 
       setScale(
