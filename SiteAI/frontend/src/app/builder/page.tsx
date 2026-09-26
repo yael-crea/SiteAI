@@ -580,6 +580,29 @@ function ResponsiveSitePreview({
   );
 }
 
+const activityExamples = [
+  {label: "Plombier", keywords: ["plomb", "chauffag"], services: ["Recherche de fuite", "Installation sanitaire", "Remplacement de chauffe-eau", "Rénovation de salle de bain"]},
+  {label: "Électricien", keywords: ["electric"], services: ["Dépannage électrique", "Installation de prises", "Rénovation électrique", "Installation d’éclairage"]},
+  {label: "Coiffeur", keywords: ["coiff", "barbier"], services: ["Coupe femme", "Coupe homme", "Coloration", "Taille de barbe"]},
+  {label: "Restaurant", keywords: ["restaur", "pizzeria", "traiteur"], services: ["Repas sur place", "Plats à emporter", "Réservation de table", "Repas de groupe"]},
+  {label: "Paysagiste", keywords: ["paysag", "jardin"], services: ["Entretien de jardin", "Taille de haies", "Tonte de pelouse", "Aménagement extérieur"]},
+  {label: "Entreprise de nettoyage", keywords: ["nettoy", "menage"], services: ["Nettoyage de bureaux", "Entretien de locaux", "Nettoyage de vitres", "Remise en état"]},
+  {label: "Peintre en bâtiment", keywords: ["peint"], services: ["Peinture intérieure", "Peinture extérieure", "Préparation des murs", "Pose de revêtements muraux"]},
+] as const;
+
+function normalizeActivity(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function parseServices(value: string) {
+  return value.split(/[,;\n]+/).map(item => item.trim()).filter(Boolean);
+}
+
+function appendService(current: string, suggestion: string) {
+  if (parseServices(current).some(item => normalizeActivity(item) === normalizeActivity(suggestion))) return current;
+  return current.trim() ? current.trimEnd() + "\n" + suggestion : suggestion;
+}
+
 export default function Home() {
   const router = useRouter();
   const mobileSteps = ["Infos", "Contenu", "Apparence", "Aperçu", "Publication"] as const;
@@ -628,6 +651,11 @@ export default function Home() {
 
   const [services, setServices] =
     useState("");
+
+  const suggestedActivity = activityExamples.find(example =>
+    example.keywords.some(keyword => normalizeActivity(activity).includes(keyword)),
+  );
+  const selectedServices = parseServices(services).map(normalizeActivity);
 
   const [designStyle, setDesignStyle] =
     useState<DesignStyle>("moderne");
@@ -962,17 +990,7 @@ export default function Home() {
     setChatMessages([]);
     setManualEditorOpen(false);
 
-    const serviceList =
-      services
-        .split(",")
-        .map(
-          (service) =>
-            service.trim(),
-        )
-        .filter(
-          (service) =>
-            service !== "",
-        );
+    const serviceList = parseServices(services);
 
     try {
       const response =
@@ -3254,17 +3272,17 @@ export default function Home() {
               </h2>
 
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Utilise ces informations pour créer un nouveau site avec l&apos;IA.
+                Présente ton activité avec tes propres mots. L’IA utilisera ces informations pour préparer ton site.
               </p>
 
               <div className="mt-7 space-y-5">
                 <div>
-                  <label className="mb-2 block text-sm text-slate-400">
+                  <label htmlFor="business-name" className="mb-2 block text-sm text-slate-400">
                     Nom de l&apos;entreprise
                   </label>
 
                   <input
-                    value={
+                    id="business-name" value={
                       businessName
                     }
                     onChange={(
@@ -3282,12 +3300,12 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm text-slate-400">
+                  <label htmlFor="business-activity" className="mb-2 block text-sm text-slate-400">
                     Activité
                   </label>
 
                   <input
-                    value={activity}
+                    id="business-activity" list="activity-examples" value={activity}
                     onChange={(
                       event,
                     ) =>
@@ -3302,13 +3320,17 @@ export default function Home() {
                   />
                 </div>
 
+                <datalist id="activity-examples">
+                  {activityExamples.map(example => <option key={example.label} value={example.label} />)}
+                </datalist>
+
                 <div>
-                  <label className="mb-2 block text-sm text-slate-400">
+                  <label htmlFor="business-city" className="mb-2 block text-sm text-slate-400">
                     Ville
                   </label>
 
                   <input
-                    value={city}
+                    id="business-city" value={city}
                     onChange={(
                       event,
                     ) =>
@@ -3323,12 +3345,12 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm text-slate-400">
+                  <label htmlFor="business-phone" className="mb-2 block text-sm text-slate-400">
                     Téléphone
                   </label>
 
                   <input
-                    value={phone}
+                    id="business-phone" type="tel" autoComplete="tel" value={phone}
                     onChange={(
                       event,
                     ) =>
@@ -3343,12 +3365,12 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm text-slate-400">
+                  <label htmlFor="business-services" className="mb-2 block text-sm text-slate-400">
                     Services
                   </label>
 
                   <textarea
-                    value={services}
+                    id="business-services" aria-describedby="services-help" value={services}
                     onChange={(
                       event,
                     ) =>
@@ -3357,10 +3379,29 @@ export default function Home() {
                           .value,
                       )
                     }
-                    placeholder="Dépannage plomberie, chauffe-eau, rénovation..."
+                    placeholder="Décris tes prestations, une par ligne"
                     rows={5}
                     className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
                   />
+                </div>
+
+                <div id="services-help" className="rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                  <p className="text-xs leading-5 text-slate-400">Une prestation par ligne, ou séparée par une virgule. Précise ce que tu proposes réellement à tes clients.</p>
+                  {suggestedActivity && <>
+                    <p className="mt-3 text-sm font-semibold">Idées de prestations</p>
+                    <p className="mt-1 text-xs text-slate-400">Clique uniquement sur celles que tu proposes.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {suggestedActivity.services.map(suggestion => {
+                        const added = selectedServices.includes(normalizeActivity(suggestion));
+                        return <button key={suggestion} type="button" disabled={added || loading}
+                          onClick={() => setServices(current => appendService(current, suggestion))}
+                          className="rounded-lg border border-slate-600 px-3 py-2 text-left text-xs text-blue-200 hover:border-blue-400 disabled:border-emerald-900 disabled:text-emerald-300">
+                          {added ? "✓ " : "+ "}{suggestion}
+                        </button>;
+                      })}
+                    </div>
+                  </>}
+                  <p role="status" className="mt-3 text-xs text-slate-400">{selectedServices.length} prestation{selectedServices.length > 1 ? "s" : ""} renseignée{selectedServices.length > 1 ? "s" : ""}</p>
                 </div>
 
                 <div>
