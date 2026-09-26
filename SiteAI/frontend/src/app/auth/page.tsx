@@ -1,82 +1,44 @@
 "use client";
 
-import {
-  FormEvent,
-  useEffect,
-  useState,
-} from "react";
-
+import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+
+type AuthMode = "login" | "signup" | "forgot";
 
 export default function AuthPage() {
   const router = useRouter();
 
-  const [mode, setMode] = useState<
-    "login" | "signup"
-  >("login");
+  const [mode, setMode] = useState<AuthMode>("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
 
-  const [email, setEmail] =
-    useState("");
+  const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
-  const [password, setPassword] =
-    useState("");
-
-  const [
-    confirmPassword,
-    setConfirmPassword,
-  ] = useState("");
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [
-    checkingSession,
-    setCheckingSession,
-  ] = useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  const [message, setMessage] =
-    useState("");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     let active = true;
 
     async function checkSession() {
       try {
-        const {
-          data,
-          error: sessionError,
-        } =
-          await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
 
         if (!active) {
           return;
         }
 
-        if (sessionError) {
-          console.error(
-            sessionError,
-          );
-
-          setCheckingSession(false);
-          return;
-        }
-
         if (data.session) {
-          router.replace(
-            "/dashboard",
-          );
-
+          router.replace("/dashboard");
           return;
         }
-
-        setCheckingSession(false);
       } catch (err) {
         console.error(err);
-
+      } finally {
         if (active) {
           setCheckingSession(false);
         }
@@ -90,47 +52,99 @@ export default function AuthPage() {
     };
   }, [router]);
 
+  function changeMode(nextMode: AuthMode) {
+    setMode(nextMode);
+    setError("");
+    setMessage("");
+    setPassword("");
+    setPasswordConfirm("");
+  }
+
+  async function handleForgotPassword(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    setError("");
+    setMessage("");
+
+    if (!cleanEmail) {
+      setError("Entre ton adresse e-mail.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const redirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/reset-password`
+          : undefined;
+
+      const { error: resetError } =
+        await supabase.auth.resetPasswordForEmail(
+          cleanEmail,
+          {
+            redirectTo,
+          },
+        );
+
+      if (resetError) {
+        throw resetError;
+      }
+
+      setMessage(
+        "E-mail envoyé. Ouvre le message reçu puis clique sur le lien pour choisir un nouveau mot de passe.",
+      );
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible d'envoyer l'e-mail de réinitialisation.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
+    if (mode === "forgot") {
+      await handleForgotPassword(event);
+      return;
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
     setError("");
     setMessage("");
 
-    const cleanEmail =
-      email.trim();
-
-    if (
-      cleanEmail === "" ||
-      password === ""
-    ) {
-      setError(
-        "Entre ton adresse e-mail et ton mot de passe.",
-      );
-
+    if (!cleanEmail) {
+      setError("Entre ton adresse e-mail.");
       return;
     }
 
-    if (
-      mode === "signup" &&
-      password.length < 6
-    ) {
+    if (password.length < 6) {
       setError(
         "Le mot de passe doit contenir au moins 6 caractères.",
       );
-
       return;
     }
 
     if (
       mode === "signup" &&
-      password !== confirmPassword
+      password !== passwordConfirm
     ) {
       setError(
-        "Les mots de passe ne correspondent pas.",
+        "Les deux mots de passe ne correspondent pas.",
       );
-
       return;
     }
 
@@ -138,129 +152,88 @@ export default function AuthPage() {
 
     try {
       if (mode === "login") {
-        const {
-          error: loginError,
-        } =
-          await supabase.auth.signInWithPassword(
-            {
-              email: cleanEmail,
-              password,
-            },
-          );
+        const { error: loginError } =
+          await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password,
+          });
 
         if (loginError) {
           throw loginError;
         }
 
-        router.replace(
-          "/dashboard",
-        );
-
+        router.replace("/dashboard");
         router.refresh();
-
         return;
       }
+
+      const emailRedirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/onboarding`
+          : undefined;
 
       const {
         data,
         error: signupError,
-      } =
-        await supabase.auth.signUp({
-          email: cleanEmail,
-          password,
-        });
+      } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          emailRedirectTo,
+        },
+      });
 
       if (signupError) {
         throw signupError;
       }
 
       if (data.session) {
-        router.replace(
-          "/dashboard",
-        );
-
+        router.replace("/onboarding");
         router.refresh();
-
         return;
       }
 
       setMessage(
-        "✅ Compte créé. Vérifie ton adresse e-mail pour confirmer ton compte.",
+        "Compte créé. Vérifie ta boîte mail puis clique sur le lien de confirmation. Tu seras ensuite dirigé vers la création de ton premier site.",
       );
-
-      setPassword("");
-      setConfirmPassword("");
     } catch (err) {
       console.error(err);
 
-      if (
-        err instanceof Error
-      ) {
-        const text =
+      if (err instanceof Error) {
+        const lowerMessage =
           err.message.toLowerCase();
 
         if (
-          text.includes(
+          lowerMessage.includes(
             "invalid login credentials",
+          ) ||
+          lowerMessage.includes(
+            "invalid credentials",
           )
         ) {
           setError(
-            "Adresse e-mail ou mot de passe incorrect.",
+            "E-mail ou mot de passe incorrect.",
           );
-
-          return;
-        }
-
-        if (
-          text.includes(
+        } else if (
+          lowerMessage.includes(
             "user already registered",
+          ) ||
+          lowerMessage.includes(
+            "already registered",
           )
         ) {
           setError(
             "Un compte existe déjà avec cette adresse e-mail.",
           );
-
-          return;
+        } else {
+          setError(err.message);
         }
-
-        if (
-          text.includes(
-            "email not confirmed",
-          )
-        ) {
-          setError(
-            "Confirme d'abord ton adresse e-mail.",
-          );
-
-          return;
-        }
-
-        setError(
-          err.message,
-        );
-
-        return;
+      } else {
+        setError("Une erreur est survenue.");
       }
-
-      setError(
-        "Une erreur est survenue.",
-      );
     } finally {
       setLoading(false);
     }
-  }
-
-  function switchMode(
-    newMode:
-      | "login"
-      | "signup",
-  ) {
-    setMode(newMode);
-
-    setError("");
-    setMessage("");
-    setPassword("");
-    setConfirmPassword("");
   }
 
   if (checkingSession) {
@@ -272,7 +245,7 @@ export default function AuthPage() {
           </div>
 
           <p className="mt-4 text-slate-400">
-            Vérification de la session...
+            Chargement...
           </p>
         </div>
       </main>
@@ -280,203 +253,244 @@ export default function AuthPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-12 text-white">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-black">
+    <main className="min-h-screen bg-slate-950 text-white">
+      <header className="border-b border-slate-800">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          <Link
+            href="/"
+            className="text-2xl font-black"
+          >
             Site
             <span className="text-blue-500">
               AI
             </span>
+          </Link>
+
+          <Link
+            href="/"
+            className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-blue-500 hover:text-white"
+          >
+            ← Accueil
+          </Link>
+        </div>
+      </header>
+
+      <section className="mx-auto grid min-h-[calc(100vh-81px)] max-w-7xl items-center gap-12 px-6 py-12 lg:grid-cols-2">
+        <div className="hidden lg:block">
+          <p className="text-sm font-black uppercase tracking-[0.3em] text-blue-400">
+            SiteAI
+          </p>
+
+          <h1 className="mt-5 max-w-xl text-5xl font-black leading-tight">
+            Crée le site de ton entreprise avec l&apos;IA.
           </h1>
 
-          <p className="mt-3 text-slate-400">
-            {mode === "login"
-              ? "Connecte-toi à ton espace."
-              : "Crée ton compte SiteAI."}
+          <p className="mt-6 max-w-xl text-lg leading-8 text-slate-400">
+            Connecte-toi à ton espace ou crée ton
+            compte pour générer, personnaliser et
+            publier ton site.
           </p>
+
+          <div className="mt-9 grid max-w-xl gap-4">
+            {[
+              "✨ Génération de site avec l’IA",
+              "✍️ Modification depuis un éditeur simple",
+              "🚀 Publication et gestion depuis ton dashboard",
+            ].map((item) => (
+              <div
+                key={item}
+                className="rounded-2xl border border-slate-800 bg-slate-900 p-5 font-semibold text-slate-300"
+              >
+                {item}
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
-          <div className="mb-8 grid grid-cols-2 rounded-xl bg-slate-950 p-1">
-            <button
-              type="button"
-              onClick={() =>
-                switchMode(
-                  "login",
-                )
-              }
-              className={`rounded-lg px-4 py-3 text-sm font-bold transition ${
-                mode === "login"
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Connexion
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                switchMode(
-                  "signup",
-                )
-              }
-              className={`rounded-lg px-4 py-3 text-sm font-bold transition ${
-                mode === "signup"
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Créer un compte
-            </button>
-          </div>
-
-          <form
-            onSubmit={
-              handleSubmit
-            }
-            className="space-y-5"
-          >
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-sm text-slate-400"
-              >
-                Adresse e-mail
-              </label>
-
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(
-                  event,
-                ) =>
-                  setEmail(
-                    event.target
-                      .value,
-                  )
-                }
-                placeholder="ton@email.com"
-                required
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-sm text-slate-400"
-              >
-                Mot de passe
-              </label>
-
-              <input
-                id="password"
-                type="password"
-                autoComplete={
-                  mode === "login"
-                    ? "current-password"
-                    : "new-password"
-                }
-                value={password}
-                onChange={(
-                  event,
-                ) =>
-                  setPassword(
-                    event.target
-                      .value,
-                  )
-                }
-                placeholder="••••••••"
-                required
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500"
-              />
-            </div>
-
-            {mode ===
-              "signup" && (
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="mb-2 block text-sm text-slate-400"
+        <div className="mx-auto w-full max-w-md">
+          <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7 shadow-2xl shadow-black/20 sm:p-9">
+            {mode !== "forgot" && (
+              <div className="grid grid-cols-2 rounded-xl bg-slate-950 p-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    changeMode("login")
+                  }
+                  className={`rounded-lg px-4 py-3 text-sm font-black transition ${
+                    mode === "login"
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-400 hover:text-white"
+                  }`}
                 >
-                  Confirme le mot de passe
+                  Connexion
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    changeMode("signup")
+                  }
+                  className={`rounded-lg px-4 py-3 text-sm font-black transition ${
+                    mode === "signup"
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Créer un compte
+                </button>
+              </div>
+            )}
+
+            <div className="mt-8">
+              <h2 className="text-3xl font-black">
+                {mode === "login"
+                  ? "Bon retour 👋"
+                  : mode === "signup"
+                    ? "Bienvenue sur SiteAI ✨"
+                    : "Mot de passe oublié 🔐"}
+              </h2>
+
+              <p className="mt-3 leading-7 text-slate-400">
+                {mode === "login"
+                  ? "Connecte-toi pour retrouver tes sites."
+                  : mode === "signup"
+                    ? "Crée ton compte puis configure ton premier site."
+                    : "Entre ton adresse e-mail. Nous t'enverrons un lien pour choisir un nouveau mot de passe."}
+              </p>
+            </div>
+
+            <form
+              onSubmit={handleSubmit}
+              className="mt-8 space-y-5"
+            >
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-400">
+                  Adresse e-mail
                 </label>
 
                 <input
-                  id="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  value={
-                    confirmPassword
-                  }
-                  onChange={(
-                    event,
-                  ) =>
-                    setConfirmPassword(
-                      event.target
-                        .value,
+                  type="email"
+                  value={email}
+                  onChange={(event) =>
+                    setEmail(
+                      event.target.value,
                     )
                   }
-                  placeholder="••••••••"
+                  placeholder="toi@entreprise.fr"
+                  autoComplete="email"
                   required
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500"
                 />
               </div>
-            )}
 
-            {error && (
-              <div className="rounded-xl border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-300">
-                {error}
-              </div>
-            )}
+              {mode !== "forgot" && (
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-slate-400">
+                    Mot de passe
+                  </label>
 
-            {message && (
-              <div className="rounded-xl border border-emerald-900 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300">
-                {message}
-              </div>
-            )}
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) =>
+                      setPassword(
+                        event.target.value,
+                      )
+                    }
+                    placeholder="••••••••"
+                    autoComplete={
+                      mode === "login"
+                        ? "current-password"
+                        : "new-password"
+                    }
+                    required
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500"
+                  />
+                </div>
+              )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-blue-600 px-4 py-3 font-bold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading
-                ? "Chargement..."
-                : mode ===
-                    "login"
-                  ? "Se connecter"
-                  : "Créer mon compte"}
-            </button>
-          </form>
+              {mode === "signup" && (
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-slate-400">
+                    Confirmer le mot de passe
+                  </label>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
-            {mode === "login"
-              ? "Pas encore de compte ?"
-              : "Tu as déjà un compte ?"}
-          </p>
+                  <input
+                    type="password"
+                    value={passwordConfirm}
+                    onChange={(event) =>
+                      setPasswordConfirm(
+                        event.target.value,
+                      )
+                    }
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    required
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500"
+                  />
+                </div>
+              )}
 
-          <button
-            type="button"
-            onClick={() =>
-              switchMode(
-                mode === "login"
-                  ? "signup"
-                  : "login",
-              )
-            }
-            className="mt-2 w-full text-center text-sm font-semibold text-blue-400 hover:text-blue-300"
-          >
-            {mode === "login"
-              ? "Créer un compte"
-              : "Se connecter"}
-          </button>
+              {mode === "login" && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      changeMode("forgot")
+                    }
+                    className="text-sm font-semibold text-blue-400 hover:text-blue-300"
+                  >
+                    Mot de passe oublié ?
+                  </button>
+                </div>
+              )}
+
+              {error && (
+                <div className="rounded-xl border border-red-900 bg-red-950/30 p-4 text-sm leading-6 text-red-300">
+                  {error}
+                </div>
+              )}
+
+              {message && (
+                <div className="rounded-xl border border-emerald-900 bg-emerald-950/30 p-4 text-sm leading-6 text-emerald-300">
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-blue-600 px-5 py-4 font-black transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading
+                  ? "Chargement..."
+                  : mode === "login"
+                    ? "Se connecter"
+                    : mode === "signup"
+                      ? "Créer mon compte"
+                      : "Envoyer le lien"}
+              </button>
+
+              {mode === "forgot" && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    changeMode("login")
+                  }
+                  className="w-full rounded-xl border border-slate-700 px-5 py-4 text-sm font-bold text-slate-300 transition hover:border-blue-500"
+                >
+                  ← Retour à la connexion
+                </button>
+              )}
+            </form>
+
+            <p className="mt-6 text-center text-xs leading-5 text-slate-500">
+              En continuant, tu accèdes à ton espace
+              SiteAI.
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 }

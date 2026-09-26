@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import SitePreview from "@/components/SitePreview";
+import SiteAnalyticsTracker from "@/components/SiteAnalyticsTracker";
 
 type SiteSection = {
   title: string;
@@ -409,6 +410,12 @@ export default async function PublicSitePage(
               "\\u003c",
             ),
         }}
+      />
+
+      <SiteAnalyticsTracker
+        publicSlug={
+          publicSite.publicSlug
+        }
       />
 
       <main className="min-h-screen">

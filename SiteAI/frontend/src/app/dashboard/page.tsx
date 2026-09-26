@@ -64,6 +64,29 @@ type BillingStatus = {
   customDomainAllowed?: boolean;
 };
 
+type LeadSummary = {
+  id: number;
+  status: string;
+};
+
+type SiteAnalyticsSummary = {
+  siteId: number;
+  publicSlug: string;
+  businessName: string;
+  views30d: number;
+  visitors30d: number;
+  leads30d: number;
+  conversionRate: number;
+};
+
+type AnalyticsSummary = {
+  views30d: number;
+  visitors30d: number;
+  leads30d: number;
+  conversionRate: number;
+  sites: SiteAnalyticsSummary[];
+};
+
 function readablePlan(plan: string) {
   switch (plan.toLowerCase()) {
     case "essentiel":
@@ -115,9 +138,13 @@ export default function DashboardPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [sitesLoading, setSitesLoading] = useState(true);
   const [billingLoading, setBillingLoading] = useState(true);
+  const [leadsLoading, setLeadsLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
   const [sites, setSites] = useState<SavedSite[]>([]);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [leads, setLeads] = useState<LeadSummary[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -150,7 +177,12 @@ export default function DashboardPage() {
         setUserEmail(data.session.user.email ?? "");
         setAuthLoading(false);
 
-        await Promise.all([loadSites(), loadBilling()]);
+        await Promise.all([
+          loadSites(),
+          loadBilling(),
+          loadLeads(),
+          loadAnalytics(),
+        ]);
       } catch (err) {
         console.error(err);
         if (active) {
@@ -233,6 +265,46 @@ export default function DashboardPage() {
       setError("Impossible de charger tes sites.");
     } finally {
       setSitesLoading(false);
+    }
+  }
+
+  async function loadLeads() {
+    setLeadsLoading(true);
+
+    try {
+      const response = await authenticatedFetch("/leads");
+
+      if (!response.ok) {
+        throw new Error("Impossible de récupérer les prospects.");
+      }
+
+      const data = (await response.json()) as LeadSummary[];
+      setLeads(data);
+    } catch (err) {
+      console.error(err);
+      setLeads([]);
+    } finally {
+      setLeadsLoading(false);
+    }
+  }
+
+  async function loadAnalytics() {
+    setAnalyticsLoading(true);
+
+    try {
+      const response = await authenticatedFetch("/analytics/summary");
+
+      if (!response.ok) {
+        throw new Error("Impossible de récupérer les statistiques.");
+      }
+
+      const data = (await response.json()) as AnalyticsSummary;
+      setAnalytics(data);
+    } catch (err) {
+      console.error(err);
+      setAnalytics(null);
+    } finally {
+      setAnalyticsLoading(false);
     }
   }
 
@@ -517,6 +589,7 @@ export default function DashboardPage() {
 
   const publishedSites = sites.filter((site) => site.published).length;
   const draftSites = sites.length - publishedSites;
+  const newLeadsCount = leads.filter((lead) => lead.status === "new").length;
 
   const filteredSites = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -576,6 +649,19 @@ export default function DashboardPage() {
 
             <button
               type="button"
+              onClick={() => router.push("/prospects")}
+              className="relative rounded-xl border border-emerald-800 px-4 py-2 text-sm font-bold text-emerald-300 transition hover:bg-emerald-950"
+            >
+              📥 Prospects
+              {!leadsLoading && newLeadsCount > 0 && (
+                <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950">
+                  {newLeadsCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={() => router.push("/pricing")}
               className="rounded-xl border border-violet-700 px-4 py-2 text-sm font-bold text-violet-300 transition hover:bg-violet-950"
             >
@@ -627,7 +713,7 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
           <button
             type="button"
             onClick={() => setFilter("all")}
@@ -669,6 +755,27 @@ export default function DashboardPage() {
             <p className="mt-2 text-4xl font-black text-amber-400">
               {draftSites}
             </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push("/prospects")}
+            className="rounded-2xl border border-emerald-900 bg-emerald-950/20 p-6 text-left transition hover:border-emerald-500"
+          >
+            <p className="text-sm text-emerald-300">Prospects</p>
+
+            {leadsLoading ? (
+              <p className="mt-3 text-sm text-slate-500">Chargement...</p>
+            ) : (
+              <>
+                <p className="mt-2 text-4xl font-black text-emerald-400">
+                  {newLeadsCount}
+                </p>
+                <p className="mt-2 text-xs text-slate-500">
+                  {leads.length} demande{leads.length > 1 ? "s" : ""} au total
+                </p>
+              </>
+            )}
           </button>
 
           <button
@@ -742,6 +849,168 @@ export default function DashboardPage() {
           </div>
         )}
 
+        <section className="mt-10">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-400">
+                Statistiques
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black">
+                Performance des 30 derniers jours
+              </h2>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Visiteurs, pages vues, prospects et taux de conversion de tes sites publiés.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={loadAnalytics}
+              disabled={analyticsLoading}
+              className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-bold text-slate-300 hover:border-cyan-500 disabled:opacity-50"
+            >
+              ↻ Actualiser les stats
+            </button>
+          </div>
+
+          {analyticsLoading ? (
+            <div className="mt-5 rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-500">
+              Chargement des statistiques...
+            </div>
+          ) : analytics ? (
+            <>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-cyan-900/70 bg-cyan-950/20 p-6">
+                  <p className="text-sm text-cyan-300">
+                    Visiteurs uniques
+                  </p>
+
+                  <p className="mt-2 text-4xl font-black text-cyan-400">
+                    {analytics.visitors30d}
+                  </p>
+
+                  <p className="mt-2 text-xs text-slate-500">
+                    Sur les 30 derniers jours
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-6">
+                  <p className="text-sm text-blue-300">
+                    Pages vues
+                  </p>
+
+                  <p className="mt-2 text-4xl font-black text-blue-400">
+                    {analytics.views30d}
+                  </p>
+
+                  <p className="mt-2 text-xs text-slate-500">
+                    Toutes visites confondues
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-6">
+                  <p className="text-sm text-emerald-300">
+                    Prospects
+                  </p>
+
+                  <p className="mt-2 text-4xl font-black text-emerald-400">
+                    {analytics.leads30d}
+                  </p>
+
+                  <p className="mt-2 text-xs text-slate-500">
+                    Demandes reçues sur 30 jours
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-6">
+                  <p className="text-sm text-violet-300">
+                    Conversion
+                  </p>
+
+                  <p className="mt-2 text-4xl font-black text-violet-400">
+                    {analytics.conversionRate.toFixed(1)} %
+                  </p>
+
+                  <p className="mt-2 text-xs text-slate-500">
+                    Prospects / visiteurs uniques
+                  </p>
+                </div>
+              </div>
+
+              {analytics.sites.length > 0 && (
+                <div className="mt-5 overflow-hidden rounded-3xl border border-slate-800 bg-slate-900">
+                  <div className="border-b border-slate-800 px-6 py-5">
+                    <h3 className="font-black">
+                      Détail par site
+                    </h3>
+                  </div>
+
+                  <div className="divide-y divide-slate-800">
+                    {analytics.sites.map((siteStats) => (
+                      <div
+                        key={siteStats.siteId}
+                        className="grid gap-4 px-6 py-5 md:grid-cols-[1.5fr_repeat(4,minmax(90px,1fr))] md:items-center"
+                      >
+                        <div>
+                          <p className="font-bold">
+                            {siteStats.businessName}
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-600">
+                            {siteStats.publicSlug || "Non publié"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-slate-500">
+                            Visiteurs
+                          </p>
+                          <p className="mt-1 font-black">
+                            {siteStats.visitors30d}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-slate-500">
+                            Vues
+                          </p>
+                          <p className="mt-1 font-black">
+                            {siteStats.views30d}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-slate-500">
+                            Prospects
+                          </p>
+                          <p className="mt-1 font-black text-emerald-400">
+                            {siteStats.leads30d}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-slate-500">
+                            Conversion
+                          </p>
+                          <p className="mt-1 font-black text-violet-400">
+                            {siteStats.conversionRate.toFixed(1)} %
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="mt-5 rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-500">
+              Les statistiques ne sont pas encore disponibles.
+            </div>
+          )}
+        </section>
+
         {error && (
           <div className="mt-8 rounded-xl border border-red-900 bg-red-950/40 px-5 py-4 text-red-300">
             {error}
@@ -800,6 +1069,8 @@ export default function DashboardPage() {
                 onClick={() => {
                   loadSites();
                   loadBilling();
+                  loadLeads();
+                  loadAnalytics();
                 }}
                 className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-blue-500"
               >

@@ -380,7 +380,7 @@ export default function HomePage() {
 
                 <div className="mt-7 flex items-end gap-2">
                   <span className="text-4xl font-black">{plan.price}</span>
-                  <span className="pb-1 text-slate-500">/ mois</span>
+                  <span className="pb-1 text-slate-300">/ mois</span>
                 </div>
 
                 <ul className="mt-8 flex-1 space-y-4">
@@ -457,7 +457,7 @@ export default function HomePage() {
       </section>
 
       <footer className="border-t border-slate-800">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 px-6 py-8 text-sm text-slate-500 md:flex-row md:items-center">
+        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 px-6 py-8 text-sm text-slate-300 md:flex-row md:items-center">
           <div>
             <span className="font-black text-white">
               Site<span className="text-blue-500">AI</span>
@@ -472,6 +472,18 @@ export default function HomePage() {
             <a href="#tarifs" className="hover:text-white">
               Tarifs
             </a>
+            <Link href="/mentions-legales" className="hover:text-white">
+              Mentions légales
+            </Link>
+            <Link href="/confidentialite" className="hover:text-white">
+              Confidentialité
+            </Link>
+            <Link href="/cgu" className="hover:text-white">
+              CGU
+            </Link>
+            <Link href="/cgv" className="hover:text-white">
+              CGV
+            </Link>
             <Link href="/auth" className="hover:text-white">
               Connexion
             </Link>
