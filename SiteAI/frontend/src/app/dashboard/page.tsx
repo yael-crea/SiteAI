@@ -66,7 +66,11 @@ type BillingStatus = {
 
 type LeadSummary = {
   id: number;
+  siteId: number;
+  businessName: string;
   status: string;
+  archived?: boolean;
+  createdAt: string;
 };
 
 type SiteAnalyticsSummary = {
@@ -129,6 +133,26 @@ function formatBillingDate(value?: string) {
     day: "2-digit",
     month: "long",
     year: "numeric",
+  });
+}
+
+function isValidDate(value: string) {
+  const date = new Date(value);
+  return !Number.isNaN(date.getTime());
+}
+
+function startOfDay(date: Date) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+  );
+}
+
+function formatShortDay(date: Date) {
+  return date.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
   });
 }
 
@@ -591,6 +615,115 @@ export default function DashboardPage() {
   const draftSites = sites.length - publishedSites;
   const newLeadsCount = leads.filter((lead) => lead.status === "new").length;
 
+  const commercialStats = useMemo(() => {
+    const today = startOfDay(new Date());
+    const thirtyDaysAgo = new Date(today);
+
+    thirtyDaysAgo.setDate(
+      thirtyDaysAgo.getDate() - 29,
+    );
+
+    const activeLeads = leads.filter(
+      (lead) =>
+        lead.archived !== true &&
+        isValidDate(lead.createdAt),
+    );
+
+    const leads30d = activeLeads.filter(
+      (lead) =>
+        new Date(lead.createdAt) >=
+        thirtyDaysAgo,
+    );
+
+    const new30d = leads30d.filter(
+      (lead) => lead.status === "new",
+    ).length;
+
+    const contacted30d = leads30d.filter(
+      (lead) => lead.status === "contacted",
+    ).length;
+
+    const quoteSent30d = leads30d.filter(
+      (lead) => lead.status === "quote_sent",
+    ).length;
+
+    const won30d = leads30d.filter(
+      (lead) => lead.status === "won",
+    ).length;
+
+    const lost30d = leads30d.filter(
+      (lead) => lead.status === "lost",
+    ).length;
+
+    const commercialConversion =
+      leads30d.length > 0
+        ? (won30d / leads30d.length) * 100
+        : 0;
+
+    const closed30d = won30d + lost30d;
+
+    const winRate =
+      closed30d > 0
+        ? (won30d / closed30d) * 100
+        : 0;
+
+    const daily = Array.from(
+      { length: 30 },
+      (_, index) => {
+        const date = new Date(thirtyDaysAgo);
+
+        date.setDate(
+          thirtyDaysAgo.getDate() + index,
+        );
+
+        const start = startOfDay(date);
+        const end = new Date(start);
+
+        end.setDate(
+          end.getDate() + 1,
+        );
+
+        const count = leads30d.filter(
+          (lead) => {
+            const createdAt = new Date(
+              lead.createdAt,
+            );
+
+            return (
+              createdAt >= start &&
+              createdAt < end
+            );
+          },
+        ).length;
+
+        return {
+          date: start,
+          count,
+        };
+      },
+    );
+
+    const maxDaily = Math.max(
+      1,
+      ...daily.map(
+        (item) => item.count,
+      ),
+    );
+
+    return {
+      total30d: leads30d.length,
+      new30d,
+      contacted30d,
+      quoteSent30d,
+      won30d,
+      lost30d,
+      commercialConversion,
+      winRate,
+      daily,
+      maxDaily,
+    };
+  }, [leads]);
+
   const filteredSites = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -848,6 +981,252 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        <section className="mt-10">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-400">
+                Commercial
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black">
+                Pipeline des 30 derniers jours
+              </h2>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Prospects créés sur 30 jours, classés selon leur statut actuel.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push("/prospects")}
+              className="rounded-xl border border-emerald-800 px-4 py-2 text-sm font-bold text-emerald-300 hover:bg-emerald-950"
+            >
+              Ouvrir le CRM →
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <p className="text-sm text-slate-400">
+                Prospects créés
+              </p>
+              <p className="mt-2 text-3xl font-black">
+                {commercialStats.total30d}
+              </p>
+              <p className="mt-2 text-xs text-slate-600">
+                Sur 30 jours
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-5">
+              <p className="text-sm text-blue-300">
+                Devis envoyés
+              </p>
+              <p className="mt-2 text-3xl font-black text-blue-400">
+                {commercialStats.quoteSent30d}
+              </p>
+              <p className="mt-2 text-xs text-slate-600">
+                Statut actuel
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-5">
+              <p className="text-sm text-emerald-300">
+                Gagnés
+              </p>
+              <p className="mt-2 text-3xl font-black text-emerald-400">
+                {commercialStats.won30d}
+              </p>
+              <p className="mt-2 text-xs text-slate-600">
+                Clients convertis
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-red-900/70 bg-red-950/20 p-5">
+              <p className="text-sm text-red-300">
+                Perdus
+              </p>
+              <p className="mt-2 text-3xl font-black text-red-400">
+                {commercialStats.lost30d}
+              </p>
+              <p className="mt-2 text-xs text-slate-600">
+                Opportunités perdues
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-5">
+              <p className="text-sm text-violet-300">
+                Conversion commerciale
+              </p>
+              <p className="mt-2 text-3xl font-black text-violet-400">
+                {commercialStats.commercialConversion.toFixed(1)} %
+              </p>
+              <p className="mt-2 text-xs text-slate-600">
+                Gagnés / prospects créés
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-5 xl:grid-cols-[1.5fr_1fr]">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h3 className="font-black">
+                    Nouveaux prospects par jour
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Activité sur les 30 derniers jours
+                  </p>
+                </div>
+
+                <p className="text-sm font-bold text-slate-400">
+                  {commercialStats.total30d} au total
+                </p>
+              </div>
+
+              <div className="mt-7 overflow-x-auto pb-2">
+                <div className="flex min-w-[720px] items-end gap-2">
+                  {commercialStats.daily.map(
+                    (item, index) => {
+                      const height =
+                        item.count === 0
+                          ? 8
+                          : Math.max(
+                              18,
+                              Math.round(
+                                (item.count /
+                                  commercialStats.maxDaily) *
+                                  120,
+                              ),
+                            );
+
+                      const showLabel =
+                        index === 0 ||
+                        index ===
+                          commercialStats.daily.length - 1 ||
+                        index % 5 === 0;
+
+                      return (
+                        <div
+                          key={item.date.toISOString()}
+                          className="flex min-w-0 flex-1 flex-col items-center justify-end"
+                          title={`${formatShortDay(item.date)} : ${item.count} prospect${item.count > 1 ? "s" : ""}`}
+                        >
+                          <span className="mb-2 text-[10px] font-bold text-slate-500">
+                            {item.count > 0 ? item.count : ""}
+                          </span>
+
+                          <div
+                            className={`w-full rounded-t-md ${
+                              item.count > 0
+                                ? "bg-emerald-500"
+                                : "bg-slate-800"
+                            }`}
+                            style={{
+                              height: `${height}px`,
+                            }}
+                          />
+
+                          <span className="mt-2 h-4 text-[9px] text-slate-600">
+                            {showLabel
+                              ? formatShortDay(item.date)
+                              : ""}
+                          </span>
+                        </div>
+                      );
+                    },
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+              <h3 className="font-black">
+                Répartition du pipeline
+              </h3>
+
+              <p className="mt-1 text-xs text-slate-500">
+                Statuts actuels des prospects créés sur 30 jours
+              </p>
+
+              <div className="mt-6 space-y-4">
+                {[
+                  {
+                    label: "Nouveaux",
+                    value: commercialStats.new30d,
+                    className: "bg-blue-500",
+                  },
+                  {
+                    label: "Contactés",
+                    value: commercialStats.contacted30d,
+                    className: "bg-cyan-500",
+                  },
+                  {
+                    label: "Devis envoyés",
+                    value: commercialStats.quoteSent30d,
+                    className: "bg-violet-500",
+                  },
+                  {
+                    label: "Gagnés",
+                    value: commercialStats.won30d,
+                    className: "bg-emerald-500",
+                  },
+                  {
+                    label: "Perdus",
+                    value: commercialStats.lost30d,
+                    className: "bg-red-500",
+                  },
+                ].map((item) => {
+                  const percentage =
+                    commercialStats.total30d > 0
+                      ? (item.value /
+                          commercialStats.total30d) *
+                        100
+                      : 0;
+
+                  return (
+                    <div key={item.label}>
+                      <div className="flex items-center justify-between gap-4 text-sm">
+                        <span className="text-slate-300">
+                          {item.label}
+                        </span>
+
+                        <span className="font-black">
+                          {item.value}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
+                        <div
+                          className={`h-full rounded-full ${item.className}`}
+                          style={{
+                            width: `${percentage}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                  Taux de réussite
+                </p>
+
+                <p className="mt-2 text-2xl font-black text-emerald-400">
+                  {commercialStats.winRate.toFixed(1)} %
+                </p>
+
+                <p className="mt-1 text-xs text-slate-600">
+                  Gagnés parmi les opportunités clôturées
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section className="mt-10">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
