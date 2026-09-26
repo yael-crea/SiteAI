@@ -584,6 +584,7 @@ export default function Home() {
   const router = useRouter();
   const mobileSteps = ["Infos", "Contenu", "Apparence", "Aperçu", "Publication"] as const;
   const [mobileStep, setMobileStep] = useState(0);
+  const [desktopPanel, setDesktopPanel] = useState<"infos" | "contenu" | "apparence" | "ia" | "publication" | "sites" | "apercu" | null>(null);
   const [isMobileBuilder, setIsMobileBuilder] = useState(false);
   const mobileHeadingRef = useRef<HTMLHeadingElement | null>(null);
 
@@ -645,6 +646,8 @@ export default function Home() {
 
   const [site, setSite] =
     useState<GeneratedSite | null>(null);
+
+  const activeDesktopPanel = desktopPanel ?? (site ? "apercu" : "infos");
 
   const [loading, setLoading] =
     useState(false);
@@ -1034,6 +1037,7 @@ export default function Home() {
       };
 
       setSite(generatedSite);
+      setDesktopPanel("apercu");
       if (window.matchMedia("(width < 48rem)").matches) navigateMobileStep(1);
       setBusinessName(
         generatedSite.businessName ||
@@ -1711,6 +1715,7 @@ export default function Home() {
     setSavedSiteID(null);
     setSite(null);
     setMobileStep(0);
+    setDesktopPanel(null);
 
     setBusinessName("");
     setActivity("");
@@ -2994,7 +2999,7 @@ export default function Home() {
   }
 
   return (
-    <main data-mobile-step={mobileStep} data-siteai-builder className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
+    <main data-desktop-panel={activeDesktopPanel} data-mobile-step={mobileStep} data-siteai-builder className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto max-w-[1800px] px-4 py-4 lg:px-6">
           <div className="flex items-center justify-between gap-3">
@@ -3116,6 +3121,20 @@ export default function Home() {
         </div>
       </header>
 
+      <nav aria-label="Outils du builder" className="hidden shrink-0 items-center gap-2 overflow-x-auto border-b border-slate-800 bg-slate-900/60 px-5 py-3 md:flex">
+        {([
+          ["apercu", "Aperçu"], ["infos", "Infos"], ["contenu", "Contenu"],
+          ["apparence", "Apparence"], ["ia", "Assistant IA"], ["sites", "Mes sites"],
+          ["publication", "Sauvegarder / Publier"],
+        ] as const).map(([value, label]) => (
+          <button key={value} type="button" disabled={!site && !["infos", "sites"].includes(value)}
+            aria-pressed={activeDesktopPanel === value}
+            onClick={() => { setDesktopPanel(value); setEditorCollapsed(false); }}
+            className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-30 ${activeDesktopPanel === value ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}>
+            {label}
+          </button>
+        ))}
+      </nav>
       <div className="px-4 pt-5 md:hidden">
         <nav aria-label="Étapes de création du site" className="grid grid-cols-5 gap-1">
           {mobileSteps.map((label, index) => (
@@ -3140,6 +3159,38 @@ export default function Home() {
         </p>
       </div>
       <style>{`
+        @media (width >= 48rem) {
+          [data-siteai-builder] { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+          [data-siteai-builder] > header { flex-shrink: 0; }
+          [data-siteai-builder] > header > div { max-width: none; padding-top: .65rem; padding-bottom: .65rem; }
+          [data-builder-section] { width: 100%; max-width: none; flex: 1; min-height: 0; padding: 1rem; }
+          [data-builder-section] > [data-mobile-hide] { display: none; }
+          [data-builder-grid] { height: 100%; min-height: 0; grid-template-columns: 320px minmax(0, 1fr); gap: 1rem; }
+          [data-builder-editor] { display: block; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: .25rem; }
+          [data-builder-editor] > * { display: none; margin: 0; }
+          [data-desktop-panel="infos"] form[data-mobile-panel="infos"],
+          [data-desktop-panel="sites"] [data-desktop-sites],
+          [data-desktop-panel="ia"] [data-desktop-ai],
+          [data-desktop-panel="publication"] [data-mobile-panel="publication"],
+          [data-desktop-panel="contenu"] [data-mobile-manual],
+          [data-desktop-panel="apparence"] [data-mobile-manual] { display: block; padding: 1.25rem; border-radius: 1rem; }
+          [data-mobile-manual] > div:first-child { display: none; }
+          [data-mobile-fields] { margin-top: 0; }
+          [data-desktop-save] { display: none; }
+          [data-desktop-panel="contenu"] [data-mobile-appearance] { display: none; }
+          [data-desktop-panel="apparence"] [data-mobile-fields] > :not([data-mobile-appearance]) { display: none; }
+          [data-desktop-panel="apparence"] [data-mobile-appearance] { border: 0; padding: 0; margin: 0; }
+          [data-desktop-panel="apercu"] [data-builder-grid] { grid-template-columns: minmax(0, 1fr); }
+          [data-desktop-panel="apercu"] [data-builder-editor] { display: none; }
+          [data-desktop-preview] { position: static; align-self: stretch; min-height: 0; overflow: auto; border-radius: 1rem; scrollbar-width: thin; }
+          [data-desktop-preview] > div:first-child { position: sticky; top: 0; z-index: 10; background: #0b1222; padding: .75rem 1rem; }
+          [data-desktop-preview] > div:first-child > div { flex-direction: row; flex-wrap: wrap; }
+          [data-desktop-preview] > div:first-child > div > div:first-child { display: none; }
+          [data-desktop-preview] > div:first-child > div > div:last-child > button:first-child { display: none; }
+          [data-desktop-preview] > div:nth-child(2) { padding: .75rem; }
+          [data-desktop-preview] > div:nth-child(2) > p { display: none; }
+        }
+
         @media (width < 48rem) {
           [data-siteai-builder] [data-mobile-hide] { display: none !important; }
           [data-builder-section] { padding-top: 1rem; padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
@@ -3463,7 +3514,7 @@ export default function Home() {
                   </button>
                 </div>
 
-                {(manualEditorOpen || isMobileBuilder) && (
+                {(manualEditorOpen || isMobileBuilder || activeDesktopPanel === "contenu" || activeDesktopPanel === "apparence") && (
                   <div data-mobile-fields className="mt-6 space-y-6">
                     <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
                       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
@@ -4911,7 +4962,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <button data-mobile-hide
+                    <button data-desktop-save data-mobile-hide
                       type="button"
                       onClick={
                         saveCurrentSite
@@ -5054,7 +5105,7 @@ export default function Home() {
             )}
 
             {site && (
-              <div data-mobile-panel="contenu" className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
+              <div data-desktop-ai data-mobile-panel="contenu" className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
                 <h2 className="text-xl font-bold">
                   ✨ Modifier avec l&apos;IA
                 </h2>
@@ -5134,7 +5185,7 @@ export default function Home() {
               </div>
             )}
 
-            <div data-mobile-panel="infos" className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
+            <div data-desktop-sites data-mobile-panel="infos" className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">
                   📂 Mes sites
@@ -5253,7 +5304,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div data-mobile-hide className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 xl:sticky xl:top-6 xl:self-start">
+          <div data-desktop-preview data-mobile-hide className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 xl:sticky xl:top-6 xl:self-start">
             {!site ? (
               <div className="flex min-h-[700px] items-center justify-center text-center">
                 <div>
