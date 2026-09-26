@@ -589,6 +589,9 @@ export default function Home() {
   const [userEmail, setUserEmail] =
     useState("");
 
+  const [builderMobileMenuOpen, setBuilderMobileMenuOpen] =
+    useState(false);
+
   const [businessName, setBusinessName] =
     useState("");
 
@@ -2968,69 +2971,135 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-slate-800">
-        <div className="mx-auto flex max-w-[1800px] items-center justify-between px-4 py-5 lg:px-6">
-          <button
-            type="button"
-            onClick={returnToDashboard}
-            className="text-2xl font-black"
-          >
-            Site
-            <span className="text-blue-500">
-              AI
-            </span>
-          </button>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden text-right md:block">
-              <p className="text-xs text-slate-500">
-                Connecté avec
-              </p>
-
-              <p className="text-sm font-medium">
-                {userEmail}
-              </p>
-            </div>
-
+    <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+        <div className="mx-auto max-w-[1800px] px-4 py-4 lg:px-6">
+          <div className="flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={returnToDashboard}
-              className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold hover:border-blue-500"
+              className="shrink-0 text-2xl font-black"
             >
-              ← Dashboard
+              Site
+              <span className="text-blue-500">
+                AI
+              </span>
             </button>
 
             <button
               type="button"
-              onClick={
-                createNewSite
+              onClick={() =>
+                setBuilderMobileMenuOpen(
+                  (current) => !current,
+                )
               }
-              className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold hover:border-blue-500"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-xl font-bold transition hover:border-blue-500 md:hidden"
+              aria-label={
+                builderMobileMenuOpen
+                  ? "Fermer le menu"
+                  : "Ouvrir le menu"
+              }
+              aria-expanded={builderMobileMenuOpen}
             >
-              + Nouveau site
+              {builderMobileMenuOpen ? "✕" : "☰"}
             </button>
 
-            <button
-              type="button"
-              onClick={
-                handleLogout
-              }
-              className="rounded-xl border border-red-900 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-950"
-            >
-              Déconnexion
-            </button>
+            <div className="hidden items-center gap-4 md:flex">
+              <div className="hidden text-right xl:block">
+                <p className="text-xs text-slate-500">
+                  Connecté avec
+                </p>
+
+                <p className="text-sm font-medium">
+                  {userEmail}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={returnToDashboard}
+                className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold hover:border-blue-500"
+              >
+                ← Dashboard
+              </button>
+
+              <button
+                type="button"
+                onClick={createNewSite}
+                className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold hover:border-blue-500"
+              >
+                + Nouveau site
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-xl border border-red-900 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-950"
+              >
+                Déconnexion
+              </button>
+            </div>
           </div>
+
+          {builderMobileMenuOpen && (
+            <div className="mt-4 border-t border-slate-800 pt-4 md:hidden">
+              {userEmail && (
+                <div className="mb-3 rounded-xl bg-slate-900 px-4 py-3">
+                  <p className="text-xs text-slate-500">
+                    Connecté avec
+                  </p>
+                  <p className="mt-1 break-all text-sm font-medium text-slate-200">
+                    {userEmail}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBuilderMobileMenuOpen(false);
+                    returnToDashboard();
+                  }}
+                  className="w-full rounded-xl border border-slate-700 px-4 py-3 text-left text-sm font-semibold hover:border-blue-500"
+                >
+                  ← Dashboard
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBuilderMobileMenuOpen(false);
+                    createNewSite();
+                  }}
+                  className="w-full rounded-xl border border-slate-700 px-4 py-3 text-left text-sm font-semibold hover:border-blue-500"
+                >
+                  + Nouveau site
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBuilderMobileMenuOpen(false);
+                    void handleLogout();
+                  }}
+                  className="w-full rounded-xl border border-red-900 px-4 py-3 text-left text-sm font-semibold text-red-400 hover:bg-red-950"
+                >
+                  Déconnexion
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      <section className="mx-auto max-w-[1800px] px-4 py-10 lg:px-6 lg:py-14">
-        <div className="mb-12 text-center">
+      <section className="mx-auto max-w-[1800px] px-4 py-7 sm:py-10 lg:px-6 lg:py-14">
+        <div className="mb-8 text-center sm:mb-12">
           <p className="text-sm font-bold uppercase tracking-[0.35em] text-blue-400">
             SiteAI
           </p>
 
-          <h1 className="mt-3 text-4xl font-black md:text-6xl">
+          <h1 className="mt-3 text-3xl font-black sm:text-4xl md:text-6xl">
             Crée ton site professionnel
 
             <span className="block text-blue-500">
@@ -3057,7 +3126,7 @@ export default function Home() {
               onSubmit={
                 handleSubmit
               }
-              className="rounded-3xl border border-slate-800 bg-slate-900 p-7"
+              className="rounded-3xl border border-slate-800 bg-slate-900 p-5 sm:p-7"
             >
               <h2 className="text-2xl font-bold">
                 Ton entreprise

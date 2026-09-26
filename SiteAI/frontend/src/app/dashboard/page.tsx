@@ -979,14 +979,14 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+      <section className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-12">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-blue-400">
               Dashboard
             </p>
 
-            <h1 className="mt-3 text-4xl font-black md:text-5xl">
+            <h1 className="mt-3 text-3xl font-black sm:text-4xl md:text-5xl">
               Mes sites
             </h1>
 
@@ -1311,8 +1311,8 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="mt-7 overflow-x-auto pb-2">
-                <div className="flex min-w-[720px] items-end gap-2">
+              <div className="mt-7 w-full overflow-hidden pb-2">
+                <div className="grid grid-cols-[repeat(30,minmax(0,1fr))] items-end gap-1 sm:flex sm:min-w-[720px] sm:gap-2">
                   {commercialStats.daily.map(
                     (item, index) => {
                       const height =
@@ -1336,7 +1336,7 @@ export default function DashboardPage() {
                       return (
                         <div
                           key={item.date.toISOString()}
-                          className="flex min-w-0 flex-1 flex-col items-center justify-end"
+                          className="flex min-w-0 flex-col items-center justify-end sm:flex-1"
                           title={`${formatShortDay(item.date)} : ${item.count} prospect${item.count > 1 ? "s" : ""}`}
                         >
                           <span className="mb-2 text-[10px] font-bold text-slate-500">
@@ -1365,9 +1365,25 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
+
+              <div className="mt-5 grid grid-cols-3 gap-2 sm:hidden">
+                {commercialStats.daily.map((item) => (
+                  <div
+                    key={`mobile-${item.date.toISOString()}`}
+                    className="rounded-xl border border-slate-800 bg-slate-950/70 px-2 py-2 text-center"
+                  >
+                    <p className="text-[10px] text-slate-500">
+                      {formatShortDay(item.date)}
+                    </p>
+                    <p className="mt-1 text-sm font-black text-slate-200">
+                      {item.count}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-5 sm:p-6">
               <h3 className="font-black">
                 Répartition du pipeline
               </h3>
@@ -1631,11 +1647,11 @@ export default function DashboardPage() {
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500 lg:max-w-xl"
             />
 
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => setFilter("all")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                className={`w-full rounded-lg px-4 py-2 text-sm font-semibold sm:w-auto ${
                   filter === "all"
                     ? "bg-blue-600"
                     : "bg-slate-800 text-slate-400 hover:text-white"
@@ -1647,7 +1663,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setFilter("published")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                className={`w-full rounded-lg px-4 py-2 text-sm font-semibold sm:w-auto ${
                   filter === "published"
                     ? "bg-emerald-600"
                     : "bg-slate-800 text-slate-400 hover:text-white"
@@ -1659,7 +1675,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setFilter("draft")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                className={`w-full rounded-lg px-4 py-2 text-sm font-semibold sm:w-auto ${
                   filter === "draft"
                     ? "bg-amber-600"
                     : "bg-slate-800 text-slate-400 hover:text-white"
@@ -1676,7 +1692,7 @@ export default function DashboardPage() {
                   loadLeads();
                   loadAnalytics();
                 }}
-                className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-blue-500"
+                className="w-full rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-blue-500 sm:w-auto"
               >
                 Actualiser
               </button>
