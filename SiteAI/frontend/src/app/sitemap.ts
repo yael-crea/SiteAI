@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+export const revalidate = 3600;
+
 const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ||
   "https://site-ai-izjx.vercel.app"
@@ -20,7 +22,9 @@ async function getPublishedSites() {
     const response = await fetch(
       `${BACKEND_URL}/public-sitemap-sites`,
       {
-        cache: "no-store",
+        next: {
+          revalidate: 3600,
+        },
       },
     );
 
