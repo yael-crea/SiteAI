@@ -309,7 +309,53 @@ type PlanEntitlements struct {
 	CustomDomainAllowed bool
 }
 
+type AdminStatsSummary struct {
+	TotalUsers         int64   `json:"totalUsers"`
+	TotalSites         int64   `json:"totalSites"`
+	PublishedSites     int64   `json:"publishedSites"`
+	AICallsToday       int64   `json:"aiCallsToday"`
+	AICallsMonth       int64   `json:"aiCallsMonth"`
+	GenerationsMonth   int64   `json:"generationsMonth"`
+	ModificationsMonth int64   `json:"modificationsMonth"`
+	TokensToday        int64   `json:"tokensToday"`
+	TokensMonth        int64   `json:"tokensMonth"`
+	CostTodayUSD       float64 `json:"costTodayUsd"`
+	CostMonthUSD       float64 `json:"costMonthUsd"`
+}
+
+type AdminUserUsage struct {
+	UserID           string     `json:"userId"`
+	Email            string     `json:"email"`
+	AICalls          int64      `json:"aiCalls"`
+	Generations      int64      `json:"generations"`
+	Modifications    int64      `json:"modifications"`
+	TotalTokens      int64      `json:"totalTokens"`
+	EstimatedCostUSD float64    `json:"estimatedCostUsd"`
+	LastAIUseAt      *time.Time `json:"lastAiUseAt,omitempty"`
+}
+
+type AdminStatsResponse struct {
+	Summary AdminStatsSummary `json:"summary"`
+	Users   []AdminUserUsage  `json:"users"`
+}
+
 type OpenAIResponse struct {
+	ID    string `json:"id"`
+	Model string `json:"model"`
+
+	Usage struct {
+		InputTokens int64 `json:"input_tokens"`
+
+		InputTokensDetails struct {
+			CachedTokens     int64 `json:"cached_tokens"`
+			CacheWriteTokens int64 `json:"cache_write_tokens"`
+		} `json:"input_tokens_details"`
+
+		OutputTokens int64 `json:"output_tokens"`
+
+		TotalTokens int64 `json:"total_tokens"`
+	} `json:"usage"`
+
 	Output []struct {
 		Type string `json:"type"`
 
@@ -377,6 +423,8 @@ func main() {
 	http.HandleFunc("/public-domains/", publicDomainHandler)
 
 	http.HandleFunc("/legal/cgv/accept", cgvAcceptanceHandler)
+
+	http.HandleFunc("/admin/stats", adminStatsHandler)
 
 	http.HandleFunc("/stripe/checkout", stripeCheckoutHandler)
 
@@ -706,6 +754,18 @@ func createTables(ctx context.Context) error {
         ON ai_usage(user_id, created_at DESC);
 
         `,
+
+		`
+
+        CREATE TABLE IF NOT EXISTS admin_users (
+
+            user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+        );
+
+        `,
 	}
 
 	for _, query := range queries {
@@ -858,6 +918,264 @@ func requireUser(
 
 }
 
+func requireAdmin(
+	w http.ResponseWriter,
+	r *http.Request,
+) (SupabaseUser, bool) {
+	user, authenticated := requireUser(w, r)
+	if !authenticated {
+		return SupabaseUser{}, false
+	}
+
+	var isAdmin bool
+
+	err := db.QueryRow(
+		r.Context(),
+		`
+		SELECT EXISTS(
+			SELECT 1
+			FROM admin_users
+			WHERE user_id = $1::uuid
+		);
+		`,
+		user.ID,
+	).Scan(&isAdmin)
+
+	if err != nil {
+		log.Println("Erreur vérification admin :", err)
+
+		http.Error(
+			w,
+			"Impossible de vérifier les droits administrateur",
+			http.StatusInternalServerError,
+		)
+
+		return SupabaseUser{}, false
+	}
+
+	if !isAdmin {
+		http.Error(
+			w,
+			"Accès administrateur requis",
+			http.StatusForbidden,
+		)
+
+		return SupabaseUser{}, false
+	}
+
+	return user, true
+}
+
+func adminStatsHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	enableCORS(w)
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		http.Error(
+			w,
+			"Méthode non autorisée",
+			http.StatusMethodNotAllowed,
+		)
+		return
+	}
+
+	_, authorized := requireAdmin(w, r)
+	if !authorized {
+		return
+	}
+
+	ctx := r.Context()
+
+	var summary AdminStatsSummary
+
+	err := db.QueryRow(
+		ctx,
+		`
+		SELECT
+			(SELECT COUNT(*) FROM auth.users)::bigint,
+			(SELECT COUNT(*) FROM sites)::bigint,
+			(SELECT COUNT(*) FROM sites WHERE published = TRUE)::bigint,
+			(
+				SELECT COUNT(*)
+				FROM ai_usage
+				WHERE created_at >= date_trunc('day', NOW())
+			)::bigint,
+			(
+				SELECT COUNT(*)
+				FROM ai_usage
+				WHERE created_at >= date_trunc('month', NOW())
+			)::bigint,
+			(
+				SELECT COUNT(*)
+				FROM ai_usage
+				WHERE action = 'generate'
+				  AND created_at >= date_trunc('month', NOW())
+			)::bigint,
+			(
+				SELECT COUNT(*)
+				FROM ai_usage
+				WHERE action = 'modify'
+				  AND created_at >= date_trunc('month', NOW())
+			)::bigint,
+			COALESCE(
+				(
+					SELECT SUM(total_tokens)
+					FROM ai_usage
+					WHERE created_at >= date_trunc('day', NOW())
+				),
+				0
+			)::bigint,
+			COALESCE(
+				(
+					SELECT SUM(total_tokens)
+					FROM ai_usage
+					WHERE created_at >= date_trunc('month', NOW())
+				),
+				0
+			)::bigint,
+			COALESCE(
+				(
+					SELECT SUM(estimated_cost_usd)
+					FROM ai_usage
+					WHERE created_at >= date_trunc('day', NOW())
+				),
+				0
+			)::double precision,
+			COALESCE(
+				(
+					SELECT SUM(estimated_cost_usd)
+					FROM ai_usage
+					WHERE created_at >= date_trunc('month', NOW())
+				),
+				0
+			)::double precision;
+		`,
+	).Scan(
+		&summary.TotalUsers,
+		&summary.TotalSites,
+		&summary.PublishedSites,
+		&summary.AICallsToday,
+		&summary.AICallsMonth,
+		&summary.GenerationsMonth,
+		&summary.ModificationsMonth,
+		&summary.TokensToday,
+		&summary.TokensMonth,
+		&summary.CostTodayUSD,
+		&summary.CostMonthUSD,
+	)
+	if err != nil {
+		log.Println("Erreur statistiques admin :", err)
+
+		http.Error(
+			w,
+			"Impossible de charger les statistiques",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	rows, err := db.Query(
+		ctx,
+		`
+		SELECT
+			u.id::text,
+			COALESCE(u.email, ''),
+			COUNT(a.id)::bigint,
+			COUNT(a.id) FILTER (
+				WHERE a.action = 'generate'
+			)::bigint,
+			COUNT(a.id) FILTER (
+				WHERE a.action = 'modify'
+			)::bigint,
+			COALESCE(SUM(a.total_tokens), 0)::bigint,
+			COALESCE(
+				SUM(a.estimated_cost_usd),
+				0
+			)::double precision,
+			MAX(a.created_at)
+		FROM auth.users u
+		LEFT JOIN ai_usage a
+			ON a.user_id = u.id
+		GROUP BY
+			u.id,
+			u.email
+		ORDER BY
+			COALESCE(
+				SUM(a.estimated_cost_usd),
+				0
+			) DESC,
+			u.created_at DESC;
+		`,
+	)
+	if err != nil {
+		log.Println("Erreur utilisateurs admin :", err)
+
+		http.Error(
+			w,
+			"Impossible de charger les utilisateurs",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+	defer rows.Close()
+
+	users := make([]AdminUserUsage, 0)
+
+	for rows.Next() {
+		var item AdminUserUsage
+
+		err := rows.Scan(
+			&item.UserID,
+			&item.Email,
+			&item.AICalls,
+			&item.Generations,
+			&item.Modifications,
+			&item.TotalTokens,
+			&item.EstimatedCostUSD,
+			&item.LastAIUseAt,
+		)
+		if err != nil {
+			log.Println("Erreur lecture utilisateur admin :", err)
+
+			http.Error(
+				w,
+				"Impossible de lire les statistiques utilisateurs",
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		users = append(users, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println("Erreur parcours utilisateurs admin :", err)
+
+		http.Error(
+			w,
+			"Impossible de terminer le chargement des utilisateurs",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	writeJSON(
+		w,
+		http.StatusOK,
+		AdminStatsResponse{
+			Summary: summary,
+			Users:   users,
+		},
+	)
+}
+
 func healthHandler(
 
 	w http.ResponseWriter,
@@ -921,10 +1239,10 @@ func consumeAIUsage(
 	ctx context.Context,
 	userID string,
 	action string,
-) (int, bool, error) {
+) (int64, int, bool, error) {
 	tx, err := db.Begin(ctx)
 	if err != nil {
-		return 0, false, err
+		return 0, 0, false, err
 	}
 
 	defer tx.Rollback(ctx)
@@ -935,7 +1253,7 @@ func consumeAIUsage(
 		userID,
 	)
 	if err != nil {
-		return 0, false, err
+		return 0, 0, false, err
 	}
 
 	var used int
@@ -951,14 +1269,16 @@ func consumeAIUsage(
 		userID,
 	).Scan(&used)
 	if err != nil {
-		return 0, false, err
+		return 0, 0, false, err
 	}
 
 	if used >= aiHourlyLimit {
-		return 0, false, nil
+		return 0, 0, false, nil
 	}
 
-	_, err = tx.Exec(
+	var usageID int64
+
+	err = tx.QueryRow(
 		ctx,
 		`
 		INSERT INTO ai_usage (
@@ -970,20 +1290,21 @@ func consumeAIUsage(
 			$1::uuid,
 			$2,
 			NOW()
-		);
+		)
+		RETURNING id;
 		`,
 		userID,
 		action,
-	)
+	).Scan(&usageID)
 	if err != nil {
-		return 0, false, err
+		return 0, 0, false, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return 0, false, err
+		return 0, 0, false, err
 	}
 
-	return aiHourlyLimit - used - 1, true, nil
+	return usageID, aiHourlyLimit - used - 1, true, nil
 }
 
 func enforceAIRateLimit(
@@ -991,8 +1312,8 @@ func enforceAIRateLimit(
 	r *http.Request,
 	userID string,
 	action string,
-) bool {
-	remaining, allowed, err := consumeAIUsage(
+) (int64, bool) {
+	usageID, remaining, allowed, err := consumeAIUsage(
 		r.Context(),
 		userID,
 		action,
@@ -1007,7 +1328,7 @@ func enforceAIRateLimit(
 			http.StatusInternalServerError,
 		)
 
-		return false
+		return 0, false
 	}
 
 	w.Header().Set(
@@ -1029,10 +1350,10 @@ func enforceAIRateLimit(
 			http.StatusTooManyRequests,
 		)
 
-		return false
+		return 0, false
 	}
 
-	return true
+	return usageID, true
 }
 
 func generateHandler(
@@ -1122,16 +1443,21 @@ func generateHandler(
 
 	}
 
-	if !enforceAIRateLimit(
+	usageID, allowed := enforceAIRateLimit(
 		w,
 		r,
 		user.ID,
 		"generate",
-	) {
+	)
+	if !allowed {
 		return
 	}
 
-	site, err := generateSiteWithAI(input)
+	site, err := generateSiteWithAI(
+		r.Context(),
+		usageID,
+		input,
+	)
 
 	if err != nil {
 
@@ -1238,16 +1564,21 @@ func modifyHandler(
 
 	}
 
-	if !enforceAIRateLimit(
+	usageID, allowed := enforceAIRateLimit(
 		w,
 		r,
 		user.ID,
 		"modify",
-	) {
+	)
+	if !allowed {
 		return
 	}
 
-	result, err := modifySiteWithAI(input)
+	result, err := modifySiteWithAI(
+		r.Context(),
+		usageID,
+		input,
+	)
 
 	if err != nil {
 
@@ -3562,6 +3893,10 @@ func getSavedSiteByID(
 
 func generateSiteWithAI(
 
+	ctx context.Context,
+
+	usageID int64,
+
 	input BusinessInput,
 
 ) (GeneratedSite, error) {
@@ -3650,6 +3985,10 @@ Services : %s`,
 
 	outputText, err := callOpenAI(
 
+		ctx,
+
+		usageID,
+
 		instructions,
 
 		userPrompt,
@@ -3702,6 +4041,10 @@ Services : %s`,
 }
 
 func modifySiteWithAI(
+
+	ctx context.Context,
+
+	usageID int64,
 
 	input ModifySiteInput,
 
@@ -3818,6 +4161,10 @@ DEMANDE :
 	)
 
 	outputText, err := callOpenAI(
+
+		ctx,
+
+		usageID,
 
 		instructions,
 
@@ -3953,7 +4300,118 @@ DEMANDE :
 
 }
 
+func calculateOpenAICostUSD(
+	model string,
+	inputTokens int64,
+	cachedTokens int64,
+	cacheWriteTokens int64,
+	outputTokens int64,
+) (float64, bool) {
+	var inputPrice float64
+	var cachedInputPrice float64
+	var cacheWritePrice float64
+	var outputPrice float64
+
+	switch strings.ToLower(strings.TrimSpace(model)) {
+	case "gpt-5.6-luna":
+		inputPrice = 0.20
+		cachedInputPrice = 0.02
+		cacheWritePrice = 0.25
+		outputPrice = 1.20
+	default:
+		return 0, false
+	}
+
+	ordinaryInputTokens :=
+		inputTokens -
+			cachedTokens -
+			cacheWriteTokens
+
+	if ordinaryInputTokens < 0 {
+		ordinaryInputTokens = 0
+	}
+
+	cost :=
+		(float64(ordinaryInputTokens)*inputPrice +
+			float64(cachedTokens)*cachedInputPrice +
+			float64(cacheWriteTokens)*cacheWritePrice +
+			float64(outputTokens)*outputPrice) /
+			1_000_000
+
+	return cost, true
+}
+
+func saveAIUsageMetrics(
+	ctx context.Context,
+	usageID int64,
+	response OpenAIResponse,
+	requestedModel string,
+) error {
+	model := strings.TrimSpace(response.Model)
+
+	if model == "" {
+		model = strings.TrimSpace(requestedModel)
+	}
+
+	inputTokens := response.Usage.InputTokens
+	cachedTokens :=
+		response.Usage.InputTokensDetails.CachedTokens
+	cacheWriteTokens :=
+		response.Usage.InputTokensDetails.CacheWriteTokens
+	outputTokens := response.Usage.OutputTokens
+	totalTokens := response.Usage.TotalTokens
+
+	if totalTokens == 0 {
+		totalTokens = inputTokens + outputTokens
+	}
+
+	costUSD, hasPrice := calculateOpenAICostUSD(
+		model,
+		inputTokens,
+		cachedTokens,
+		cacheWriteTokens,
+		outputTokens,
+	)
+
+	var estimatedCost any
+	if hasPrice {
+		estimatedCost = costUSD
+	}
+
+	_, err := db.Exec(
+		ctx,
+		`
+		UPDATE ai_usage
+		SET
+			model = $2,
+			input_tokens = $3,
+			cached_input_tokens = $4,
+			cache_write_tokens = $5,
+			output_tokens = $6,
+			total_tokens = $7,
+			estimated_cost_usd = $8,
+			openai_response_id = $9
+		WHERE id = $1;
+		`,
+		usageID,
+		model,
+		inputTokens,
+		cachedTokens,
+		cacheWriteTokens,
+		outputTokens,
+		totalTokens,
+		estimatedCost,
+		response.ID,
+	)
+
+	return err
+}
+
 func callOpenAI(
+
+	ctx context.Context,
+
+	usageID int64,
 
 	instructions string,
 
@@ -4006,7 +4464,9 @@ func callOpenAI(
 
 	}
 
-	request, err := http.NewRequest(
+	request, err := http.NewRequestWithContext(
+
+		ctx,
 
 		http.MethodPost,
 
@@ -4091,6 +4551,18 @@ func callOpenAI(
 
 		return "", err
 
+	}
+
+	if err := saveAIUsageMetrics(
+		ctx,
+		usageID,
+		parsed,
+		model,
+	); err != nil {
+		log.Println(
+			"Erreur enregistrement coût IA :",
+			err,
+		)
 	}
 
 	for _, output := range parsed.Output {
