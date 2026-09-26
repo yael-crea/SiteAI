@@ -582,6 +582,27 @@ function ResponsiveSitePreview({
 
 export default function Home() {
   const router = useRouter();
+  const mobileSteps = ["Infos", "Contenu", "Apparence", "Aperçu", "Publication"] as const;
+  const [mobileStep, setMobileStep] = useState(0);
+  const [isMobileBuilder, setIsMobileBuilder] = useState(false);
+  const mobileHeadingRef = useRef<HTMLHeadingElement | null>(null);
+
+  useEffect(() => {
+    const media = window.matchMedia("(width < 48rem)");
+    const update = () => setIsMobileBuilder(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  function navigateMobileStep(step: number) {
+    setMobileStep(step);
+    requestAnimationFrame(() => {
+      mobileHeadingRef.current?.focus({ preventScroll: true });
+      mobileHeadingRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  }
+
 
   const [authLoading, setAuthLoading] =
     useState(true);
@@ -1013,6 +1034,7 @@ export default function Home() {
       };
 
       setSite(generatedSite);
+      if (window.matchMedia("(width < 48rem)").matches) navigateMobileStep(1);
       setBusinessName(
         generatedSite.businessName ||
           businessName,
@@ -1688,6 +1710,7 @@ export default function Home() {
 
     setSavedSiteID(null);
     setSite(null);
+    setMobileStep(0);
 
     setBusinessName("");
     setActivity("");
@@ -2971,7 +2994,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
+    <main data-mobile-step={mobileStep} data-siteai-builder className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto max-w-[1800px] px-4 py-4 lg:px-6">
           <div className="flex items-center justify-between gap-3">
@@ -3093,8 +3116,51 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-[1800px] px-4 py-7 sm:py-10 lg:px-6 lg:py-14">
-        <div className="mb-8 text-center sm:mb-12">
+      <div className="px-4 pt-5 md:hidden">
+        <nav aria-label="Étapes de création du site" className="grid grid-cols-5 gap-1">
+          {mobileSteps.map((label, index) => (
+            <button key={label} type="button" aria-current={mobileStep === index ? "step" : undefined}
+              disabled={index > 0 && !site} onClick={() => navigateMobileStep(index)}
+              className={`min-h-14 min-w-0 rounded-xl px-1 py-2 text-[10px] font-bold disabled:opacity-35 ${mobileStep === index ? "bg-blue-600 text-white" : "bg-slate-900 text-slate-300"}`}>
+              <span className="mb-1 block text-sm">{index + 1}</span>{label}
+            </button>
+          ))}
+        </nav>
+        <h1 ref={mobileHeadingRef} tabIndex={-1} className="mt-5 scroll-mt-4 text-2xl font-bold outline-none">
+          {mobileSteps[mobileStep]}
+        </h1>
+        <p className="mt-2 text-sm text-slate-400" aria-live="polite">
+          Étape {mobileStep + 1} sur 5 · {[
+            "Renseigne ton entreprise, puis crée ou ouvre un site.",
+            "Modifie tes textes et tes images, ou demande de l’aide à l’IA.",
+            "Personnalise le style, les couleurs et la mise en page.",
+            "Parcours ton site avant de le publier.",
+            "Enregistre tes modifications, puis publie ton site.",
+          ][mobileStep]}
+        </p>
+      </div>
+      <style>{`
+        @media (width < 48rem) {
+          [data-siteai-builder] [data-mobile-hide] { display: none !important; }
+          [data-builder-section] { padding-top: 1rem; padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
+          [data-builder-grid] { display: block; }
+          [data-mobile-step="3"] [data-builder-section] { display: none; }
+          [data-builder-editor] { display: block !important; }
+          [data-mobile-panel], [data-mobile-manual] { display: none; }
+          [data-mobile-step="0"] [data-mobile-panel="infos"],
+          [data-mobile-step="1"] [data-mobile-panel="contenu"],
+          [data-mobile-step="4"] [data-mobile-panel="publication"],
+          [data-mobile-step="1"] [data-mobile-manual],
+          [data-mobile-step="2"] [data-mobile-manual] { display: block; margin-top: 0; margin-bottom: 1.5rem; padding: 1.25rem; }
+          [data-mobile-manual] > div:first-child { display: none; }
+          [data-mobile-fields] { margin-top: 0; }
+          [data-mobile-step="1"] [data-mobile-appearance] { display: none; }
+          [data-mobile-step="2"] [data-mobile-fields] > :not([data-mobile-appearance]) { display: none; }
+          [data-mobile-step="2"] [data-mobile-appearance] { border: 0; padding-top: 0; margin-top: 0; }
+        }
+      `}</style>
+      <section data-builder-section className="mx-auto max-w-[1800px] px-4 py-7 sm:py-10 lg:px-6 lg:py-14">
+        <div data-mobile-hide className="mb-8 text-center sm:mb-12">
           <p className="text-sm font-bold uppercase tracking-[0.35em] text-blue-400">
             SiteAI
           </p>
@@ -3108,21 +3174,21 @@ export default function Home() {
           </h1>
         </div>
 
-        <div
+        <div data-builder-grid
           className={`grid gap-6 ${
             editorCollapsed
               ? "grid-cols-1"
               : "xl:grid-cols-[360px_minmax(0,1fr)]"
           }`}
         >
-          <div
+          <div data-builder-editor
             className={
               editorCollapsed
                 ? "hidden"
                 : "space-y-8"
             }
           >
-            <form
+            <form data-mobile-panel="infos"
               onSubmit={
                 handleSubmit
               }
@@ -3369,7 +3435,7 @@ export default function Home() {
             </form>
 
             {site && (
-              <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
+              <div data-mobile-manual className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <h2 className="text-xl font-bold">
@@ -3397,8 +3463,8 @@ export default function Home() {
                   </button>
                 </div>
 
-                {manualEditorOpen && (
-                  <div className="mt-6 space-y-6">
+                {(manualEditorOpen || isMobileBuilder) && (
+                  <div data-mobile-fields className="mt-6 space-y-6">
                     <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
                       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                         <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-700 bg-white">
@@ -4473,7 +4539,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="border-t border-slate-800 pt-6">
+                    <div data-mobile-appearance className="border-t border-slate-800 pt-6">
                       <p className="mb-3 font-bold">
                         Apparence
                       </p>
@@ -4845,7 +4911,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <button
+                    <button data-mobile-hide
                       type="button"
                       onClick={
                         saveCurrentSite
@@ -4868,7 +4934,7 @@ export default function Home() {
             )}
 
             {site && (
-              <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
+              <div data-mobile-panel="publication" className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
                 <h2 className="text-xl font-bold">
                   💾 Sauvegarde et publication
                 </h2>
@@ -4988,7 +5054,7 @@ export default function Home() {
             )}
 
             {site && (
-              <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
+              <div data-mobile-panel="contenu" className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
                 <h2 className="text-xl font-bold">
                   ✨ Modifier avec l&apos;IA
                 </h2>
@@ -5068,7 +5134,7 @@ export default function Home() {
               </div>
             )}
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
+            <div data-mobile-panel="infos" className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">
                   📂 Mes sites
@@ -5187,7 +5253,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 xl:sticky xl:top-6 xl:self-start">
+          <div data-mobile-hide className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 xl:sticky xl:top-6 xl:self-start">
             {!site ? (
               <div className="flex min-h-[700px] items-center justify-center text-center">
                 <div>
@@ -5327,6 +5393,27 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {isMobileBuilder && mobileStep === 3 && site && (
+        <div className="px-2 pb-28 md:hidden">
+          <button type="button" onClick={() => { setPreviewDevice("mobile"); setPreviewFullscreenOpen(true); }}
+            className="mb-3 w-full rounded-xl border border-blue-500/50 px-4 py-3 font-bold text-blue-300">
+            ⛶ Agrandir l&apos;aperçu
+          </button>
+          <ResponsiveSitePreview device="mobile" site={site} designStyle={designStyle}
+            accentColor={accentColor} activity={activity} city={city} />
+        </div>
+      )}
+      <nav aria-label="Navigation entre les étapes" className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-slate-800 bg-slate-950 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden">
+        <button type="button" disabled={mobileStep === 0} onClick={() => navigateMobileStep(mobileStep - 1)}
+          className="min-h-11 flex-1 rounded-xl border border-slate-700 px-3 py-3 text-sm font-bold disabled:opacity-35">Précédent</button>
+        {mobileStep < 4 ? (
+          <button type="button" disabled={!site} onClick={() => navigateMobileStep(mobileStep + 1)}
+            className="min-h-11 flex-1 rounded-xl bg-blue-600 px-3 py-3 text-sm font-bold disabled:opacity-35">
+            {mobileSteps[mobileStep + 1]} →
+          </button>
+        ) : <span className="flex-1 text-center text-sm text-slate-400">Étape 5 sur 5</span>}
+      </nav>
 
       {site &&
         previewFullscreenOpen && (
