@@ -4,15 +4,59 @@ import { useState } from "react";
 
 
 
+type IconMode = "auto" | "custom" | "none";
+
+type ImageMode = "auto" | "custom" | "none";
+
+type LayoutBlock =
+  | "about"
+  | "services"
+  | "process"
+  | "faq"
+  | "gallery"
+  | "contact";
+
 type SiteSection = {
 
   title: string;
 
   text: string;
 
+  iconMode?: IconMode;
+
+  icon?: string;
+
+  imageMode?: ImageMode;
+
+  imageUrl?: string;
+
+  hidden?: boolean;
+
 };
 
 
+type SiteBenefit = {
+  title: string;
+  text: string;
+};
+
+
+type FAQItem = {
+  question: string;
+  answer: string;
+};
+
+
+type DesignSettings = {
+  font?: "system" | "modern" | "classic" | "editorial" | "mono";
+  buttonStyle?: "square" | "soft" | "pill";
+  cardStyle?: "simple" | "bordered" | "shadow";
+  logoSize?: "small" | "medium" | "large";
+  heroLayout?: "auto" | "left" | "center";
+  contentWidth?: "normal" | "wide";
+  spacing?: "compact" | "normal" | "airy";
+  background?: "auto" | "light" | "dark";
+};
 
 type GeneratedSite = {
 
@@ -24,9 +68,15 @@ type GeneratedSite = {
 
   metaDescription: string;
 
+  heroEyebrow?: string;
+
   heroTitle: string;
 
   heroText: string;
+
+  primaryCta?: string;
+
+  secondaryCta?: string;
 
   phone: string;
 
@@ -36,7 +86,25 @@ type GeneratedSite = {
 
   gallery: string[];
 
+  aboutTitle?: string;
+
+  aboutText?: string;
+
   sections: SiteSection[];
+
+  benefits?: SiteBenefit[];
+
+  faq?: FAQItem[];
+
+  contactTitle?: string;
+
+  contactText?: string;
+
+  layoutOrder?: LayoutBlock[];
+
+  hiddenBlocks?: LayoutBlock[];
+
+  designSettings?: DesignSettings;
 
 };
 
@@ -67,6 +135,982 @@ type SitePreviewProps = {
 };
 
 
+
+
+function normalizeDesignSettings(
+  value?: DesignSettings,
+) {
+  return {
+    font:
+      value?.font === "modern" ||
+      value?.font === "classic" ||
+      value?.font === "editorial" ||
+      value?.font === "mono"
+        ? value.font
+        : "system",
+    buttonStyle:
+      value?.buttonStyle === "square" ||
+      value?.buttonStyle === "pill"
+        ? value.buttonStyle
+        : "soft",
+    cardStyle:
+      value?.cardStyle === "simple" ||
+      value?.cardStyle === "shadow"
+        ? value.cardStyle
+        : "bordered",
+    logoSize:
+      value?.logoSize === "small" ||
+      value?.logoSize === "large"
+        ? value.logoSize
+        : "medium",
+    heroLayout:
+      value?.heroLayout === "left" ||
+      value?.heroLayout === "center"
+        ? value.heroLayout
+        : "auto",
+    contentWidth:
+      value?.contentWidth === "wide"
+        ? "wide"
+        : "normal",
+    spacing:
+      value?.spacing === "compact" ||
+      value?.spacing === "airy"
+        ? value.spacing
+        : "normal",
+    background:
+      value?.background === "light" ||
+      value?.background === "dark"
+        ? value.background
+        : "auto",
+  } as const;
+}
+
+function DesignShell({
+  settings,
+  children,
+}: {
+  settings: ReturnType<typeof normalizeDesignSettings>;
+  children: React.ReactNode;
+}) {
+  const fontFamily = {
+    system:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    modern:
+      '"Trebuchet MS", "Segoe UI", Arial, sans-serif',
+    classic:
+      'Georgia, "Times New Roman", serif',
+    editorial:
+      '"Times New Roman", Times, serif',
+    mono:
+      '"Courier New", Courier, monospace',
+  }[settings.font];
+
+  const buttonRadius = {
+    square: "0px",
+    soft: "12px",
+    pill: "9999px",
+  }[settings.buttonStyle];
+
+  const logoSize = {
+    small: "34px",
+    medium: "48px",
+    large: "64px",
+  }[settings.logoSize];
+
+  const contentWidth =
+    settings.contentWidth === "wide"
+      ? "1500px"
+      : "1280px";
+
+  const spacingMultiplier = {
+    compact: "0.78",
+    normal: "1",
+    airy: "1.22",
+  }[settings.spacing];
+
+  const background =
+    settings.background === "dark"
+      ? "#0b1120"
+      : settings.background === "light"
+        ? "#ffffff"
+        : "transparent";
+
+  return (
+    <div
+      className="siteai-design-root"
+      data-card-style={settings.cardStyle}
+      data-hero-layout={settings.heroLayout}
+      data-background={settings.background}
+      data-siteai-spacing={settings.spacing}
+      style={
+        {
+          fontFamily,
+          background,
+          "--siteai-button-radius":
+            buttonRadius,
+          "--siteai-logo-size":
+            logoSize,
+          "--siteai-content-width":
+            contentWidth,
+          "--siteai-spacing":
+            spacingMultiplier,
+        } as React.CSSProperties
+      }
+    >
+      <style>{`
+        .siteai-design-root {
+          min-height: 100%;
+        }
+
+        .siteai-design-root a[class*="rounded"],
+        .siteai-design-root button[class*="rounded"] {
+          border-radius: var(--siteai-button-radius) !important;
+        }
+
+        .siteai-design-root img[alt^="Logo "] {
+          width: var(--siteai-logo-size) !important;
+          height: var(--siteai-logo-size) !important;
+        }
+
+        .siteai-design-root .max-w-7xl {
+          max-width: var(--siteai-content-width) !important;
+        }
+
+        .siteai-design-root[data-card-style="shadow"]
+          section [class*="rounded"][class*="border"][class*=" p-"] {
+          box-shadow:
+            0 16px 35px rgba(15, 23, 42, 0.12) !important;
+        }
+
+        .siteai-design-root[data-card-style="simple"]
+          section [class*="rounded"][class*="border"][class*=" p-"] {
+          box-shadow: none !important;
+          border-color: transparent !important;
+        }
+
+        .siteai-design-root[data-card-style="bordered"]
+          section [class*="rounded"][class*="border"][class*=" p-"] {
+          box-shadow: none !important;
+        }
+
+        .siteai-design-root[data-hero-layout="center"]
+          [data-siteai-hero-content] {
+          margin-left: auto !important;
+          margin-right: auto !important;
+          text-align: center !important;
+          align-items: center !important;
+        }
+
+        .siteai-design-root[data-hero-layout="center"]
+          [data-siteai-hero-content] > div,
+        .siteai-design-root[data-hero-layout="center"]
+          [data-siteai-hero-content] p {
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+
+        .siteai-design-root[data-hero-layout="center"]
+          [data-siteai-hero-actions],
+        .siteai-design-root[data-hero-layout="center"]
+          [data-siteai-hero-badges] {
+          justify-content: center !important;
+        }
+
+        .siteai-design-root[data-hero-layout="left"]
+          [data-siteai-hero-content] {
+          text-align: left !important;
+          margin-left: 0 !important;
+          margin-right: auto !important;
+          align-items: flex-start !important;
+        }
+
+        .siteai-design-root[data-hero-layout="left"]
+          [data-siteai-hero-actions],
+        .siteai-design-root[data-hero-layout="left"]
+          [data-siteai-hero-badges] {
+          justify-content: flex-start !important;
+        }
+
+        .siteai-design-root[data-background="dark"] {
+          color-scheme: dark;
+        }
+
+        .siteai-design-root[data-background="dark"]
+          section:not([data-siteai-hero]) {
+          background-color: #0f172a !important;
+          color: #f8fafc !important;
+          border-color: #334155 !important;
+        }
+
+        .siteai-design-root[data-background="dark"]
+          section:not([data-siteai-hero])
+          [class*="text-slate-"],
+        .siteai-design-root[data-background="dark"]
+          section:not([data-siteai-hero])
+          [class*="text-neutral-"],
+        .siteai-design-root[data-background="dark"]
+          section:not([data-siteai-hero])
+          [class*="text-stone-"] {
+          color: #cbd5e1 !important;
+        }
+
+        .siteai-design-root[data-background="light"]
+          section:not([data-siteai-hero]) {
+          background-color: #ffffff !important;
+          color: #0f172a !important;
+        }
+
+        .siteai-design-root[data-background="light"]
+          section:not([data-siteai-hero])
+          [class*="text-neutral-"],
+        .siteai-design-root[data-background="light"]
+          section:not([data-siteai-hero])
+          [class*="text-stone-"] {
+          color: #334155 !important;
+        }
+
+        .siteai-design-root[data-siteai-spacing="compact"]
+          section:not([data-siteai-hero]) {
+          padding-top: 2.75rem !important;
+          padding-bottom: 2.75rem !important;
+        }
+
+        .siteai-design-root[data-siteai-spacing="airy"]
+          section:not([data-siteai-hero]) {
+          padding-top: 7rem !important;
+          padding-bottom: 7rem !important;
+        }
+      `}</style>
+
+      {children}
+    </div>
+  );
+}
+
+function formatBusinessName(value: string) {
+  const clean = value.trim().replace(/\s+/g, " ");
+
+  if (!clean) {
+    return value;
+  }
+
+  // Si l'utilisateur a déjà choisi une casse précise (ex. SARL DUPONT, eTech),
+  // on la respecte. On corrige surtout les noms entièrement saisis en minuscules.
+  if (/[A-ZÀ-Ÿ]/.test(clean)) {
+    return clean;
+  }
+
+  return clean.replace(
+    /(^|[\s'’-])([a-zà-ÿ])/g,
+    (_match, separator: string, letter: string) =>
+      `${separator}${letter.toLocaleUpperCase("fr-FR")}`,
+  );
+}
+
+
+function formatPhoneNumber(value: string) {
+  const clean = value.trim();
+
+  if (!clean) {
+    return "";
+  }
+
+  const compact = clean.replace(/[\s.()-]/g, "");
+
+  if (/^\+33\d{9}$/.test(compact)) {
+    const local = compact.slice(3);
+    return `+33 ${local[0]} ${local.slice(1).match(/.{1,2}/g)?.join(" ") ?? local.slice(1)}`;
+  }
+
+  const digits = compact.replace(/\D/g, "");
+
+  if (/^0\d{9}$/.test(digits)) {
+    return digits.match(/.{1,2}/g)?.join(" ") ?? clean;
+  }
+
+  if (digits.length >= 6) {
+    return digits.match(/.{1,2}/g)?.join(" ") ?? clean;
+  }
+
+  return clean;
+}
+
+function phoneHref(value: string) {
+  const clean = value.trim();
+  if (!clean) {
+    return "";
+  }
+
+  const prefix = clean.startsWith("+") ? "+" : "";
+  return prefix + clean.replace(/\D/g, "");
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeGeneratedText(
+  value: string | undefined,
+  rawBusinessName: string,
+  displayBusinessName: string,
+  rawPhone: string,
+) {
+  if (!value) {
+    return value;
+  }
+
+  let result = value;
+
+  if (rawBusinessName.trim()) {
+    result = result.replace(
+      new RegExp(escapeRegExp(rawBusinessName.trim()), "gi"),
+      displayBusinessName,
+    );
+  }
+
+  const formattedPhone = formatPhoneNumber(rawPhone);
+  if (rawPhone.trim() && formattedPhone) {
+    result = result.split(rawPhone.trim()).join(formattedPhone);
+
+    const rawDigits = rawPhone.replace(/\D/g, "");
+    if (rawDigits.length >= 6) {
+      result = result.split(rawDigits).join(formattedPhone);
+    }
+  }
+
+  return result;
+}
+
+function normalizeSiteForDisplay(site: GeneratedSite): GeneratedSite {
+  const rawBusinessName = site.businessName;
+  const displayBusinessName = formatBusinessName(rawBusinessName);
+  const normalize = (value: string | undefined) =>
+    normalizeGeneratedText(
+      value,
+      rawBusinessName,
+      displayBusinessName,
+      site.phone,
+    );
+
+  return {
+    ...site,
+    businessName: displayBusinessName,
+    metaTitle: normalize(site.metaTitle) ?? site.metaTitle,
+    metaDescription: normalize(site.metaDescription) ?? site.metaDescription,
+    heroEyebrow: normalize(site.heroEyebrow),
+    heroTitle: normalize(site.heroTitle) ?? site.heroTitle,
+    heroText: normalize(site.heroText) ?? site.heroText,
+    primaryCta: normalize(site.primaryCta),
+    secondaryCta: normalize(site.secondaryCta),
+    aboutTitle: normalize(site.aboutTitle),
+    aboutText: normalize(site.aboutText),
+    contactTitle: normalize(site.contactTitle),
+    contactText: normalize(site.contactText),
+    sections: (site.sections ?? []).map((section) => ({
+      ...section,
+      title: normalize(section.title) ?? section.title,
+      text: normalize(section.text) ?? section.text,
+      hidden: section.hidden ?? false,
+    })),
+    benefits: (site.benefits ?? []).map((benefit) => ({
+      title: normalize(benefit.title) ?? benefit.title,
+      text: normalize(benefit.text) ?? benefit.text,
+    })),
+    faq: (site.faq ?? []).map((item) => ({
+      question: normalize(item.question) ?? item.question,
+      answer: normalize(item.answer) ?? item.answer,
+    })),
+    designSettings:
+      normalizeDesignSettings(
+        site.designSettings,
+      ),
+  };
+}
+
+function getActivityTheme(activity: string) {
+  const value = activity.trim().toLowerCase();
+
+  const themes = [
+    { keywords: ["plomb", "sanitaire", "chauff"], noun: "plomberie", icon: "🔧" },
+    { keywords: ["élect", "electric", "domotique"], noun: "électricité", icon: "⚡" },
+    { keywords: ["coiff", "barber", "barbier"], noun: "coiffure", icon: "✂️" },
+    { keywords: ["restaurant", "restaur", "traiteur", "cuisine"], noun: "restauration", icon: "🍽️" },
+    { keywords: ["boulanger", "pâtiss", "patiss"], noun: "boulangerie-pâtisserie", icon: "🥐" },
+    { keywords: ["jardin", "paysag", "espace vert"], noun: "aménagement paysager", icon: "🌿" },
+    { keywords: ["photo", "vidéo", "video", "photographe"], noun: "photographie", icon: "📷" },
+    { keywords: ["garage", "auto", "mécan", "mecan"], noun: "mécanique automobile", icon: "🚗" },
+    { keywords: ["peint"], noun: "peinture", icon: "🎨" },
+    { keywords: ["menuis", "bois", "ébén", "eben"], noun: "menuiserie", icon: "🪚" },
+    { keywords: ["maçon", "macon", "construction"], noun: "maçonnerie", icon: "🧱" },
+    { keywords: ["avocat", "jurid"], noun: "accompagnement juridique", icon: "⚖️" },
+  ];
+
+  return (
+    themes.find((theme) =>
+      theme.keywords.some((keyword) => value.includes(keyword)),
+    ) ?? {
+      noun: value || "votre activité",
+      icon: "✦",
+    }
+  );
+}
+
+
+type SectorVisualTheme = {
+  key: string;
+  icon: string;
+  heroFallback: string;
+  serviceLabel: string;
+  serviceHeading: string;
+  serviceIntro: string;
+  trustItems: [string, string, string];
+  serviceIcons: string[];
+  processEyebrow: string;
+  processHeading: string;
+  contactBadge: string;
+  ctaLabel: string;
+  aboutLabel: string;
+  galleryLabel: string;
+  heroPattern: (accentColor: string) => string;
+  modernServiceCardClass: string;
+  artisanServiceCardClass: string;
+};
+
+function getSectorVisualTheme(
+  activity: string,
+  city: string,
+): SectorVisualTheme {
+  const value = activity.trim().toLowerCase();
+
+  const base = {
+    processEyebrow: "Comment ça marche ?",
+    ctaLabel: "Demander un devis",
+    modernServiceCardClass:
+      "rounded-3xl border border-slate-200 bg-white shadow-sm",
+    artisanServiceCardClass:
+      "rounded-2xl border border-stone-300 bg-[#fffaf0] shadow-sm",
+  };
+
+  if (
+    ["plomb", "sanitaire", "chauff"].some((keyword) =>
+      value.includes(keyword),
+    )
+  ) {
+    return {
+      ...base,
+      key: "plomberie",
+      icon: "🔧",
+      heroFallback: "Plomberie & installations sanitaires",
+      serviceLabel: "Plomberie",
+      serviceHeading: "Des solutions fiables pour vos installations",
+      serviceIntro: `Dépannage, installation et rénovation : des prestations de plomberie adaptées à votre besoin à ${city}.`,
+      trustItems: [
+        "Diagnostic ciblé",
+        "Intervention adaptée",
+        `Service à ${city}`,
+      ],
+      serviceIcons: ["💧", "🔎", "🚿", "🛁", "🔥", "🔧"],
+      processEyebrow: "Votre intervention",
+      processHeading: "Votre projet de plomberie, étape par étape.",
+      contactBadge: "Besoin d’un plombier ?",
+      ctaLabel: "Présenter mon besoin",
+      aboutLabel: "Votre plombier",
+      galleryLabel: "Interventions & réalisations",
+      heroPattern: (accentColor) =>
+        `linear-gradient(135deg, ${accentColor}22 0%, transparent 44%), radial-gradient(circle at 78% 22%, ${accentColor}44 0, transparent 26%)`,
+      modernServiceCardClass:
+        "rounded-2xl border border-slate-200 bg-white shadow-sm",
+      artisanServiceCardClass:
+        "rounded-2xl border border-stone-300 bg-[#fffaf0] shadow-sm",
+    };
+  }
+
+  if (
+    ["élect", "electric", "domotique"].some((keyword) =>
+      value.includes(keyword),
+    )
+  ) {
+    return {
+      ...base,
+      key: "electricite",
+      icon: "⚡",
+      heroFallback: "Électricité & équipements",
+      serviceLabel: "Électricité",
+      serviceHeading: "Des installations pensées pour votre sécurité",
+      serviceIntro: `Installation, dépannage et équipements électriques présentés clairement pour vos projets à ${city}.`,
+      trustItems: [
+        "Besoin identifié",
+        "Solution adaptée",
+        `Intervention à ${city}`,
+      ],
+      serviceIcons: ["⚡", "💡", "🔌", "🧰", "🏠", "📡"],
+      processEyebrow: "Votre installation",
+      processHeading: "Un parcours clair pour votre projet électrique.",
+      contactBadge: "Parlons de votre installation",
+      ctaLabel: "Décrire mon besoin",
+      aboutLabel: "Votre électricien",
+      galleryLabel: "Installations & projets",
+      heroPattern: (accentColor) =>
+        `linear-gradient(115deg, ${accentColor}2f 0%, transparent 46%), repeating-linear-gradient(90deg, transparent 0 54px, ${accentColor}12 55px 56px)`,
+      modernServiceCardClass:
+        "rounded-2xl border border-slate-200 bg-white shadow-sm",
+      artisanServiceCardClass:
+        "rounded-xl border border-stone-300 bg-[#fffaf0] shadow-sm",
+    };
+  }
+
+  if (
+    ["coiff", "barber", "barbier"].some((keyword) =>
+      value.includes(keyword),
+    )
+  ) {
+    return {
+      ...base,
+      key: "coiffure",
+      icon: "✂️",
+      heroFallback: "Coiffure & style",
+      serviceLabel: "Prestations",
+      serviceHeading: "Des prestations pensées pour votre style",
+      serviceIntro: `Coupe, soin et mise en beauté : découvrez l’univers de ${activity} proposé à ${city}.`,
+      trustItems: [
+        "Conseil personnalisé",
+        "Soin & précision",
+        "Style sur mesure",
+      ],
+      serviceIcons: ["✂️", "✨", "💇", "🎨", "🪞", "🧴"],
+      processEyebrow: "Votre rendez-vous",
+      processHeading: "Votre style, de l’idée au résultat.",
+      contactBadge: "Envie de changer de style ?",
+      ctaLabel: "Prendre contact",
+      aboutLabel: "Le salon",
+      galleryLabel: "Styles & réalisations",
+      heroPattern: (accentColor) =>
+        `radial-gradient(circle at 18% 18%, ${accentColor}44 0, transparent 30%), linear-gradient(135deg, transparent 30%, ${accentColor}1f 100%)`,
+      modernServiceCardClass:
+        "rounded-[2rem] border border-slate-200 bg-white shadow-sm",
+      artisanServiceCardClass:
+        "rounded-[2rem] border border-stone-300 bg-[#fffaf0] shadow-sm",
+    };
+  }
+
+  if (
+    ["restaurant", "restaur", "traiteur", "cuisine"].some((keyword) =>
+      value.includes(keyword),
+    )
+  ) {
+    return {
+      ...base,
+      key: "restauration",
+      icon: "🍽️",
+      heroFallback: "Cuisine & savoir-faire",
+      serviceLabel: "À découvrir",
+      serviceHeading: "Une expérience gourmande à découvrir",
+      serviceIntro: `Découvrez les spécialités, services et savoir-faire de ${siteSafeActivity(activity)} à ${city}.`,
+      trustItems: [
+        "Savoir-faire maison",
+        "Expérience conviviale",
+        `À découvrir à ${city}`,
+      ],
+      serviceIcons: ["🍽️", "🥘", "🥗", "🍰", "🥂", "👨‍🍳"],
+      processEyebrow: "Votre expérience",
+      processHeading: "Découvrez, choisissez, puis profitez.",
+      contactBadge: "Une table, un événement, une question ?",
+      ctaLabel: "Nous contacter",
+      aboutLabel: "Notre cuisine",
+      galleryLabel: "Assiettes & ambiance",
+      heroPattern: (accentColor) =>
+        `radial-gradient(circle at 22% 18%, ${accentColor}50 0, transparent 28%), radial-gradient(circle at 78% 82%, ${accentColor}28 0, transparent 30%)`,
+      modernServiceCardClass:
+        "rounded-[2rem] border border-slate-200 bg-white shadow-sm",
+      artisanServiceCardClass:
+        "rounded-3xl border border-stone-300 bg-[#fffaf0] shadow-md",
+    };
+  }
+
+  if (
+    ["boulanger", "pâtiss", "patiss"].some((keyword) =>
+      value.includes(keyword),
+    )
+  ) {
+    return {
+      ...base,
+      key: "boulangerie",
+      icon: "🥐",
+      heroFallback: "Créations artisanales",
+      serviceLabel: "Nos créations",
+      serviceHeading: "Des créations préparées avec savoir-faire",
+      serviceIntro: `Découvrez les produits, spécialités et créations proposées à ${city}.`,
+      trustItems: [
+        "Créations maison",
+        "Savoir-faire artisanal",
+        `À retrouver à ${city}`,
+      ],
+      serviceIcons: ["🥐", "🥖", "🍰", "🧁", "🍫", "☕"],
+      processEyebrow: "Notre savoir-faire",
+      processHeading: "Du savoir-faire à la dégustation.",
+      contactBadge: "Une commande ou une question ?",
+      ctaLabel: "Nous contacter",
+      aboutLabel: "La maison",
+      galleryLabel: "Créations & spécialités",
+      heroPattern: (accentColor) =>
+        `linear-gradient(135deg, ${accentColor}33 0%, transparent 48%), radial-gradient(circle at 80% 25%, ${accentColor}2a 0, transparent 25%)`,
+      modernServiceCardClass:
+        "rounded-[2rem] border border-slate-200 bg-white shadow-sm",
+      artisanServiceCardClass:
+        "rounded-3xl border border-stone-300 bg-[#fffaf0] shadow-md",
+    };
+  }
+
+  if (
+    ["jardin", "paysag", "espace vert"].some((keyword) =>
+      value.includes(keyword),
+    )
+  ) {
+    return {
+      ...base,
+      key: "paysage",
+      icon: "🌿",
+      heroFallback: "Jardins & espaces extérieurs",
+      serviceLabel: "Espaces verts",
+      serviceHeading: "Des extérieurs pensés pour votre quotidien",
+      serviceIntro: `Aménagement, entretien et création paysagère pour vos espaces extérieurs à ${city}.`,
+      trustItems: [
+        "Conseil adapté",
+        "Projet extérieur",
+        `Présence locale à ${city}`,
+      ],
+      serviceIcons: ["🌿", "🌱", "🌳", "✂️", "🪴", "🏡"],
+      processEyebrow: "Votre extérieur",
+      processHeading: "De l’idée à un extérieur qui vous ressemble.",
+      contactBadge: "Un projet pour votre jardin ?",
+      ctaLabel: "Présenter mon projet",
+      aboutLabel: "Votre paysagiste",
+      galleryLabel: "Jardins & aménagements",
+      heroPattern: (accentColor) =>
+        `radial-gradient(circle at 15% 20%, ${accentColor}42 0, transparent 34%), linear-gradient(160deg, transparent 55%, ${accentColor}20 100%)`,
+      modernServiceCardClass:
+        "rounded-[2rem] border border-slate-200 bg-white shadow-sm",
+      artisanServiceCardClass:
+        "rounded-3xl border border-stone-300 bg-[#fffaf0] shadow-sm",
+    };
+  }
+
+  if (
+    ["garage", "auto", "mécan", "mecan"].some((keyword) =>
+      value.includes(keyword),
+    )
+  ) {
+    return {
+      ...base,
+      key: "automobile",
+      icon: "🚗",
+      heroFallback: "Entretien & mécanique automobile",
+      serviceLabel: "Atelier",
+      serviceHeading: "Des solutions claires pour votre véhicule",
+      serviceIntro: `Entretien, diagnostic et réparation : découvrez les prestations proposées à ${city}.`,
+      trustItems: [
+        "Diagnostic",
+        "Entretien adapté",
+        "Contact atelier",
+      ],
+      serviceIcons: ["🔧", "🚗", "🛞", "🧰", "⚙️", "🔍"],
+      processEyebrow: "Votre véhicule",
+      processHeading: "Du diagnostic à la remise en route.",
+      contactBadge: "Un souci avec votre véhicule ?",
+      ctaLabel: "Décrire le problème",
+      aboutLabel: "L’atelier",
+      galleryLabel: "Atelier & interventions",
+      heroPattern: (accentColor) =>
+        `repeating-linear-gradient(135deg, transparent 0 42px, ${accentColor}12 43px 44px), radial-gradient(circle at 80% 20%, ${accentColor}40 0, transparent 28%)`,
+      modernServiceCardClass:
+        "rounded-xl border border-slate-200 bg-white shadow-sm",
+      artisanServiceCardClass:
+        "rounded-xl border border-stone-300 bg-[#fffaf0] shadow-sm",
+    };
+  }
+
+  if (
+    ["photo", "vidéo", "video", "photographe"].some((keyword) =>
+      value.includes(keyword),
+    )
+  ) {
+    return {
+      ...base,
+      key: "photo",
+      icon: "📷",
+      heroFallback: "Image & création",
+      serviceLabel: "Créations",
+      serviceHeading: "Des images pensées pour raconter votre histoire",
+      serviceIntro: `Portraits, reportages et créations visuelles réalisés autour de vos projets à ${city}.`,
+      trustItems: [
+        "Regard créatif",
+        "Projet personnalisé",
+        "Images soignées",
+      ],
+      serviceIcons: ["📷", "🎞️", "✨", "🖼️", "🎥", "🌅"],
+      processEyebrow: "Votre projet visuel",
+      processHeading: "De votre idée à des images qui vous ressemblent.",
+      contactBadge: "Un projet à mettre en image ?",
+      ctaLabel: "Parler de mon projet",
+      aboutLabel: "Le studio",
+      galleryLabel: "Portfolio",
+      heroPattern: (accentColor) =>
+        `linear-gradient(120deg, ${accentColor}28 0%, transparent 40%), radial-gradient(circle at 82% 18%, ${accentColor}44 0, transparent 24%)`,
+      modernServiceCardClass:
+        "rounded-none border border-slate-200 bg-white shadow-sm",
+      artisanServiceCardClass:
+        "rounded-2xl border border-stone-300 bg-[#fffaf0] shadow-sm",
+    };
+  }
+
+  if (
+    ["avocat", "jurid", "notaire", "conseil"].some((keyword) =>
+      value.includes(keyword),
+    )
+  ) {
+    return {
+      ...base,
+      key: "juridique",
+      icon: "⚖️",
+      heroFallback: "Conseil & accompagnement",
+      serviceLabel: "Expertise",
+      serviceHeading: "Un accompagnement clair pour vos démarches",
+      serviceIntro: `Découvrez les domaines d’accompagnement et les services proposés à ${city}.`,
+      trustItems: [
+        "Écoute du besoin",
+        "Échange confidentiel",
+        "Accompagnement clair",
+      ],
+      serviceIcons: ["⚖️", "📄", "🖋️", "🏛️", "📚", "🤝"],
+      processEyebrow: "Votre démarche",
+      processHeading: "Un accompagnement structuré, étape par étape.",
+      contactBadge: "Besoin d’un premier échange ?",
+      ctaLabel: "Prendre contact",
+      aboutLabel: "Le cabinet",
+      galleryLabel: "Le cabinet",
+      heroPattern: (accentColor) =>
+        `linear-gradient(90deg, ${accentColor}24 0%, transparent 38%), repeating-linear-gradient(0deg, transparent 0 70px, ${accentColor}0c 71px 72px)`,
+      modernServiceCardClass:
+        "rounded-lg border border-slate-200 bg-white shadow-sm",
+      artisanServiceCardClass:
+        "rounded-lg border border-stone-300 bg-[#fffaf0] shadow-sm",
+    };
+  }
+
+  return {
+    ...base,
+    key: "general",
+    icon: getActivityTheme(activity).icon,
+    heroFallback: activity || "Activité professionnelle",
+    serviceLabel: "Services",
+    serviceHeading: "Des solutions pensées pour votre besoin",
+    serviceIntro: `Découvrez les principaux services proposés à ${city}.`,
+    trustItems: [
+      "Contact direct",
+      "Service personnalisé",
+      `Présence locale à ${city}`,
+    ],
+    serviceIcons: ["✦", "◆", "●", "■", "▲", "○"],
+    processEyebrow: "Votre projet",
+    processHeading: `Votre projet ${activityProjectPhrase(activity)}, étape par étape.`,
+    contactBadge: "Parlons de votre besoin",
+    ctaLabel: "Présenter mon besoin",
+    aboutLabel: "L’entreprise",
+    galleryLabel: "Réalisations",
+    heroPattern: (accentColor) =>
+      `radial-gradient(circle at 20% 20%, ${accentColor}44 0, transparent 32%), radial-gradient(circle at 82% 78%, ${accentColor}28 0, transparent 28%)`,
+  };
+}
+
+function siteSafeActivity(activity: string) {
+  const clean = activity.trim();
+  return clean || "l’entreprise";
+}
+
+function getSectorServiceIcon(activity: string, index: number) {
+  const theme = getSectorVisualTheme(activity, "");
+  return theme.serviceIcons[index % theme.serviceIcons.length];
+}
+
+function getSectionIcon(
+  section: SiteSection,
+  activity: string,
+  index: number,
+) {
+  const mode = section.iconMode?.trim().toLowerCase();
+
+  if (mode === "none") {
+    return "";
+  }
+
+  if (mode === "custom") {
+    return section.icon?.trim() || "✨";
+  }
+
+  return getSectorServiceIcon(activity, index);
+}
+
+
+function getSectionImage(
+  site: GeneratedSite,
+  section: SiteSection,
+  index: number,
+) {
+  const mode = section.imageMode?.trim().toLowerCase();
+
+  if (mode === "none") {
+    return "";
+  }
+
+  if (mode === "custom") {
+    return section.imageUrl?.trim() || "";
+  }
+
+  if (section.imageUrl?.trim() && !section.imageMode) {
+    return section.imageUrl.trim();
+  }
+
+  const gallery = (site.gallery ?? []).filter(
+    (url) => url?.trim(),
+  );
+
+  if (gallery.length === 0) {
+    return "";
+  }
+
+  return gallery[index % gallery.length];
+}
+
+
+function activityProjectPhrase(activity: string) {
+  const noun = getActivityTheme(activity).noun;
+  const startsWithVowel = /^[aeiouyhàâäéèêëîïôöùûü]/i.test(noun);
+  return startsWithVowel ? `d’${noun}` : `de ${noun}`;
+}
+
+function textOr(value: string | undefined, fallback: string) {
+  const clean = value?.trim();
+  return clean ? clean : fallback;
+}
+
+function getBenefits(
+  site: GeneratedSite,
+  city: string,
+  activity: string,
+): SiteBenefit[] {
+  const generated = (site.benefits ?? []).filter(
+    (item) => item?.title?.trim() && item?.text?.trim(),
+  );
+
+  if (generated.length > 0) {
+    return generated.slice(0, 3);
+  }
+
+  const sector = getSectorVisualTheme(activity, city);
+
+  return sector.trustItems.map((title, index) => ({
+    title,
+    text:
+      index === 0
+        ? `Une première approche adaptée à votre besoin en ${getActivityTheme(activity).noun}.`
+        : index === 1
+          ? "Des informations claires pour avancer selon votre situation."
+          : `Un contact ancré localement autour de ${city}.`,
+  }));
+}
+
+const defaultLayoutOrder: LayoutBlock[] = [
+  "about",
+  "services",
+  "process",
+  "faq",
+  "gallery",
+  "contact",
+];
+
+function normalizeLayoutOrder(
+  value: LayoutBlock[] | undefined,
+): LayoutBlock[] {
+  const valid = new Set<LayoutBlock>(
+    defaultLayoutOrder,
+  );
+
+  const result: LayoutBlock[] = [];
+
+  for (const block of value ?? []) {
+    if (
+      valid.has(block) &&
+      !result.includes(block)
+    ) {
+      result.push(block);
+    }
+  }
+
+  for (const block of defaultLayoutOrder) {
+    if (!result.includes(block)) {
+      result.push(block);
+    }
+  }
+
+  return result;
+}
+
+function getLayoutOrder(
+  site: GeneratedSite,
+  block: LayoutBlock,
+) {
+  const order =
+    normalizeLayoutOrder(
+      site.layoutOrder,
+    );
+
+  const index =
+    order.indexOf(block);
+
+  return 10 + Math.max(index, 0);
+}
+
+function isLayoutBlockVisible(
+  site: GeneratedSite,
+  block: LayoutBlock,
+) {
+  return !(
+    site.hiddenBlocks ?? []
+  ).includes(block);
+}
+
+function OrderedBlock({
+  site,
+  block,
+  children,
+}: {
+  site: GeneratedSite;
+  block: LayoutBlock;
+  children: React.ReactNode;
+}) {
+  if (
+    !isLayoutBlockVisible(
+      site,
+      block,
+    )
+  ) {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        order:
+          getLayoutOrder(
+            site,
+            block,
+          ),
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 
 function getProjectTitle(activity: string, index: number) {
@@ -145,14 +1189,18 @@ export default function SitePreview({
   city,
 
 }: SitePreviewProps) {
+  const normalizedSite = normalizeSiteForDisplay(site);
+  const designSettings = normalizeDesignSettings(
+    normalizedSite.designSettings,
+  );
 
   if (designStyle === "elegant") {
 
     return (
+      <DesignShell settings={designSettings}>
+        <ElegantTemplate
 
-      <ElegantTemplate
-
-        site={site}
+        site={normalizedSite}
 
         accentColor={accentColor}
 
@@ -161,7 +1209,7 @@ export default function SitePreview({
         city={city}
 
       />
-
+      </DesignShell>
     );
 
   }
@@ -171,10 +1219,10 @@ export default function SitePreview({
   if (designStyle === "artisan") {
 
     return (
+      <DesignShell settings={designSettings}>
+        <ArtisanTemplate
 
-      <ArtisanTemplate
-
-        site={site}
+        site={normalizedSite}
 
         accentColor={accentColor}
 
@@ -183,7 +1231,7 @@ export default function SitePreview({
         city={city}
 
       />
-
+      </DesignShell>
     );
 
   }
@@ -191,10 +1239,10 @@ export default function SitePreview({
 
 
   return (
+      <DesignShell settings={designSettings}>
+        <ModernTemplate
 
-    <ModernTemplate
-
-      site={site}
+      site={normalizedSite}
 
       accentColor={accentColor}
 
@@ -203,8 +1251,8 @@ export default function SitePreview({
       city={city}
 
     />
-
-  );
+      </DesignShell>
+    );
 
 }
 
@@ -227,10 +1275,11 @@ function ModernTemplate({
   "designStyle"
 
 >) {
+  const sector = getSectorVisualTheme(activity, city);
 
   return (
 
-    <div className="overflow-hidden bg-white text-slate-950">
+    <div className="flex flex-col overflow-hidden bg-white text-slate-950">
 
       <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
@@ -262,7 +1311,7 @@ function ModernTemplate({
 
           <div className="hidden items-center gap-7 lg:flex">
             <a href="#services" className="text-sm font-bold text-slate-600 transition hover:text-slate-950">
-              Services
+              {sector.serviceLabel}
             </a>
             {(site.gallery ?? []).length > 0 && (
               <a href="#realisations" className="text-sm font-bold text-slate-600 transition hover:text-slate-950">
@@ -275,11 +1324,11 @@ function ModernTemplate({
 
             {site.phone && (
               <a
-                href={`tel:${site.phone}`}
+                href={`tel:${phoneHref(site.phone)}`}
                 style={{ backgroundColor: accentColor }}
                 className="rounded-xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5"
               >
-                Demander un devis
+                {textOr(site.primaryCta, "Demander un devis")}
               </a>
             )}
           </div>
@@ -292,7 +1341,7 @@ function ModernTemplate({
 
             <div className="absolute right-0 mt-3 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl">
               <a href="#services" className="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
-                Services
+                {sector.serviceLabel}
               </a>
               {(site.gallery ?? []).length > 0 && (
                 <a href="#realisations" className="block rounded-xl px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
@@ -305,11 +1354,11 @@ function ModernTemplate({
 
               {site.phone && (
                 <a
-                  href={`tel:${site.phone}`}
+                  href={`tel:${phoneHref(site.phone)}`}
                   style={{ backgroundColor: accentColor }}
                   className="mt-2 block rounded-xl px-4 py-3 text-center text-sm font-black text-white"
                 >
-                  Demander un devis
+                  {textOr(site.primaryCta, "Demander un devis")}
                 </a>
               )}
             </div>
@@ -319,11 +1368,11 @@ function ModernTemplate({
 
 
 
-            <section className="relative overflow-hidden bg-slate-950 text-white">
+            <section data-siteai-hero className="relative overflow-hidden bg-slate-950 text-white">
         <div
           className="pointer-events-none absolute inset-0 opacity-30"
           style={{
-            background: `radial-gradient(circle at 20% 20%, ${accentColor}55 0, transparent 34%), radial-gradient(circle at 85% 80%, ${accentColor}33 0, transparent 30%)`,
+            background: sector.heroPattern(accentColor),
           }}
         />
 
@@ -335,13 +1384,14 @@ function ModernTemplate({
           }`}
         >
           <div className="flex items-center px-5 py-14 sm:px-10 sm:py-20 lg:px-14 lg:py-24">
-            <div className={site.heroImageUrl ? "max-w-2xl" : "mx-auto max-w-4xl text-center"}>
-              <div className={`flex flex-wrap gap-2 ${site.heroImageUrl ? "" : "justify-center"}`}>
+            <div data-siteai-hero-content className={site.heroImageUrl ? "max-w-2xl" : "mx-auto max-w-4xl text-center"}>
+              <div data-siteai-hero-badges className={`flex flex-wrap gap-2 ${site.heroImageUrl ? "" : "justify-center"}`}>
                 <span
                   className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-black uppercase tracking-[0.2em]"
                   style={{ color: accentColor }}
                 >
-                  {activity}
+                  <span className="mr-2" aria-hidden="true">{sector.icon}</span>
+                  {textOr(site.heroEyebrow, sector.heroFallback)}
                 </span>
 
                 {city && (
@@ -365,14 +1415,14 @@ function ModernTemplate({
                 {site.heroText}
               </p>
 
-              <div className={`mt-9 flex flex-wrap gap-3 ${site.heroImageUrl ? "" : "justify-center"}`}>
+              <div data-siteai-hero-actions className={`mt-9 flex flex-wrap gap-3 ${site.heroImageUrl ? "" : "justify-center"}`}>
                 {site.phone && (
                   <a
-                    href={`tel:${site.phone}`}
+                    href={`tel:${phoneHref(site.phone)}`}
                     style={{ backgroundColor: accentColor }}
                     className="w-full rounded-xl px-6 py-4 text-center text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 sm:w-auto"
                   >
-                    Appeler maintenant
+                    {textOr(site.primaryCta, "Appeler maintenant")}
                   </a>
                 )}
 
@@ -380,7 +1430,7 @@ function ModernTemplate({
                   href="#contact"
                   className="w-full rounded-xl border border-white/20 bg-white/5 px-6 py-4 text-center text-sm font-black text-white transition hover:bg-white/10 sm:w-auto"
                 >
-                  Demander un devis
+                  {textOr(site.secondaryCta, "Demander un devis")}
                 </a>
               </div>
 
@@ -389,9 +1439,9 @@ function ModernTemplate({
                   site.heroImageUrl ? "" : "justify-center"
                 }`}
               >
-                <span>✓ Contact direct</span>
-                <span>✓ Service local</span>
-                <span>✓ Réponse adaptée à votre besoin</span>
+                {sector.trustItems.map((item) => (
+                  <span key={item}>✓ {item}</span>
+                ))}
               </div>
             </div>
           </div>
@@ -422,23 +1472,7 @@ function ModernTemplate({
 
       <section className="border-y border-slate-200 bg-white px-6 py-7 sm:px-8">
         <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-3">
-          {[
-            {
-              title: "Contact direct",
-              text: "Un échange simple pour présenter votre besoin.",
-              icon: "01",
-            },
-            {
-              title: "Projet sur mesure",
-              text: "Une présentation adaptée à votre activité et à vos clients.",
-              icon: "02",
-            },
-            {
-              title: "Présence locale",
-              text: `Une entreprise mise en valeur à ${city}.`,
-              icon: "03",
-            },
-          ].map((item) => (
+          {getBenefits(site, city, activity).map((item, index) => (
             <div
               key={item.title}
               className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-5"
@@ -447,7 +1481,7 @@ function ModernTemplate({
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-black text-white"
                 style={{ backgroundColor: accentColor }}
               >
-                {item.icon}
+                {String(index + 1).padStart(2, "0")}
               </div>
 
               <div>
@@ -459,7 +1493,22 @@ function ModernTemplate({
         </div>
       </section>
 
-<section id="services" className="bg-white px-5 py-16 sm:px-8 sm:py-20 lg:py-24">
+      <OrderedBlock site={site} block="about">
+
+
+        <AboutSection
+        site={site}
+        activity={activity}
+        city={city}
+        accentColor={accentColor}
+        variant="modern"
+      />
+
+
+      </OrderedBlock>
+
+<OrderedBlock site={site} block="services">
+      <section id="services" className="bg-white px-5 py-16 sm:px-8 sm:py-20 lg:py-24">
 
         <div className="mx-auto max-w-6xl">
 
@@ -477,7 +1526,7 @@ function ModernTemplate({
 
             >
 
-              Nos services
+              {sector.serviceLabel}
 
             </p>
 
@@ -485,7 +1534,7 @@ function ModernTemplate({
 
             <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
 
-              Des solutions pensées pour votre besoin
+              {sector.serviceHeading}
 
             </h2>
 
@@ -493,7 +1542,7 @@ function ModernTemplate({
 
             <p className="mx-auto mt-5 max-w-2xl leading-7 text-slate-500">
 
-              Découvrez les principaux services proposés par {site.businessName} à {city}.
+              {sector.serviceIntro}
 
             </p>
 
@@ -503,7 +1552,7 @@ function ModernTemplate({
 
           <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
 
-            {site.sections.map(
+            {site.sections.filter((section) => !section.hidden).map(
 
               (
 
@@ -517,7 +1566,7 @@ function ModernTemplate({
 
                   key={index}
 
-                  className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl"
+                  className={`group relative overflow-hidden p-7 transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl ${sector.modernServiceCardClass}`}
 
                 >
 
@@ -535,31 +1584,64 @@ function ModernTemplate({
 
 
 
+                  {getSectionImage(
+                    site,
+                    section,
+                    index,
+                  ) && (
+                    <div className="mb-6 overflow-hidden rounded-2xl border border-slate-100 bg-slate-100">
+                      <img
+                        src={getSectionImage(
+                          site,
+                          section,
+                          index,
+                        )}
+                        alt={`Illustration ${section.title}`}
+                        className="h-44 w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+
+
+
                   <div className="flex items-center justify-between gap-4">
 
-                    <div
+                    {getSectionIcon(
+                      section,
+                      activity,
+                      index,
+                    ) && (
+                      <div
 
-                      style={{
+                        style={{
 
-                        backgroundColor: `${accentColor}14`,
+                          backgroundColor: `${accentColor}14`,
 
-                        color: accentColor,
+                          color: accentColor,
 
-                      }}
+                        }}
 
-                      className="flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-black"
+                        className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-black"
 
-                    >
+                      >
 
-                      {String(index + 1).padStart(2, "0")}
+                        <span aria-hidden="true">
+                          {getSectionIcon(
+                            section,
+                            activity,
+                            index,
+                          )}
+                        </span>
 
-                    </div>
+                      </div>
+                    )}
 
 
 
                     <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
 
-                      Service
+                      {sector.serviceLabel}
 
                     </span>
 
@@ -588,7 +1670,7 @@ function ModernTemplate({
                     className="mt-7 inline-flex items-center gap-2 text-sm font-bold"
                     style={{ color: accentColor }}
                   >
-                    Demander un devis
+                    {sector.ctaLabel}
                     <span className="transition-transform duration-300 group-hover:translate-x-1">
                       →
                     </span>
@@ -628,13 +1710,18 @@ function ModernTemplate({
               className="w-full rounded-xl px-6 py-4 text-center text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 sm:w-auto"
               style={{ backgroundColor: accentColor }}
             >
-              Demander un devis
+              {textOr(site.primaryCta, "Demander un devis")}
             </a>
           </div>
         </div>
       </section>
 
-      <ProcessSection
+      </OrderedBlock>
+
+      <OrderedBlock site={site} block="process">
+
+
+        <ProcessSection
         site={site}
         activity={activity}
         city={city}
@@ -642,7 +1729,13 @@ function ModernTemplate({
         variant="modern"
       />
 
-      <FaqSection
+
+      </OrderedBlock>
+
+      <OrderedBlock site={site} block="faq">
+
+
+        <FaqSection
         site={site}
         activity={activity}
         city={city}
@@ -650,11 +1743,14 @@ function ModernTemplate({
         variant="modern"
       />
 
-      {(site.gallery ?? [])
+
+      </OrderedBlock>
+
+      {isLayoutBlockVisible(site, "gallery") && (site.gallery ?? [])
 
         .length > 0 && (
 
-        <section id="realisations" className="bg-slate-50 px-6 py-20 sm:px-8 lg:py-24">
+        <section id="realisations" style={{ order: getLayoutOrder(site, "gallery") }} className="bg-slate-50 px-6 py-20 sm:px-8 lg:py-24">
 
           <div className="mx-auto max-w-6xl">
 
@@ -676,7 +1772,7 @@ function ModernTemplate({
 
                 >
 
-                  Réalisations
+                  {sector.galleryLabel}
 
                 </p>
 
@@ -808,7 +1904,12 @@ function ModernTemplate({
 
 
 
-      <ContactSection
+      <OrderedBlock site={site} block="contact">
+
+
+
+
+        <ContactSection
 
         site={site}
 
@@ -824,7 +1925,12 @@ function ModernTemplate({
 
 
 
-      <footer className="bg-slate-950 px-6 py-12 text-white sm:px-8">
+
+      </OrderedBlock>
+
+
+
+      <footer style={{ order: 1000 }} className="bg-slate-950 px-6 py-12 text-white sm:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-10 border-b border-white/10 pb-10 md:grid-cols-[1.3fr_0.7fr_0.7fr]">
             <div>
@@ -888,11 +1994,11 @@ function ModernTemplate({
 
               {site.phone && (
                 <a
-                  href={`tel:${site.phone}`}
+                  href={`tel:${phoneHref(site.phone)}`}
                   className="mt-3 block text-sm font-black"
                   style={{ color: accentColor }}
                 >
-                  {site.phone}
+                  {formatPhoneNumber(site.phone)}
                 </a>
               )}
             </div>
@@ -930,10 +2036,11 @@ function ElegantTemplate({
   "designStyle"
 
 >) {
+  const sector = getSectorVisualTheme(activity, city);
 
   return (
 
-    <div className="overflow-hidden bg-[#f8f6f1] text-neutral-950">
+    <div className="flex flex-col overflow-hidden bg-[#f8f6f1] text-neutral-950">
 
       <nav className="sticky top-0 z-50 border-b border-neutral-300 bg-[#f8f6f1]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-5 py-5 sm:px-8">
@@ -958,7 +2065,7 @@ function ElegantTemplate({
 
           <div className="hidden items-center gap-8 lg:flex">
             <a href="#services" className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-600 transition hover:text-neutral-950">
-              Expertise
+              {sector.serviceLabel}
             </a>
             {(site.gallery ?? []).length > 0 && (
               <a href="#realisations" className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-600 transition hover:text-neutral-950">
@@ -971,11 +2078,11 @@ function ElegantTemplate({
 
             {site.phone && (
               <a
-                href={`tel:${site.phone}`}
+                href={`tel:${phoneHref(site.phone)}`}
                 style={{ borderColor: accentColor, color: accentColor }}
                 className="border px-5 py-3 text-xs font-bold uppercase tracking-[0.16em] transition hover:-translate-y-0.5"
               >
-                Demander un devis
+                {textOr(site.primaryCta, "Demander un devis")}
               </a>
             )}
           </div>
@@ -987,7 +2094,7 @@ function ElegantTemplate({
 
             <div className="absolute right-0 mt-3 w-[min(16rem,calc(100vw-2rem))] border border-neutral-300 bg-[#f8f6f1] p-3 shadow-2xl">
               <a href="#services" className="block px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-neutral-700">
-                Expertise
+                {sector.serviceLabel}
               </a>
               {(site.gallery ?? []).length > 0 && (
                 <a href="#realisations" className="block px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-neutral-700">
@@ -1000,11 +2107,11 @@ function ElegantTemplate({
 
               {site.phone && (
                 <a
-                  href={`tel:${site.phone}`}
+                  href={`tel:${phoneHref(site.phone)}`}
                   style={{ borderColor: accentColor, color: accentColor }}
                   className="mt-2 block border px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.16em]"
                 >
-                  Demander un devis
+                  {textOr(site.primaryCta, "Demander un devis")}
                 </a>
               )}
             </div>
@@ -1015,6 +2122,7 @@ function ElegantTemplate({
 
 
             <section
+        data-siteai-hero
         className="relative flex min-h-[560px] items-center overflow-hidden bg-neutral-950 text-white sm:min-h-[650px]"
         style={
           site.heroImageUrl
@@ -1032,8 +2140,8 @@ function ElegantTemplate({
         />
 
         <div className="relative z-10 mx-auto w-full max-w-7xl px-5 py-16 sm:px-10 sm:py-24 lg:px-14">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-4">
+          <div data-siteai-hero-content className="max-w-3xl">
+            <div data-siteai-hero-badges className="flex items-center gap-4">
               <div
                 className="h-px w-14"
                 style={{ backgroundColor: accentColor }}
@@ -1042,7 +2150,8 @@ function ElegantTemplate({
                 style={{ color: accentColor }}
                 className="text-xs font-semibold uppercase tracking-[0.4em]"
               >
-                {activity} · {city}
+                <span className="mr-2" aria-hidden="true">{sector.icon}</span>
+                {textOr(site.heroEyebrow, sector.heroFallback)} · {city}
               </p>
             </div>
 
@@ -1054,21 +2163,21 @@ function ElegantTemplate({
               {site.heroText}
             </p>
 
-            <div className="mt-10 flex flex-wrap gap-4">
+            <div data-siteai-hero-actions className="mt-10 flex flex-wrap gap-4">
               <a
                 href="#contact"
                 style={{ borderColor: accentColor, color: accentColor }}
                 className="w-full border px-6 py-4 text-center text-xs font-semibold uppercase tracking-[0.18em] transition hover:bg-white hover:text-black sm:w-auto sm:px-7 sm:tracking-[0.2em]"
               >
-                Nous contacter
+                {textOr(site.primaryCta, "Nous contacter")}
               </a>
 
               {site.phone && (
                 <a
-                  href={`tel:${site.phone}`}
+                  href={`tel:${phoneHref(site.phone)}`}
                   className="w-full border border-white/25 px-6 py-4 text-center text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white sm:w-auto sm:px-7 sm:tracking-[0.2em]"
                 >
-                  {site.phone}
+                  {formatPhoneNumber(site.phone)}
                 </a>
               )}
             </div>
@@ -1093,7 +2202,7 @@ function ElegantTemplate({
                   Contact
                 </p>
                 <p className="mt-2 text-sm text-neutral-200">
-                  {site.phone || "Sur demande"}
+                  {site.phone ? formatPhoneNumber(site.phone) : "Sur demande"}
                 </p>
               </div>
             </div>
@@ -1103,20 +2212,7 @@ function ElegantTemplate({
 
       <section className="border-y border-neutral-300 bg-[#f8f6f1] px-6 py-8 sm:px-8">
         <div className="mx-auto grid max-w-6xl divide-y divide-neutral-300 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {[
-            {
-              title: "Écoute",
-              text: "Comprendre votre besoin avant de vous accompagner.",
-            },
-            {
-              title: "Exigence",
-              text: "Une présentation claire, soignée et cohérente.",
-            },
-            {
-              title: "Proximité",
-              text: `Une activité ancrée à ${city}.`,
-            },
-          ].map((item, index) => (
+          {getBenefits(site, city, activity).map((item, index) => (
             <div
               key={item.title}
               className="px-0 py-6 sm:px-8 sm:py-2 first:sm:pl-0 last:sm:pr-0"
@@ -1135,7 +2231,22 @@ function ElegantTemplate({
         </div>
       </section>
 
-<section id="services" className="px-5 py-16 sm:px-8 sm:py-24 lg:py-28">
+      <OrderedBlock site={site} block="about">
+
+
+        <AboutSection
+        site={site}
+        activity={activity}
+        city={city}
+        accentColor={accentColor}
+        variant="elegant"
+      />
+
+
+      </OrderedBlock>
+
+<OrderedBlock site={site} block="services">
+      <section id="services" className="px-5 py-16 sm:px-8 sm:py-24 lg:py-28">
 
         <div className="mx-auto max-w-6xl">
 
@@ -1157,7 +2268,7 @@ function ElegantTemplate({
 
               >
 
-                Expertise
+                {sector.serviceLabel}
 
               </p>
 
@@ -1165,7 +2276,7 @@ function ElegantTemplate({
 
               <h2 className="mt-6 text-4xl font-light leading-[1.1] sm:text-5xl">
 
-                Une approche soignée, pensée dans chaque détail.
+                {sector.serviceHeading}
 
               </h2>
 
@@ -1173,7 +2284,7 @@ function ElegantTemplate({
 
               <p className="mt-6 max-w-md leading-8 text-neutral-500">
 
-                {site.businessName} vous accompagne à {city} avec une prestation claire, attentive et adaptée à votre projet.
+                {sector.serviceIntro}
 
               </p>
 
@@ -1183,7 +2294,7 @@ function ElegantTemplate({
 
             <div className="border-t border-neutral-300">
 
-              {site.sections.map(
+              {site.sections.filter((section) => !section.hidden).map(
 
                 (
 
@@ -1197,27 +2308,64 @@ function ElegantTemplate({
 
                     key={index}
 
-                    className="group grid gap-5 border-b border-neutral-300 py-9 transition-colors duration-300 md:grid-cols-[80px_1fr_auto] md:items-start"
+                    className={`group grid gap-5 border-b border-neutral-300 py-9 transition-colors duration-300 md:items-start ${
+                      getSectionIcon(
+                        section,
+                        activity,
+                        index,
+                      )
+                        ? "md:grid-cols-[80px_1fr_auto]"
+                        : "md:grid-cols-[1fr_auto]"
+                    }`}
 
                   >
 
-                    <p
+                    {getSectionImage(
+                      site,
+                      section,
+                      index,
+                    ) && (
+                      <div className="overflow-hidden rounded-sm bg-neutral-100 md:col-span-full">
+                        <img
+                          src={getSectionImage(
+                            site,
+                            section,
+                            index,
+                          )}
+                          alt={`Illustration ${section.title}`}
+                          className="h-52 w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
 
-                      style={{
+                    {getSectionIcon(
+                      section,
+                      activity,
+                      index,
+                    ) && (
+                      <p
 
-                        color:
+                        style={{
 
-                          accentColor,
+                          color:
 
-                      }}
+                            accentColor,
 
-                      className="pt-1 text-sm font-semibold tracking-[0.18em]"
+                        }}
 
-                    >
+                        className="pt-1 text-2xl font-semibold tracking-[0.18em]"
 
-                      {String(index + 1).padStart(2, "0")}
+                      >
 
-                    </p>
+                        {getSectionIcon(
+                          section,
+                          activity,
+                          index,
+                        )}
+
+                      </p>
+                    )}
 
 
 
@@ -1291,13 +2439,18 @@ function ElegantTemplate({
               className="w-full border px-7 py-4 text-center text-xs font-bold uppercase tracking-[0.18em] transition hover:-translate-y-0.5 sm:w-auto"
               style={{ borderColor: accentColor, color: accentColor }}
             >
-              Demander un devis
+              {textOr(site.primaryCta, "Demander un devis")}
             </a>
           </div>
         </div>
       </section>
 
-      <ProcessSection
+      </OrderedBlock>
+
+      <OrderedBlock site={site} block="process">
+
+
+        <ProcessSection
         site={site}
         activity={activity}
         city={city}
@@ -1305,7 +2458,13 @@ function ElegantTemplate({
         variant="elegant"
       />
 
-      <FaqSection
+
+      </OrderedBlock>
+
+      <OrderedBlock site={site} block="faq">
+
+
+        <FaqSection
         site={site}
         activity={activity}
         city={city}
@@ -1313,11 +2472,14 @@ function ElegantTemplate({
         variant="elegant"
       />
 
-      {(site.gallery ?? [])
+
+      </OrderedBlock>
+
+      {isLayoutBlockVisible(site, "gallery") && (site.gallery ?? [])
 
         .length > 0 && (
 
-        <section id="realisations" className="bg-neutral-950 px-6 py-24 text-white sm:px-8 lg:py-28">
+        <section id="realisations" style={{ order: getLayoutOrder(site, "gallery") }} className="bg-neutral-950 px-6 py-24 text-white sm:px-8 lg:py-28">
 
           <div className="mx-auto max-w-6xl">
 
@@ -1339,7 +2501,7 @@ function ElegantTemplate({
 
                 >
 
-                  Sélection
+                  {sector.galleryLabel}
 
                 </p>
 
@@ -1467,7 +2629,12 @@ function ElegantTemplate({
 
 
 
-      <ContactSection
+      <OrderedBlock site={site} block="contact">
+
+
+
+
+        <ContactSection
 
         site={site}
 
@@ -1485,7 +2652,12 @@ function ElegantTemplate({
 
 
 
-      <footer className="border-t border-neutral-300 bg-[#f8f6f1] px-6 py-14 text-neutral-950 sm:px-8">
+
+      </OrderedBlock>
+
+
+
+      <footer style={{ order: 1000 }} className="border-t border-neutral-300 bg-[#f8f6f1] px-6 py-14 text-neutral-950 sm:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-12 border-b border-neutral-300 pb-12 md:grid-cols-[1.3fr_0.7fr_0.7fr]">
             <div>
@@ -1536,11 +2708,11 @@ function ElegantTemplate({
 
               {site.phone && (
                 <a
-                  href={`tel:${site.phone}`}
+                  href={`tel:${phoneHref(site.phone)}`}
                   className="mt-3 inline-block border-b pb-1 text-sm"
                   style={{ borderColor: accentColor, color: accentColor }}
                 >
-                  {site.phone}
+                  {formatPhoneNumber(site.phone)}
                 </a>
               )}
             </div>
@@ -1578,10 +2750,11 @@ function ArtisanTemplate({
   "designStyle"
 
 >) {
+  const sector = getSectorVisualTheme(activity, city);
 
   return (
 
-    <div className="overflow-hidden bg-[#f3eee4] text-stone-900">
+    <div className="flex flex-col overflow-hidden bg-[#f3eee4] text-stone-900">
 
       <nav className="sticky top-0 z-50 border-b border-stone-300 bg-[#fffaf0]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
@@ -1613,7 +2786,7 @@ function ArtisanTemplate({
 
           <div className="hidden items-center gap-7 lg:flex">
             <a href="#services" className="text-sm font-black text-stone-600 transition hover:text-stone-950">
-              Services
+              {sector.serviceLabel}
             </a>
             {(site.gallery ?? []).length > 0 && (
               <a href="#realisations" className="text-sm font-black text-stone-600 transition hover:text-stone-950">
@@ -1626,11 +2799,11 @@ function ArtisanTemplate({
 
             {site.phone && (
               <a
-                href={`tel:${site.phone}`}
+                href={`tel:${phoneHref(site.phone)}`}
                 style={{ backgroundColor: accentColor }}
                 className="rounded-xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5"
               >
-                Demander un devis
+                {textOr(site.primaryCta, "Demander un devis")}
               </a>
             )}
           </div>
@@ -1643,7 +2816,7 @@ function ArtisanTemplate({
 
             <div className="absolute right-0 mt-3 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-stone-300 bg-[#fffaf0] p-3 shadow-2xl">
               <a href="#services" className="block rounded-xl px-4 py-3 text-sm font-black text-stone-700 hover:bg-white">
-                Services
+                {sector.serviceLabel}
               </a>
               {(site.gallery ?? []).length > 0 && (
                 <a href="#realisations" className="block rounded-xl px-4 py-3 text-sm font-black text-stone-700 hover:bg-white">
@@ -1656,11 +2829,11 @@ function ArtisanTemplate({
 
               {site.phone && (
                 <a
-                  href={`tel:${site.phone}`}
+                  href={`tel:${phoneHref(site.phone)}`}
                   style={{ backgroundColor: accentColor }}
                   className="mt-2 block rounded-xl px-4 py-3 text-center text-sm font-black text-white"
                 >
-                  Demander un devis
+                  {textOr(site.primaryCta, "Demander un devis")}
                 </a>
               )}
             </div>
@@ -1670,16 +2843,17 @@ function ArtisanTemplate({
 
 
 
-            <section className="relative overflow-hidden bg-stone-900 text-white">
+            <section data-siteai-hero className="relative overflow-hidden bg-stone-900 text-white">
         <div className="mx-auto grid max-w-7xl lg:grid-cols-[1.02fr_0.98fr]">
           <div className="flex items-center px-5 py-14 sm:px-10 sm:py-20 lg:px-14 lg:py-24">
-            <div className="max-w-2xl">
-              <div className="flex flex-wrap gap-2">
+            <div data-siteai-hero-content className="max-w-2xl">
+              <div data-siteai-hero-badges className="flex flex-wrap gap-2">
                 <span
                   style={{ backgroundColor: accentColor }}
                   className="inline-block rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.2em]"
                 >
-                  Artisan local
+                  <span className="mr-2" aria-hidden="true">{sector.icon}</span>
+                  {textOr(site.heroEyebrow, sector.heroFallback)}
                 </span>
 
                 {city && (
@@ -1697,14 +2871,14 @@ function ArtisanTemplate({
                 {site.heroText}
               </p>
 
-              <div className="mt-9 flex flex-wrap gap-3">
+              <div data-siteai-hero-actions className="mt-9 flex flex-wrap gap-3">
                 {site.phone && (
                   <a
-                    href={`tel:${site.phone}`}
+                    href={`tel:${phoneHref(site.phone)}`}
                     style={{ backgroundColor: accentColor }}
                     className="rounded-xl px-6 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5"
                   >
-                    ☎ {site.phone}
+                    ☎ {formatPhoneNumber(site.phone)}
                   </a>
                 )}
 
@@ -1712,14 +2886,14 @@ function ArtisanTemplate({
                   href="#contact"
                   className="w-full rounded-xl border border-stone-600 bg-stone-800 px-6 py-4 text-center text-sm font-black text-white transition hover:bg-stone-700 sm:w-auto"
                 >
-                  Demander un devis
+                  {textOr(site.secondaryCta, "Demander un devis")}
                 </a>
               </div>
 
               <div className="mt-10 grid max-w-xl gap-3 text-sm text-stone-400 sm:grid-cols-3">
-                <span>✓ Proximité</span>
-                <span>✓ Contact direct</span>
-                <span>✓ Besoin personnalisé</span>
+                {sector.trustItems.map((item) => (
+                  <span key={item}>✓ {item}</span>
+                ))}
               </div>
             </div>
           </div>
@@ -1738,7 +2912,7 @@ function ArtisanTemplate({
             ) : (
               <div className="flex h-full min-h-[280px] items-center justify-center bg-stone-800 sm:min-h-[380px] lg:min-h-[620px]">
                 <div className="text-center">
-                  <p className="text-6xl">🛠️</p>
+                  <p className="text-6xl" aria-hidden="true">{sector.icon}</p>
                   <p className="mt-4 text-sm font-bold uppercase tracking-[0.25em] text-stone-500">
                     {activity}
                   </p>
@@ -1760,23 +2934,7 @@ function ArtisanTemplate({
 
       <section className="border-y border-stone-300 bg-[#fffaf0] px-6 py-8 sm:px-8">
         <div className="mx-auto grid max-w-6xl gap-4 md:grid-cols-3">
-          {[
-            {
-              title: "Proche de vous",
-              text: `Une activité locale mise en avant à ${city}.`,
-              symbol: "✓",
-            },
-            {
-              title: "Conseil personnalisé",
-              text: "Un contact simple pour expliquer votre projet.",
-              symbol: "✓",
-            },
-            {
-              title: "Suivi du projet",
-              text: "Une présentation claire de vos besoins et services.",
-              symbol: "✓",
-            },
-          ].map((item) => (
+          {getBenefits(site, city, activity).map((item) => (
             <div
               key={item.title}
               className="flex gap-4 rounded-2xl border border-stone-300 bg-white/70 p-5 shadow-sm"
@@ -1785,7 +2943,7 @@ function ArtisanTemplate({
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-black text-white"
                 style={{ backgroundColor: accentColor }}
               >
-                {item.symbol}
+                ✓
               </div>
 
               <div>
@@ -1797,7 +2955,22 @@ function ArtisanTemplate({
         </div>
       </section>
 
-<section id="services" className="px-5 py-16 sm:px-8 sm:py-20 lg:py-24">
+      <OrderedBlock site={site} block="about">
+
+
+        <AboutSection
+        site={site}
+        activity={activity}
+        city={city}
+        accentColor={accentColor}
+        variant="artisan"
+      />
+
+
+      </OrderedBlock>
+
+<OrderedBlock site={site} block="services">
+      <section id="services" className="px-5 py-16 sm:px-8 sm:py-20 lg:py-24">
 
         <div className="mx-auto max-w-6xl">
 
@@ -1817,7 +2990,7 @@ function ArtisanTemplate({
 
               >
 
-                Notre savoir-faire
+                {sector.serviceLabel}
 
               </p>
 
@@ -1825,7 +2998,7 @@ function ArtisanTemplate({
 
               <h2 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
 
-                Un service concret, local et proche de vos besoins.
+                {sector.serviceHeading}
 
               </h2>
 
@@ -1835,7 +3008,7 @@ function ArtisanTemplate({
 
             <p className="max-w-md leading-7 text-stone-600">
 
-              Des prestations présentées simplement, avec un contact direct avec {site.businessName} à {city}.
+              {sector.serviceIntro}
 
             </p>
 
@@ -1845,7 +3018,7 @@ function ArtisanTemplate({
 
           <div className="mt-12 grid gap-5 md:grid-cols-2">
 
-            {site.sections.map(
+            {site.sections.filter((section) => !section.hidden).map(
 
               (
 
@@ -1859,29 +3032,58 @@ function ArtisanTemplate({
 
                   key={index}
 
-                  className="group relative overflow-hidden rounded-2xl border border-stone-300 bg-[#fffaf0] p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                  className={`group relative overflow-hidden p-7 transition duration-300 hover:-translate-y-1 hover:shadow-lg ${sector.artisanServiceCardClass}`}
 
                 >
 
+                  {getSectionImage(
+                    site,
+                    section,
+                    index,
+                  ) && (
+                    <div className="mb-6 overflow-hidden rounded-xl bg-stone-100">
+                      <img
+                        src={getSectionImage(
+                          site,
+                          section,
+                          index,
+                        )}
+                        alt={`Illustration ${section.title}`}
+                        className="h-48 w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+
                   <div className="flex items-start gap-4">
 
-                    <div
+                    {getSectionIcon(
+                      section,
+                      activity,
+                      index,
+                    ) && (
+                      <div
 
-                      style={{
+                        style={{
 
-                        backgroundColor:
+                          backgroundColor:
 
-                          accentColor,
+                            accentColor,
 
-                      }}
+                        }}
 
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl font-black text-white shadow-sm"
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl font-black text-white shadow-sm"
 
-                    >
+                      >
 
-                      {index + 1}
+                        {getSectionIcon(
+                          section,
+                          activity,
+                          index,
+                        )}
 
-                    </div>
+                      </div>
+                    )}
 
 
 
@@ -1889,7 +3091,7 @@ function ArtisanTemplate({
 
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-stone-400">
 
-                        Service {String(index + 1).padStart(2, "0")}
+                        {sector.serviceLabel} {String(index + 1).padStart(2, "0")}
 
                       </p>
 
@@ -1933,7 +3135,7 @@ function ArtisanTemplate({
                       className="shrink-0 text-sm font-black"
                       style={{ color: accentColor }}
                     >
-                      Devis →
+                      {sector.ctaLabel} →
                     </a>
                   </div>
 
@@ -1971,13 +3173,18 @@ function ArtisanTemplate({
               className="w-full rounded-xl px-6 py-4 text-center text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 sm:w-auto"
               style={{ backgroundColor: accentColor }}
             >
-              Demander un devis
+              {textOr(site.primaryCta, "Demander un devis")}
             </a>
           </div>
         </div>
       </section>
 
-      <ProcessSection
+      </OrderedBlock>
+
+      <OrderedBlock site={site} block="process">
+
+
+        <ProcessSection
         site={site}
         activity={activity}
         city={city}
@@ -1985,7 +3192,13 @@ function ArtisanTemplate({
         variant="artisan"
       />
 
-      <FaqSection
+
+      </OrderedBlock>
+
+      <OrderedBlock site={site} block="faq">
+
+
+        <FaqSection
         site={site}
         activity={activity}
         city={city}
@@ -1993,11 +3206,14 @@ function ArtisanTemplate({
         variant="artisan"
       />
 
-      {(site.gallery ?? [])
+
+      </OrderedBlock>
+
+      {isLayoutBlockVisible(site, "gallery") && (site.gallery ?? [])
 
         .length > 0 && (
 
-        <section id="realisations" className="bg-[#fffaf0] px-6 py-20 sm:px-8 lg:py-24">
+        <section id="realisations" style={{ order: getLayoutOrder(site, "gallery") }} className="bg-[#fffaf0] px-6 py-20 sm:px-8 lg:py-24">
 
           <div className="mx-auto max-w-6xl">
 
@@ -2019,7 +3235,7 @@ function ArtisanTemplate({
 
                 >
 
-                  Nos réalisations
+                  {sector.galleryLabel}
 
                 </p>
 
@@ -2151,7 +3367,12 @@ function ArtisanTemplate({
 
 
 
-      <ContactSection
+      <OrderedBlock site={site} block="contact">
+
+
+
+
+        <ContactSection
 
         site={site}
 
@@ -2167,7 +3388,12 @@ function ArtisanTemplate({
 
 
 
-      <footer className="bg-stone-950 px-6 py-12 text-white sm:px-8">
+
+      </OrderedBlock>
+
+
+
+      <footer style={{ order: 1000 }} className="bg-stone-950 px-6 py-12 text-white sm:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-10 border-b border-stone-800 pb-10 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
             <div>
@@ -2232,11 +3458,11 @@ function ArtisanTemplate({
 
               {site.phone && (
                 <a
-                  href={`tel:${site.phone}`}
+                  href={`tel:${phoneHref(site.phone)}`}
                   className="mt-3 block font-black"
                   style={{ color: accentColor }}
                 >
-                  {site.phone}
+                  {formatPhoneNumber(site.phone)}
                 </a>
               )}
             </div>
@@ -2257,6 +3483,137 @@ function ArtisanTemplate({
 
 
 
+function AboutSection({
+  site,
+  activity,
+  city,
+  accentColor,
+  variant,
+}: {
+  site: GeneratedSite;
+  activity: string;
+  city: string;
+  accentColor: string;
+  variant: "modern" | "elegant" | "artisan";
+}) {
+  const sector = getSectorVisualTheme(activity, city);
+  const title = textOr(
+    site.aboutTitle,
+    `À propos de ${site.businessName}`,
+  );
+
+  const text = textOr(
+    site.aboutText,
+    `${site.businessName} présente son savoir-faire en ${getActivityTheme(activity).noun} à ${city}, avec une approche claire et adaptée à chaque besoin.`,
+  );
+
+  if (variant === "elegant") {
+    return (
+      <section id="a-propos" className="bg-neutral-950 px-6 py-20 text-white sm:px-8 lg:py-24">
+        <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
+          <div>
+            <p
+              className="text-xs font-bold uppercase tracking-[0.4em]"
+              style={{ color: accentColor }}
+            >
+              À propos
+            </p>
+            <h2 className="mt-6 text-4xl font-light leading-[1.1] sm:text-5xl">
+              {title}
+            </h2>
+          </div>
+          <div className="border-t border-neutral-800 pt-8 lg:pt-10">
+            <p className="max-w-3xl text-lg font-light leading-9 text-neutral-300">
+              {text}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3 text-xs uppercase tracking-[0.18em] text-neutral-400">
+              <span className="border border-neutral-800 px-4 py-3">{activity}</span>
+              <span className="border border-neutral-800 px-4 py-3">{city}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === "artisan") {
+    return (
+      <section id="a-propos" className="bg-[#f3eee4] px-6 py-20 text-stone-950 sm:px-8 lg:py-24">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-8 rounded-3xl border border-stone-300 bg-[#fffaf0] p-7 shadow-sm sm:p-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12">
+            <div>
+              <p
+                className="text-sm font-black uppercase tracking-[0.24em]"
+                style={{ color: accentColor }}
+              >
+                {sector.aboutLabel}
+              </p>
+              <h2 className="mt-4 text-3xl font-black leading-tight sm:text-4xl">
+                {title}
+              </h2>
+            </div>
+            <div>
+              <p className="text-base leading-8 text-stone-600 sm:text-lg">{text}</p>
+              <p className="mt-6 text-sm font-bold text-stone-500">
+                {activity} · {city}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section id="a-propos" className="bg-slate-50 px-6 py-20 text-slate-950 sm:px-8 lg:py-24">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-16">
+          <div>
+            <div
+              className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
+              style={{ backgroundColor: `${accentColor}18` }}
+              aria-hidden="true"
+            >
+              {sector.icon}
+            </div>
+            <p
+              className="mt-6 text-sm font-black uppercase tracking-[0.24em]"
+              style={{ color: accentColor }}
+            >
+              {sector.aboutLabel}
+            </p>
+            <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+              {title}
+            </h2>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-9">
+            <p className="text-base leading-8 text-slate-600 sm:text-lg">{text}</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <span
+                className="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-white"
+                style={{ backgroundColor: accentColor }}
+              >
+                {activity}
+              </span>
+              <span className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500">
+                📍 {city}
+              </span>
+            </div>
+            <a
+              href="#contact"
+              className="mt-7 inline-flex rounded-xl px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5"
+              style={{ backgroundColor: accentColor }}
+            >
+              Présenter mon besoin
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 function ProcessSection({
   site,
   activity,
@@ -2270,18 +3627,26 @@ function ProcessSection({
   accentColor: string;
   variant: "modern" | "elegant" | "artisan";
 }) {
+  const sector = getSectorVisualTheme(activity, city);
+  const mainService = textOr(
+    site.sections?.[0]?.title,
+    getActivityTheme(activity).noun,
+  );
+  const activityNoun = getActivityTheme(activity).noun;
+  const projectPhrase = activityProjectPhrase(activity);
+
   const steps = [
     {
       title: "Présentez votre besoin",
-      text: `Expliquez simplement votre projet de ${activity.toLowerCase()} et ce que vous recherchez.`,
+      text: `Expliquez simplement votre besoin en ${activityNoun}, par exemple autour de « ${mainService} ».`,
     },
     {
-      title: "Échangez sur le projet",
-      text: `${site.businessName} peut ensuite préciser avec vous les attentes, les contraintes et les prochaines étapes.`,
+      title: `Échangez avec ${site.businessName}`,
+      text: "Précisez ensemble la situation, vos attentes et les éléments utiles pour préparer la suite du projet.",
     },
     {
-      title: "Passez à l'action",
-      text: `Une fois le besoin clarifié, vous pouvez avancer sur votre projet à ${city}.`,
+      title: "Définissez les prochaines étapes",
+      text: `Une fois le besoin clarifié, convenez de la suite adaptée à votre projet à ${city}.`,
     },
   ];
 
@@ -2295,11 +3660,11 @@ function ProcessSection({
                 className="text-xs font-bold uppercase tracking-[0.4em]"
                 style={{ color: accentColor }}
               >
-                Notre approche
+                {sector.processEyebrow}
               </p>
 
               <h2 className="mt-6 text-4xl font-light leading-[1.1] sm:text-5xl">
-                Une démarche simple, du premier échange au projet.
+                {sector.processHeading}
               </h2>
             </div>
 
@@ -2340,11 +3705,11 @@ function ProcessSection({
               className="text-sm font-black uppercase tracking-[0.24em]"
               style={{ color: accentColor }}
             >
-              Comment ça se passe ?
+              {sector.processEyebrow}
             </p>
 
             <h2 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-              Trois étapes simples pour avancer.
+              {sector.processHeading}
             </h2>
           </div>
 
@@ -2379,15 +3744,15 @@ function ProcessSection({
             className="text-sm font-black uppercase tracking-[0.24em]"
             style={{ color: accentColor }}
           >
-            Comment ça marche ?
+            {sector.processEyebrow}
           </p>
 
           <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
-            Un parcours simple pour passer de l'idée au projet.
+            {sector.processHeading}
           </h2>
 
           <p className="mt-5 max-w-2xl leading-8 text-slate-400">
-            Trois étapes claires pour faciliter le premier contact avec {site.businessName}.
+            Trois étapes simples pour transformer votre besoin en échange concret avec {site.businessName}.
           </p>
         </div>
 
@@ -2433,11 +3798,15 @@ function FaqSection({
   accentColor: string;
   variant: "modern" | "elegant" | "artisan";
 }) {
-  const questions = [
+  const generatedQuestions = (site.faq ?? []).filter(
+    (item) => item?.question?.trim() && item?.answer?.trim(),
+  );
+
+  const fallbackQuestions: FAQItem[] = [
     {
-      question: `Comment demander un devis pour un projet de ${activity.toLowerCase()} ?`,
+      question: `Comment demander un devis pour un projet ${activityProjectPhrase(activity)} ?`,
       answer: site.phone
-        ? `Vous pouvez contacter directement ${site.businessName} au ${site.phone} pour présenter votre besoin et échanger sur votre projet.`
+        ? `Vous pouvez contacter directement ${site.businessName} au ${formatPhoneNumber(site.phone)} pour présenter votre besoin et échanger sur votre projet.`
         : `Vous pouvez contacter ${site.businessName} pour présenter votre besoin et obtenir davantage d'informations sur votre projet.`,
     },
     {
@@ -2451,10 +3820,15 @@ function FaqSection({
     {
       question: "Puis-je poser une question avant de me décider ?",
       answer: site.phone
-        ? `Oui. Vous pouvez appeler ${site.businessName} au ${site.phone} pour poser vos questions avant d'aller plus loin.`
+        ? `Oui. Vous pouvez appeler ${site.businessName} au ${formatPhoneNumber(site.phone)} pour poser vos questions avant d'aller plus loin.`
         : `Oui. Prenez contact avec ${site.businessName} pour poser vos questions avant d'aller plus loin.`,
     },
   ];
+
+  const questions =
+    generatedQuestions.length > 0
+      ? generatedQuestions.slice(0, 6)
+      : fallbackQuestions;
 
   if (variant === "elegant") {
     return (
@@ -2926,7 +4300,7 @@ function LeadForm({
 
       {site.phone && (
         <a
-          href={`tel:${site.phone}`}
+          href={`tel:${phoneHref(site.phone)}`}
           className={
             isElegant
               ? "mt-4 block text-center text-sm text-neutral-500 underline underline-offset-4"
@@ -2935,7 +4309,7 @@ function LeadForm({
                 : "mt-4 block text-center text-sm font-bold text-slate-400"
           }
         >
-          Ou appeler directement {site.phone}
+          Ou appeler directement {formatPhoneNumber(site.phone)}
         </a>
       )}
 
@@ -3000,6 +4374,7 @@ function ContactSection({
   elegant?: boolean;
 
 }) {
+  const sector = getSectorVisualTheme(activity, city);
 
   if (elegant) {
     return (
@@ -3011,16 +4386,18 @@ function ContactSection({
                 style={{ color: accentColor }}
                 className="text-xs font-bold uppercase tracking-[0.4em]"
               >
-                Contact
+                {sector.contactBadge}
               </p>
 
               <h2 className="mt-6 max-w-3xl text-4xl font-light leading-[1.08] sm:text-5xl">
-                Parlons de votre projet.
+                {textOr(site.contactTitle, "Parlons de votre projet.")}
               </h2>
 
               <p className="mt-6 max-w-2xl leading-8 text-neutral-600">
-                Contactez {site.businessName} pour échanger sur votre besoin en{" "}
-                {activity.toLowerCase()} à {city}.
+                {textOr(
+                  site.contactText,
+                  `Contactez ${site.businessName} pour échanger sur votre besoin en ${getActivityTheme(activity).noun} à ${city}.`,
+                )}
               </p>
             </div>
 
@@ -3048,16 +4425,18 @@ function ContactSection({
                   style={{ color: accentColor }}
                   className="text-sm font-black uppercase tracking-[0.24em]"
                 >
-                  Un projet en tête ?
+                  {sector.contactBadge}
                 </p>
 
                 <h2 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                  Échangeons simplement sur votre besoin.
+                  {textOr(site.contactTitle, "Échangeons simplement sur votre besoin.")}
                 </h2>
 
                 <p className="mt-6 max-w-2xl leading-8 text-stone-300">
-                  {site.businessName} intervient pour vos projets de{" "}
-                  {activity.toLowerCase()} à {city}.
+                  {textOr(
+                    site.contactText,
+                    `${site.businessName} intervient pour vos projets ${activityProjectPhrase(activity)} à ${city}.`,
+                  )}
                 </p>
 
                 <div className="mt-8 flex flex-wrap gap-3 text-sm font-bold text-stone-300">
@@ -3107,16 +4486,18 @@ function ContactSection({
                 style={{ color: accentColor }}
                 className="text-sm font-black uppercase tracking-[0.24em]"
               >
-                Contact
+                {sector.contactBadge}
               </p>
 
               <h2 className="mt-5 max-w-2xl text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Un projet ? Parlons-en.
+                {textOr(site.contactTitle, "Un projet ? Parlons-en.")}
               </h2>
 
               <p className="mt-6 max-w-2xl leading-8 text-slate-300">
-                Contactez {site.businessName} pour discuter de votre besoin en{" "}
-                {activity.toLowerCase()} à {city}.
+                {textOr(
+                  site.contactText,
+                  `Contactez ${site.businessName} pour discuter de votre besoin en ${getActivityTheme(activity).noun} à ${city}.`,
+                )}
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">

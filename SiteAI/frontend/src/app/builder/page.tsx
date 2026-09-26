@@ -4,16 +4,77 @@ import {
   ChangeEvent,
   FormEvent,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import SitePreview from "@/components/SitePreview";
 
+type IconMode =
+  | "auto"
+  | "custom"
+  | "none";
+
+type ImageMode =
+  | "auto"
+  | "custom"
+  | "none";
+
+type LayoutBlock =
+  | "about"
+  | "services"
+  | "process"
+  | "faq"
+  | "gallery"
+  | "contact";
+
 type SiteSection = {
   title: string;
   text: string;
+  iconMode?: IconMode;
+  icon?: string;
+  imageMode?: ImageMode;
+  imageUrl?: string;
+  hidden?: boolean;
+};
+
+type DesignSettings = {
+  font:
+    | "system"
+    | "modern"
+    | "classic"
+    | "editorial"
+    | "mono";
+  buttonStyle:
+    | "square"
+    | "soft"
+    | "pill";
+  cardStyle:
+    | "simple"
+    | "bordered"
+    | "shadow";
+  logoSize:
+    | "small"
+    | "medium"
+    | "large";
+  heroLayout:
+    | "auto"
+    | "left"
+    | "center";
+  contentWidth:
+    | "normal"
+    | "wide";
+  spacing:
+    | "compact"
+    | "normal"
+    | "airy";
+  background:
+    | "auto"
+    | "light"
+    | "dark";
 };
 
 type GeneratedSite = {
@@ -28,12 +89,20 @@ type GeneratedSite = {
   heroImageUrl: string;
   gallery: string[];
   sections: SiteSection[];
+  layoutOrder?: LayoutBlock[];
+  hiddenBlocks?: LayoutBlock[];
+  designSettings?: DesignSettings;
 };
 
 type DesignStyle =
   | "moderne"
   | "elegant"
   | "artisan";
+
+type PreviewDevice =
+  | "desktop"
+  | "tablet"
+  | "mobile";
 
 type ModifyResponse = {
   site: GeneratedSite;
@@ -62,7 +131,191 @@ type ChatMessage = {
   text: string;
 };
 
+const defaultDesignSettings: DesignSettings = {
+  font: "system",
+  buttonStyle: "soft",
+  cardStyle: "bordered",
+  logoSize: "medium",
+  heroLayout: "auto",
+  contentWidth: "normal",
+  spacing: "normal",
+  background: "auto",
+};
+
+function normalizeDesignSettings(
+  value?: Partial<DesignSettings> | null,
+): DesignSettings {
+  return {
+    font:
+      value?.font === "modern" ||
+      value?.font === "classic" ||
+      value?.font === "editorial" ||
+      value?.font === "mono"
+        ? value.font
+        : "system",
+    buttonStyle:
+      value?.buttonStyle === "square" ||
+      value?.buttonStyle === "pill"
+        ? value.buttonStyle
+        : "soft",
+    cardStyle:
+      value?.cardStyle === "simple" ||
+      value?.cardStyle === "shadow"
+        ? value.cardStyle
+        : "bordered",
+    logoSize:
+      value?.logoSize === "small" ||
+      value?.logoSize === "large"
+        ? value.logoSize
+        : "medium",
+    heroLayout:
+      value?.heroLayout === "left" ||
+      value?.heroLayout === "center"
+        ? value.heroLayout
+        : "auto",
+    contentWidth:
+      value?.contentWidth === "wide"
+        ? "wide"
+        : "normal",
+    spacing:
+      value?.spacing === "compact" ||
+      value?.spacing === "airy"
+        ? value.spacing
+        : "normal",
+    background:
+      value?.background === "light" ||
+      value?.background === "dark"
+        ? value.background
+        : "auto",
+  };
+}
+
 const MAX_GALLERY_IMAGES = 8;
+
+const serviceIconOptions = [
+  "🔧",
+  "💧",
+  "🚿",
+  "🔥",
+  "⚡",
+  "💡",
+  "🔌",
+  "🧰",
+  "✂️",
+  "💇",
+  "✨",
+  "🎨",
+  "🍽️",
+  "🥘",
+  "🥐",
+  "🍰",
+  "🌿",
+  "🌱",
+  "🌳",
+  "🏡",
+  "🚗",
+  "🛞",
+  "⚙️",
+  "🔍",
+  "📷",
+  "🎥",
+  "⚖️",
+  "📄",
+  "🧱",
+  "🪚",
+  "🧹",
+  "⭐",
+];
+
+const defaultLayoutOrder: LayoutBlock[] = [
+  "about",
+  "services",
+  "process",
+  "faq",
+  "gallery",
+  "contact",
+];
+
+const layoutBlockLabels: Record<
+  LayoutBlock,
+  string
+> = {
+  about: "À propos",
+  services: "Services",
+  process: "Comment ça marche",
+  faq: "FAQ",
+  gallery: "Réalisations",
+  contact: "Contact",
+};
+
+function normalizeLayoutOrder(
+  value: LayoutBlock[] | undefined,
+): LayoutBlock[] {
+  const valid = new Set<LayoutBlock>(
+    defaultLayoutOrder,
+  );
+
+  const result: LayoutBlock[] = [];
+
+  for (const block of value ?? []) {
+    if (
+      valid.has(block) &&
+      !result.includes(block)
+    ) {
+      result.push(block);
+    }
+  }
+
+  for (const block of defaultLayoutOrder) {
+    if (!result.includes(block)) {
+      result.push(block);
+    }
+  }
+
+  return result;
+}
+
+function normalizeHiddenBlocks(
+  value: LayoutBlock[] | undefined,
+): LayoutBlock[] {
+  const valid = new Set<LayoutBlock>(
+    defaultLayoutOrder,
+  );
+
+  return Array.from(
+    new Set(
+      (value ?? []).filter((block) =>
+        valid.has(block),
+      ),
+    ),
+  );
+}
+
+function normalizeIconMode(
+  value: string | undefined,
+): IconMode {
+  if (
+    value === "custom" ||
+    value === "none"
+  ) {
+    return value;
+  }
+
+  return "auto";
+}
+
+function normalizeImageMode(
+  value: string | undefined,
+): ImageMode {
+  if (
+    value === "custom" ||
+    value === "none"
+  ) {
+    return value;
+  }
+
+  return "auto";
+}
 
 const colors = [
   {
@@ -86,6 +339,239 @@ const colors = [
     value: "#dc2626",
   },
 ];
+
+const previewViewports: Record<
+  PreviewDevice,
+  {
+    width: number;
+    height: number;
+    label: string;
+  }
+> = {
+  desktop: {
+    width: 1280,
+    height: 760,
+    label: "Ordinateur · 1280 px",
+  },
+  tablet: {
+    width: 768,
+    height: 900,
+    label: "Tablette · 768 px",
+  },
+  mobile: {
+    width: 390,
+    height: 844,
+    label: "Téléphone · 390 px",
+  },
+};
+
+type ResponsivePreviewProps = {
+  device: PreviewDevice;
+  site: GeneratedSite;
+  designStyle: DesignStyle;
+  accentColor: string;
+  activity: string;
+  city: string;
+};
+
+function ResponsiveSitePreview({
+  device,
+  site,
+  designStyle,
+  accentColor,
+  activity,
+  city,
+}: ResponsivePreviewProps) {
+  const containerRef =
+    useRef<HTMLDivElement | null>(null);
+
+  const iframeRef =
+    useRef<HTMLIFrameElement | null>(null);
+
+  const [portalRoot, setPortalRoot] =
+    useState<HTMLElement | null>(null);
+
+  const [scale, setScale] =
+    useState(1);
+
+  const viewport =
+    previewViewports[device];
+
+  useEffect(() => {
+    const container =
+      containerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    function updateScale() {
+      const availableWidth =
+        Math.max(
+          1,
+          container.clientWidth - 8,
+        );
+
+      setScale(
+        Math.min(
+          1,
+          availableWidth /
+            viewport.width,
+        ),
+      );
+    }
+
+    updateScale();
+
+    if (
+      typeof ResizeObserver ===
+      "undefined"
+    ) {
+      window.addEventListener(
+        "resize",
+        updateScale,
+      );
+
+      return () => {
+        window.removeEventListener(
+          "resize",
+          updateScale,
+        );
+      };
+    }
+
+    const observer =
+      new ResizeObserver(
+        updateScale,
+      );
+
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [viewport.width]);
+
+  function prepareIframe() {
+    const frame =
+      iframeRef.current;
+
+    const frameDocument =
+      frame?.contentDocument;
+
+    if (!frameDocument) {
+      return;
+    }
+
+    frameDocument.documentElement.lang =
+      "fr";
+
+    frameDocument.documentElement.style.background =
+      "#ffffff";
+
+    frameDocument.body.style.margin =
+      "0";
+
+    frameDocument.body.style.background =
+      "#ffffff";
+
+    frameDocument.body.style.minWidth =
+      "0";
+
+    frameDocument.head
+      .querySelectorAll(
+        "[data-siteai-preview-style='true']",
+      )
+      .forEach((node) =>
+        node.remove(),
+      );
+
+    document.head
+      .querySelectorAll(
+        'style, link[rel="stylesheet"]',
+      )
+      .forEach((node) => {
+        const clone =
+          node.cloneNode(
+            true,
+          ) as HTMLElement;
+
+        clone.setAttribute(
+          "data-siteai-preview-style",
+          "true",
+        );
+
+        frameDocument.head.appendChild(
+          clone,
+        );
+      });
+
+    setPortalRoot(
+      frameDocument.getElementById(
+        "siteai-responsive-preview-root",
+      ),
+    );
+  }
+
+  const scaledWidth =
+    viewport.width * scale;
+
+  const scaledHeight =
+    viewport.height * scale;
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full overflow-hidden"
+    >
+      <div
+        className="mx-auto"
+        style={{
+          width: scaledWidth,
+          height: scaledHeight,
+        }}
+      >
+        <iframe
+          ref={iframeRef}
+          title={`Aperçu ${viewport.label}`}
+          srcDoc={`<!doctype html><html lang="fr"><head><meta charSet="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head><body><div id="siteai-responsive-preview-root"></div></body></html>`}
+          onLoad={prepareIframe}
+          style={{
+            width: viewport.width,
+            height: viewport.height,
+            transform: `scale(${scale})`,
+            transformOrigin:
+              "top left",
+          }}
+          className={`block bg-white ${
+            device === "mobile"
+              ? "rounded-[2rem] border-[10px] border-slate-800"
+              : device ===
+                  "tablet"
+                ? "rounded-[1.5rem] border-[8px] border-slate-800"
+                : "border border-slate-700"
+          }`}
+        />
+
+        {portalRoot &&
+          createPortal(
+            <SitePreview
+              site={site}
+              designStyle={
+                designStyle
+              }
+              accentColor={
+                accentColor
+              }
+              activity={activity}
+              city={city}
+            />,
+            portalRoot,
+          )}
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const router = useRouter();
@@ -116,6 +602,15 @@ export default function Home() {
 
   const [accentColor, setAccentColor] =
     useState("#2563eb");
+
+  const [previewDevice, setPreviewDevice] =
+    useState<PreviewDevice>("desktop");
+
+  const [previewFullscreenOpen, setPreviewFullscreenOpen] =
+    useState(false);
+
+  const [editorCollapsed, setEditorCollapsed] =
+    useState(false);
 
   const [site, setSite] =
     useState<GeneratedSite | null>(null);
@@ -174,6 +669,15 @@ export default function Home() {
   const [heroImageError, setHeroImageError] =
     useState("");
 
+  const [serviceImageUploadingIndex, setServiceImageUploadingIndex] =
+    useState<number | null>(null);
+
+  const [serviceImageErrorIndex, setServiceImageErrorIndex] =
+    useState<number | null>(null);
+
+  const [serviceImageError, setServiceImageError] =
+    useState("");
+
   const [galleryUploading, setGalleryUploading] =
     useState(false);
 
@@ -182,6 +686,41 @@ export default function Home() {
 
   const [galleryError, setGalleryError] =
     useState("");
+
+  useEffect(() => {
+    if (!previewFullscreenOpen) {
+      return;
+    }
+
+    const previousOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow =
+      "hidden";
+
+    function handleKeyDown(
+      event: KeyboardEvent,
+    ) {
+      if (event.key === "Escape") {
+        setPreviewFullscreenOpen(false);
+      }
+    }
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
+
+    return () => {
+      document.body.style.overflow =
+        previousOverflow;
+
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
+    };
+  }, [previewFullscreenOpen]);
 
   useEffect(() => {
     let active = true;
@@ -437,6 +976,30 @@ export default function Home() {
           data.heroImageUrl ?? "",
         gallery:
           data.gallery ?? [],
+        sections:
+          (data.sections ?? []).map(
+            (section) => ({
+              ...section,
+              imageMode:
+                section.imageMode ?? "auto",
+              imageUrl:
+                section.imageUrl ?? "",
+              hidden:
+                section.hidden ?? false,
+            }),
+          ),
+        layoutOrder:
+          normalizeLayoutOrder(
+            data.layoutOrder,
+          ),
+        hiddenBlocks:
+          normalizeHiddenBlocks(
+            data.hiddenBlocks,
+          ),
+        designSettings:
+          normalizeDesignSettings(
+            data.designSettings,
+          ),
       };
 
       setSite(generatedSite);
@@ -543,6 +1106,48 @@ export default function Home() {
           data.site.gallery?.length
             ? data.site.gallery
             : site.gallery ?? [],
+        sections:
+          (data.site.sections ?? []).map(
+            (section, index) => ({
+              ...section,
+              iconMode:
+                site.sections[index]?.iconMode ??
+                section.iconMode ??
+                "auto",
+              icon:
+                site.sections[index]?.icon ??
+                section.icon ??
+                "",
+              imageMode:
+                site.sections[index]?.imageMode ??
+                section.imageMode ??
+                "auto",
+              imageUrl:
+                site.sections[index]?.imageUrl ??
+                section.imageUrl ??
+                "",
+              hidden:
+                site.sections[index]
+                  ?.hidden ??
+                section.hidden ??
+                false,
+            }),
+          ),
+        layoutOrder:
+          normalizeLayoutOrder(
+            site.layoutOrder ??
+              data.site.layoutOrder,
+          ),
+        hiddenBlocks:
+          normalizeHiddenBlocks(
+            site.hiddenBlocks ??
+              data.site.hiddenBlocks,
+          ),
+        designSettings:
+          normalizeDesignSettings(
+            site.designSettings ??
+              data.site.designSettings,
+          ),
       };
 
       setSite(modifiedSite);
@@ -603,6 +1208,30 @@ export default function Home() {
       phone:
         phone.trim() ||
         site.phone,
+      sections:
+        (site.sections ?? []).map(
+          (section) => ({
+            ...section,
+            imageMode:
+              section.imageMode ?? "auto",
+            imageUrl:
+              section.imageUrl ?? "",
+            hidden:
+              section.hidden ?? false,
+          }),
+        ),
+      layoutOrder:
+        normalizeLayoutOrder(
+          site.layoutOrder,
+        ),
+      hiddenBlocks:
+        normalizeHiddenBlocks(
+          site.hiddenBlocks,
+        ),
+      designSettings:
+        normalizeDesignSettings(
+          site.designSettings,
+        ),
     };
 
     setSite(synchronizedSite);
@@ -689,9 +1318,13 @@ export default function Home() {
         saved.accentColor,
       );
 
-      setSite(
-        saved.site,
-      );
+      setSite({
+        ...saved.site,
+        designSettings:
+          normalizeDesignSettings(
+            saved.site.designSettings,
+          ),
+      });
 
       setSaveMessage(
         saved.published
@@ -908,6 +1541,30 @@ export default function Home() {
           saved.site.heroImageUrl ?? "",
         gallery:
           saved.site.gallery ?? [],
+        sections:
+          (saved.site.sections ?? []).map(
+            (section) => ({
+              ...section,
+              imageMode:
+                section.imageMode ?? "auto",
+              imageUrl:
+                section.imageUrl ?? "",
+              hidden:
+                section.hidden ?? false,
+            }),
+          ),
+        layoutOrder:
+          normalizeLayoutOrder(
+            saved.site.layoutOrder,
+          ),
+        hiddenBlocks:
+          normalizeHiddenBlocks(
+            saved.site.hiddenBlocks,
+          ),
+        designSettings:
+          normalizeDesignSettings(
+            saved.site.designSettings,
+          ),
       });
 
       setBusinessName(
@@ -1327,6 +1984,258 @@ export default function Home() {
     );
   }
 
+  async function handleServiceImageUpload(
+    index: number,
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file =
+      event.target.files?.[0];
+
+    event.target.value = "";
+
+    if (!file || !site) {
+      return;
+    }
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/avif",
+    ];
+
+    if (
+      !allowedTypes.includes(
+        file.type,
+      )
+    ) {
+      setServiceImageErrorIndex(index);
+      setServiceImageError(
+        "Format non autorisé. Utilise JPG, PNG, WebP ou AVIF.",
+      );
+      return;
+    }
+
+    if (
+      file.size >
+      5 * 1024 * 1024
+    ) {
+      setServiceImageErrorIndex(index);
+      setServiceImageError(
+        "L'image doit faire 5 Mo maximum.",
+      );
+      return;
+    }
+
+    const previousUrl =
+      site.sections[index]?.imageUrl ?? "";
+
+    setServiceImageUploadingIndex(index);
+    setServiceImageErrorIndex(null);
+    setServiceImageError("");
+    setSaveMessage("");
+    setSaveError("");
+
+    let uploadedPath = "";
+
+    try {
+      const {
+        data: userData,
+        error: userError,
+      } =
+        await supabase.auth.getUser();
+
+      if (
+        userError ||
+        !userData.user
+      ) {
+        throw new Error(
+          "Utilisateur non connecté",
+        );
+      }
+
+      const extension =
+        getLogoExtension(file);
+
+      uploadedPath =
+        `${userData.user.id}/services/${crypto.randomUUID()}.${extension}`;
+
+      const {
+        error: uploadError,
+      } =
+        await supabase.storage
+          .from("site-images")
+          .upload(
+            uploadedPath,
+            file,
+            {
+              cacheControl:
+                "3600",
+              upsert: false,
+              contentType:
+                file.type,
+            },
+          );
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const {
+        data: publicData,
+      } =
+        supabase.storage
+          .from("site-images")
+          .getPublicUrl(
+            uploadedPath,
+          );
+
+      if (
+        !publicData.publicUrl
+      ) {
+        throw new Error(
+          "URL publique introuvable",
+        );
+      }
+
+      setSite(
+        (current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            sections:
+              current.sections.map(
+                (
+                  section,
+                  sectionIndex,
+                ) =>
+                  sectionIndex ===
+                  index
+                    ? {
+                        ...section,
+                        imageMode:
+                          "custom",
+                        imageUrl:
+                          publicData.publicUrl,
+                      }
+                    : section,
+              ),
+          };
+        },
+      );
+
+      if (
+        previousUrl &&
+        previousUrl !==
+          publicData.publicUrl
+      ) {
+        const previousPath =
+          getStoragePathFromPublicUrl(
+            previousUrl,
+          );
+
+        if (previousPath) {
+          await supabase.storage
+            .from("site-images")
+            .remove([
+              previousPath,
+            ]);
+        }
+      }
+
+      setSaveMessage(
+        "✅ Photo du service ajoutée. Pense à enregistrer les modifications.",
+      );
+    } catch (err) {
+      console.error(err);
+
+      if (uploadedPath) {
+        await supabase.storage
+          .from("site-images")
+          .remove([
+            uploadedPath,
+          ]);
+      }
+
+      setServiceImageErrorIndex(index);
+      setServiceImageError(
+        "Impossible d'envoyer la photo du service.",
+      );
+    } finally {
+      setServiceImageUploadingIndex(null);
+    }
+  }
+
+  async function removeServiceImage(
+    index: number,
+  ) {
+    if (!site) {
+      return;
+    }
+
+    const imageUrl =
+      site.sections[index]?.imageUrl ?? "";
+
+    setSite(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          sections:
+            current.sections.map(
+              (
+                section,
+                sectionIndex,
+              ) =>
+                sectionIndex ===
+                index
+                  ? {
+                      ...section,
+                      imageMode:
+                        "none",
+                      imageUrl: "",
+                    }
+                  : section,
+            ),
+        };
+      },
+    );
+
+    setServiceImageErrorIndex(null);
+    setServiceImageError("");
+    setSaveMessage(
+      "Photo du service retirée. Pense à enregistrer les modifications.",
+    );
+
+    const storagePath =
+      getStoragePathFromPublicUrl(
+        imageUrl,
+      );
+
+    if (storagePath) {
+      const {
+        error: removeError,
+      } =
+        await supabase.storage
+          .from("site-images")
+          .remove([
+            storagePath,
+          ]);
+
+      if (removeError) {
+        console.error(
+          removeError,
+        );
+      }
+    }
+  }
+
   function getStoragePathFromPublicUrl(
     url: string,
   ) {
@@ -1685,6 +2594,34 @@ export default function Home() {
     setSaveMessage("");
   }
 
+  function updateDesignSetting<
+    K extends keyof DesignSettings,
+  >(
+    field: K,
+    value: DesignSettings[K],
+  ) {
+    setSite((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const settings =
+        normalizeDesignSettings(
+          current.designSettings,
+        );
+
+      return {
+        ...current,
+        designSettings: {
+          ...settings,
+          [field]: value,
+        },
+      };
+    });
+
+    setSaveMessage("");
+  }
+
   function updateSection(
     index: number,
     field: keyof SiteSection,
@@ -1733,6 +2670,13 @@ export default function Home() {
                 "Nouveau service",
               text:
                 "Décrivez ici ce service.",
+              iconMode:
+                "auto",
+              icon: "",
+              imageMode:
+                "auto",
+              imageUrl: "",
+              hidden: false,
             },
           ],
         };
@@ -1831,6 +2775,119 @@ export default function Home() {
     setSaveMessage("");
   }
 
+  function toggleSectionVisibility(
+    index: number,
+  ) {
+    setSite((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        sections:
+          current.sections.map(
+            (section, sectionIndex) =>
+              sectionIndex === index
+                ? {
+                    ...section,
+                    hidden:
+                      !section.hidden,
+                  }
+                : section,
+          ),
+      };
+    });
+
+    setSaveMessage("");
+  }
+
+  function moveLayoutBlock(
+    block: LayoutBlock,
+    direction: "up" | "down",
+  ) {
+    setSite((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const layoutOrder =
+        normalizeLayoutOrder(
+          current.layoutOrder,
+        );
+
+      const index =
+        layoutOrder.indexOf(block);
+
+      const targetIndex =
+        direction === "up"
+          ? index - 1
+          : index + 1;
+
+      if (
+        index < 0 ||
+        targetIndex < 0 ||
+        targetIndex >=
+          layoutOrder.length
+      ) {
+        return current;
+      }
+
+      const next = [
+        ...layoutOrder,
+      ];
+
+      const temporary =
+        next[index];
+
+      next[index] =
+        next[targetIndex];
+
+      next[targetIndex] =
+        temporary;
+
+      return {
+        ...current,
+        layoutOrder: next,
+      };
+    });
+
+    setSaveMessage("");
+  }
+
+  function toggleLayoutBlock(
+    block: LayoutBlock,
+  ) {
+    setSite((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const hiddenBlocks =
+        normalizeHiddenBlocks(
+          current.hiddenBlocks,
+        );
+
+      const isHidden =
+        hiddenBlocks.includes(block);
+
+      return {
+        ...current,
+        hiddenBlocks: isHidden
+          ? hiddenBlocks.filter(
+              (item) =>
+                item !== block,
+            )
+          : [
+              ...hiddenBlocks,
+              block,
+            ],
+      };
+    });
+
+    setSaveMessage("");
+  }
+
   function getPreviewBackground() {
     if (
       designStyle ===
@@ -1906,7 +2963,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-[1800px] items-center justify-between px-4 py-5 lg:px-6">
           <button
             type="button"
             onClick={returnToDashboard}
@@ -1960,7 +3017,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-6 py-14">
+      <section className="mx-auto max-w-[1800px] px-4 py-10 lg:px-6 lg:py-14">
         <div className="mb-12 text-center">
           <p className="text-sm font-bold uppercase tracking-[0.35em] text-blue-400">
             SiteAI
@@ -1975,8 +3032,20 @@ export default function Home() {
           </h1>
         </div>
 
-        <div className="grid gap-8 xl:grid-cols-[440px_1fr]">
-          <div className="space-y-8">
+        <div
+          className={`grid gap-6 ${
+            editorCollapsed
+              ? "grid-cols-1"
+              : "xl:grid-cols-[360px_minmax(0,1fr)]"
+          }`}
+        >
+          <div
+            className={
+              editorCollapsed
+                ? "hidden"
+                : "space-y-8"
+            }
+          >
             <form
               onSubmit={
                 handleSubmit
@@ -2712,6 +3781,120 @@ export default function Home() {
                     </div>
 
                     <div className="border-t border-slate-800 pt-6">
+                      <div>
+                        <p className="font-bold">
+                          Ordre des blocs du site
+                        </p>
+
+                        <p className="mt-1 text-sm leading-6 text-slate-500">
+                          Déplace ou masque les grandes parties du site. L&apos;aperçu se met à jour immédiatement.
+                        </p>
+                      </div>
+
+                      <div className="mt-5 space-y-3">
+                        {normalizeLayoutOrder(
+                          site.layoutOrder,
+                        ).map(
+                          (
+                            block,
+                            index,
+                            order,
+                          ) => {
+                            const hidden =
+                              normalizeHiddenBlocks(
+                                site.hiddenBlocks,
+                              ).includes(
+                                block,
+                              );
+
+                            return (
+                              <div
+                                key={
+                                  block
+                                }
+                                className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
+                                  hidden
+                                    ? "border-slate-800 bg-slate-950/40 opacity-60"
+                                    : "border-slate-700 bg-slate-950"
+                                }`}
+                              >
+                                <div>
+                                  <p className="text-sm font-bold text-slate-200">
+                                    {
+                                      layoutBlockLabels[
+                                        block
+                                      ]
+                                    }
+                                  </p>
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    {hidden
+                                      ? "Masqué sur le site"
+                                      : "Visible sur le site"}
+                                  </p>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      index ===
+                                      0
+                                    }
+                                    onClick={() =>
+                                      moveLayoutBlock(
+                                        block,
+                                        "up",
+                                      )
+                                    }
+                                    className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold disabled:opacity-30"
+                                  >
+                                    ↑ Monter
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={
+                                      index ===
+                                      order.length -
+                                        1
+                                    }
+                                    onClick={() =>
+                                      moveLayoutBlock(
+                                        block,
+                                        "down",
+                                      )
+                                    }
+                                    className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold disabled:opacity-30"
+                                  >
+                                    ↓ Descendre
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      toggleLayoutBlock(
+                                        block,
+                                      )
+                                    }
+                                    className={`rounded-lg border px-3 py-2 text-xs font-bold ${
+                                      hidden
+                                        ? "border-emerald-800 text-emerald-400"
+                                        : "border-amber-800 text-amber-300"
+                                    }`}
+                                  >
+                                    {hidden
+                                      ? "Afficher"
+                                      : "Masquer"}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-800 pt-6">
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="font-bold">
@@ -2744,7 +3927,11 @@ export default function Home() {
                               key={
                                 index
                               }
-                              className="rounded-2xl border border-slate-800 bg-slate-950 p-4"
+                              className={`rounded-2xl border border-slate-800 bg-slate-950 p-4 ${
+                                section.hidden
+                                  ? "opacity-55"
+                                  : ""
+                              }`}
                             >
                               <div className="mb-4 flex items-center justify-between gap-3">
                                 <p className="text-sm font-bold text-slate-300">
@@ -2791,6 +3978,24 @@ export default function Home() {
                                     className="rounded-lg border border-slate-700 px-2 py-1 text-xs disabled:opacity-30"
                                   >
                                     ↓
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      toggleSectionVisibility(
+                                        index,
+                                      )
+                                    }
+                                    className={`rounded-lg border px-2 py-1 text-xs ${
+                                      section.hidden
+                                        ? "border-emerald-900 text-emerald-400"
+                                        : "border-amber-900 text-amber-300"
+                                    }`}
+                                  >
+                                    {section.hidden
+                                      ? "Afficher"
+                                      : "Masquer"}
                                   </button>
 
                                   <button
@@ -2845,6 +4050,347 @@ export default function Home() {
                                 rows={4}
                                 className="mt-3 w-full resize-none rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
                               />
+
+                              <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                  <div>
+                                    <p className="text-sm font-bold text-slate-200">
+                                      Photo du service
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                                      Utilise automatiquement une photo de la galerie, importe une photo précise ou affiche le service sans image.
+                                    </p>
+                                  </div>
+
+                                  <div className="flex flex-wrap gap-2">
+                                    {(
+                                      [
+                                        [
+                                          "auto",
+                                          "Automatique",
+                                        ],
+                                        [
+                                          "custom",
+                                          "Ma photo",
+                                        ],
+                                        [
+                                          "none",
+                                          "Aucune",
+                                        ],
+                                      ] as const
+                                    ).map(
+                                      ([
+                                        mode,
+                                        label,
+                                      ]) => (
+                                        <button
+                                          key={
+                                            mode
+                                          }
+                                          type="button"
+                                          onClick={() =>
+                                            updateSection(
+                                              index,
+                                              "imageMode",
+                                              mode,
+                                            )
+                                          }
+                                          className={`rounded-lg border px-3 py-2 text-xs font-bold transition ${
+                                            normalizeImageMode(
+                                              section.imageMode,
+                                            ) ===
+                                            mode
+                                              ? "border-blue-500 bg-blue-500/10 text-blue-300"
+                                              : "border-slate-700 text-slate-400 hover:border-slate-500"
+                                          }`}
+                                        >
+                                          {
+                                            label
+                                          }
+                                        </button>
+                                      ),
+                                    )}
+                                  </div>
+                                </div>
+
+                                {normalizeImageMode(
+                                  section.imageMode,
+                                ) ===
+                                  "auto" && (
+                                  <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs leading-5 text-slate-400">
+                                    {site.gallery?.length
+                                      ? `✨ SiteAI utilisera automatiquement une photo de ta galerie pour ce service.`
+                                      : "✨ Ajoute des photos dans Réalisations pour que SiteAI puisse en utiliser automatiquement ici."}
+                                  </div>
+                                )}
+
+                                {normalizeImageMode(
+                                  section.imageMode,
+                                ) ===
+                                  "custom" && (
+                                  <div className="mt-4">
+                                    {section.imageUrl?.trim() ? (
+                                      <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950">
+                                        <img
+                                          src={
+                                            section.imageUrl
+                                          }
+                                          alt={`Photo ${section.title}`}
+                                          className="h-44 w-full object-cover"
+                                        />
+
+                                        <div className="flex flex-wrap gap-2 p-3">
+                                          <label className="cursor-pointer rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold hover:bg-blue-500">
+                                            {serviceImageUploadingIndex ===
+                                            index
+                                              ? "Envoi..."
+                                              : "Remplacer"}
+
+                                            <input
+                                              type="file"
+                                              accept="image/jpeg,image/png,image/webp,image/avif"
+                                              disabled={
+                                                serviceImageUploadingIndex !==
+                                                null
+                                              }
+                                              onChange={(
+                                                event,
+                                              ) =>
+                                                handleServiceImageUpload(
+                                                  index,
+                                                  event,
+                                                )
+                                              }
+                                              className="hidden"
+                                            />
+                                          </label>
+
+                                          <button
+                                            type="button"
+                                            disabled={
+                                              serviceImageUploadingIndex !==
+                                              null
+                                            }
+                                            onClick={() =>
+                                              removeServiceImage(
+                                                index,
+                                              )
+                                            }
+                                            className="rounded-lg border border-red-900 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-950 disabled:opacity-50"
+                                          >
+                                            Retirer
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <label className="flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-950 px-4 py-7 text-center text-sm font-bold text-slate-300 transition hover:border-blue-500 hover:text-blue-300">
+                                        {serviceImageUploadingIndex ===
+                                        index
+                                          ? "Envoi de la photo..."
+                                          : "📷 Ajouter une photo pour ce service"}
+
+                                        <input
+                                          type="file"
+                                          accept="image/jpeg,image/png,image/webp,image/avif"
+                                          disabled={
+                                            serviceImageUploadingIndex !==
+                                            null
+                                          }
+                                          onChange={(
+                                            event,
+                                          ) =>
+                                            handleServiceImageUpload(
+                                              index,
+                                              event,
+                                            )
+                                          }
+                                          className="hidden"
+                                        />
+                                      </label>
+                                    )}
+
+                                    {serviceImageErrorIndex ===
+                                      index &&
+                                      serviceImageError && (
+                                        <p className="mt-3 text-xs text-red-400">
+                                          {
+                                            serviceImageError
+                                          }
+                                        </p>
+                                      )}
+                                  </div>
+                                )}
+
+                                {normalizeImageMode(
+                                  section.imageMode,
+                                ) ===
+                                  "none" && (
+                                  <p className="mt-4 text-xs text-slate-500">
+                                    Cette carte sera affichée sans photo.
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                  <div>
+                                    <p className="text-sm font-bold text-slate-200">
+                                      Icône du service
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                                      Laisse SiteAI choisir automatiquement, sélectionne ton icône ou masque-la.
+                                    </p>
+                                  </div>
+
+                                  <div className="flex flex-wrap gap-2">
+                                    {(
+                                      [
+                                        [
+                                          "auto",
+                                          "Automatique",
+                                        ],
+                                        [
+                                          "custom",
+                                          "Choisir",
+                                        ],
+                                        [
+                                          "none",
+                                          "Aucune",
+                                        ],
+                                      ] as const
+                                    ).map(
+                                      ([
+                                        mode,
+                                        label,
+                                      ]) => (
+                                        <button
+                                          key={
+                                            mode
+                                          }
+                                          type="button"
+                                          onClick={() => {
+                                            updateSection(
+                                              index,
+                                              "iconMode",
+                                              mode,
+                                            );
+
+                                            if (
+                                              mode ===
+                                                "custom" &&
+                                              !section.icon?.trim()
+                                            ) {
+                                              updateSection(
+                                                index,
+                                                "icon",
+                                                "✨",
+                                              );
+                                            }
+                                          }}
+                                          className={`rounded-lg border px-3 py-2 text-xs font-bold transition ${
+                                            normalizeIconMode(
+                                              section.iconMode,
+                                            ) ===
+                                            mode
+                                              ? "border-blue-500 bg-blue-500/10 text-blue-300"
+                                              : "border-slate-700 text-slate-400 hover:border-slate-500"
+                                          }`}
+                                        >
+                                          {
+                                            label
+                                          }
+                                        </button>
+                                      ),
+                                    )}
+                                  </div>
+                                </div>
+
+                                {normalizeIconMode(
+                                  section.iconMode,
+                                ) ===
+                                  "custom" && (
+                                  <div className="mt-4">
+                                    <div className="flex flex-wrap gap-2">
+                                      {serviceIconOptions.map(
+                                        (
+                                          icon,
+                                        ) => (
+                                          <button
+                                            key={
+                                              icon
+                                            }
+                                            type="button"
+                                            onClick={() =>
+                                              updateSection(
+                                                index,
+                                                "icon",
+                                                icon,
+                                              )
+                                            }
+                                            className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xl transition ${
+                                              section.icon ===
+                                              icon
+                                                ? "border-blue-500 bg-blue-500/10"
+                                                : "border-slate-700 bg-slate-950 hover:border-slate-500"
+                                            }`}
+                                            title={`Utiliser ${icon}`}
+                                          >
+                                            {
+                                              icon
+                                            }
+                                          </button>
+                                        ),
+                                      )}
+                                    </div>
+
+                                    <div className="mt-4 flex items-center gap-3">
+                                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-950 text-2xl">
+                                        {section.icon?.trim() ||
+                                          "✨"}
+                                      </div>
+
+                                      <input
+                                        value={
+                                          section.icon ??
+                                          ""
+                                        }
+                                        onChange={(
+                                          event,
+                                        ) =>
+                                          updateSection(
+                                            index,
+                                            "icon",
+                                            event.target.value.slice(
+                                              0,
+                                              12,
+                                            ),
+                                          )
+                                        }
+                                        placeholder="Ou colle ton emoji : 🔧"
+                                        className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+
+                                {normalizeIconMode(
+                                  section.iconMode,
+                                ) ===
+                                  "auto" && (
+                                  <p className="mt-4 text-xs text-emerald-400">
+                                    ✨ SiteAI choisira l&apos;icône selon le métier et la position du service.
+                                  </p>
+                                )}
+
+                                {normalizeIconMode(
+                                  section.iconMode,
+                                ) ===
+                                  "none" && (
+                                  <p className="mt-4 text-xs text-slate-500">
+                                    Cette carte sera affichée sans icône.
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           ),
                         )}
@@ -2954,6 +4500,272 @@ export default function Home() {
                           }}
                           className="h-9 w-12 cursor-pointer rounded-lg border border-slate-700 bg-slate-950 p-1"
                         />
+                      </div>
+
+                      <div className="mt-6 border-t border-slate-800 pt-6">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-bold">
+                              Design avancé
+                            </p>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">
+                              Personnalise le rendu sans toucher au contenu.
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateSiteField(
+                                "designSettings",
+                                {
+                                  ...defaultDesignSettings,
+                                },
+                              )
+                            }
+                            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-slate-500"
+                          >
+                            Réinitialiser
+                          </button>
+                        </div>
+
+                        <div className="mt-5 space-y-5">
+                          <div>
+                            <label className="mb-2 block text-sm text-slate-400">
+                              Police
+                            </label>
+                            <select
+                              value={
+                                normalizeDesignSettings(
+                                  site.designSettings,
+                                ).font
+                              }
+                              onChange={(event) =>
+                                updateDesignSetting(
+                                  "font",
+                                  event.target.value as DesignSettings["font"],
+                                )
+                              }
+                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                            >
+                              <option value="system">Système</option>
+                              <option value="modern">Moderne</option>
+                              <option value="classic">Classique</option>
+                              <option value="editorial">Éditorial</option>
+                              <option value="mono">Monospace</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <p className="mb-2 text-sm text-slate-400">
+                              Boutons
+                            </p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {(
+                                [
+                                  ["square", "Carrés"],
+                                  ["soft", "Arrondis"],
+                                  ["pill", "Pilule"],
+                                ] as const
+                              ).map(([value, label]) => (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  onClick={() =>
+                                    updateDesignSetting(
+                                      "buttonStyle",
+                                      value,
+                                    )
+                                  }
+                                  className={`border px-3 py-3 text-xs font-bold ${
+                                    normalizeDesignSettings(
+                                      site.designSettings,
+                                    ).buttonStyle === value
+                                      ? "border-blue-500 bg-blue-500/10"
+                                      : "border-slate-700"
+                                  } ${
+                                    value === "square"
+                                      ? "rounded-none"
+                                      : value === "pill"
+                                        ? "rounded-full"
+                                        : "rounded-xl"
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="mb-2 text-sm text-slate-400">
+                              Cartes
+                            </p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {(
+                                [
+                                  ["simple", "Simple"],
+                                  ["bordered", "Bordée"],
+                                  ["shadow", "Ombre"],
+                                ] as const
+                              ).map(([value, label]) => (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  onClick={() =>
+                                    updateDesignSetting(
+                                      "cardStyle",
+                                      value,
+                                    )
+                                  }
+                                  className={`rounded-xl border px-3 py-3 text-xs font-bold ${
+                                    normalizeDesignSettings(
+                                      site.designSettings,
+                                    ).cardStyle === value
+                                      ? "border-blue-500 bg-blue-500/10"
+                                      : "border-slate-700"
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                              <label className="mb-2 block text-sm text-slate-400">
+                                Taille du logo
+                              </label>
+                              <select
+                                value={
+                                  normalizeDesignSettings(
+                                    site.designSettings,
+                                  ).logoSize
+                                }
+                                onChange={(event) =>
+                                  updateDesignSetting(
+                                    "logoSize",
+                                    event.target.value as DesignSettings["logoSize"],
+                                  )
+                                }
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
+                              >
+                                <option value="small">Petit</option>
+                                <option value="medium">Moyen</option>
+                                <option value="large">Grand</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block text-sm text-slate-400">
+                                Largeur
+                              </label>
+                              <select
+                                value={
+                                  normalizeDesignSettings(
+                                    site.designSettings,
+                                  ).contentWidth
+                                }
+                                onChange={(event) =>
+                                  updateDesignSetting(
+                                    "contentWidth",
+                                    event.target.value as DesignSettings["contentWidth"],
+                                  )
+                                }
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
+                              >
+                                <option value="normal">Normale</option>
+                                <option value="wide">Large</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="mb-2 text-sm text-slate-400">
+                              Hero
+                            </p>
+                            <div className="grid grid-cols-3 gap-2">
+                              {(
+                                [
+                                  ["auto", "Auto"],
+                                  ["left", "À gauche"],
+                                  ["center", "Centré"],
+                                ] as const
+                              ).map(([value, label]) => (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  onClick={() =>
+                                    updateDesignSetting(
+                                      "heroLayout",
+                                      value,
+                                    )
+                                  }
+                                  className={`rounded-xl border px-3 py-3 text-xs font-bold ${
+                                    normalizeDesignSettings(
+                                      site.designSettings,
+                                    ).heroLayout === value
+                                      ? "border-blue-500 bg-blue-500/10"
+                                      : "border-slate-700"
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                              <label className="mb-2 block text-sm text-slate-400">
+                                Espacement
+                              </label>
+                              <select
+                                value={
+                                  normalizeDesignSettings(
+                                    site.designSettings,
+                                  ).spacing
+                                }
+                                onChange={(event) =>
+                                  updateDesignSetting(
+                                    "spacing",
+                                    event.target.value as DesignSettings["spacing"],
+                                  )
+                                }
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
+                              >
+                                <option value="compact">Compact</option>
+                                <option value="normal">Normal</option>
+                                <option value="airy">Aéré</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block text-sm text-slate-400">
+                                Fond général
+                              </label>
+                              <select
+                                value={
+                                  normalizeDesignSettings(
+                                    site.designSettings,
+                                  ).background
+                                }
+                                onChange={(event) =>
+                                  updateDesignSetting(
+                                    "background",
+                                    event.target.value as DesignSettings["background"],
+                                  )
+                                }
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
+                              >
+                                <option value="auto">Selon le style</option>
+                                <option value="light">Clair</option>
+                                <option value="dark">Sombre</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -3299,7 +5111,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900">
+          <div className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 xl:sticky xl:top-6 xl:self-start">
             {!site ? (
               <div className="flex min-h-[700px] items-center justify-center text-center">
                 <div>
@@ -3317,17 +5129,237 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <SitePreview
-                site={site}
-                designStyle={designStyle}
-                accentColor={accentColor}
-                activity={activity}
-                city={city}
-              />
+              <>
+                <div className="border-b border-slate-800 bg-slate-950/70 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-slate-200">
+                        Aperçu responsive
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Le site est rendu dans un vrai viewport pour tester les versions ordinateur, tablette et téléphone.
+                      </p>
+                    </div>
+
+                    <div className="inline-flex w-fit rounded-xl border border-slate-700 bg-slate-900 p-1">
+                      {(
+                        [
+                          [
+                            "desktop",
+                            "🖥️",
+                            "Ordinateur",
+                          ],
+                          [
+                            "tablet",
+                            "▭",
+                            "Tablette",
+                          ],
+                          [
+                            "mobile",
+                            "📱",
+                            "Téléphone",
+                          ],
+                        ] as const
+                      ).map(
+                        ([
+                          value,
+                          icon,
+                          label,
+                        ]) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() =>
+                              setPreviewDevice(
+                                value,
+                              )
+                            }
+                            aria-pressed={
+                              previewDevice ===
+                              value
+                            }
+                            title={`Aperçu ${label.toLowerCase()}`}
+                            className={`rounded-lg px-3 py-2 text-xs font-bold transition ${
+                              previewDevice ===
+                              value
+                                ? "bg-blue-600 text-white"
+                                : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                            }`}
+                          >
+                            <span className="mr-1.5">
+                              {icon}
+                            </span>
+                            <span className="hidden sm:inline">
+                              {label}
+                            </span>
+                          </button>
+                        ),
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditorCollapsed(
+                            (collapsed) =>
+                              !collapsed,
+                          )
+                        }
+                        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-blue-500 hover:text-white"
+                      >
+                        {editorCollapsed
+                          ? "☰ Afficher l'éditeur"
+                          : "↔ Plus de place"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPreviewFullscreenOpen(
+                            true,
+                          )
+                        }
+                        className="rounded-xl border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-bold text-blue-300 transition hover:bg-blue-500/20 hover:text-white"
+                      >
+                        ⛶ Agrandir l&apos;aperçu
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-950/40 p-4 sm:p-6">
+                  <ResponsiveSitePreview
+                    device={previewDevice}
+                    site={site}
+                    designStyle={designStyle}
+                    accentColor={accentColor}
+                    activity={activity}
+                    city={city}
+                  />
+
+                  <p className="mt-3 text-center text-xs text-slate-500">
+                    {
+                      previewViewports[
+                        previewDevice
+                      ].label
+                    }
+                  </p>
+                </div>
+              </>
             )}
           </div>
         </div>
       </section>
+
+      {site &&
+        previewFullscreenOpen && (
+          <div
+            className="fixed inset-0 z-[100] flex flex-col bg-slate-950/95 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Aperçu du site en grand"
+          >
+            <div className="flex shrink-0 flex-col gap-3 border-b border-slate-800 bg-slate-950 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div>
+                <p className="font-bold text-white">
+                  Aperçu du site en grand
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Vérifie le rendu final avant de publier. Échap ferme aussi cet aperçu.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex rounded-xl border border-slate-700 bg-slate-900 p-1">
+                  {(
+                    [
+                      [
+                        "desktop",
+                        "🖥️",
+                        "Ordinateur",
+                      ],
+                      [
+                        "tablet",
+                        "▭",
+                        "Tablette",
+                      ],
+                      [
+                        "mobile",
+                        "📱",
+                        "Téléphone",
+                      ],
+                    ] as const
+                  ).map(
+                    ([
+                      value,
+                      icon,
+                      label,
+                    ]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() =>
+                          setPreviewDevice(
+                            value,
+                          )
+                        }
+                        aria-pressed={
+                          previewDevice ===
+                          value
+                        }
+                        className={`rounded-lg px-3 py-2 text-xs font-bold transition ${
+                          previewDevice ===
+                          value
+                            ? "bg-blue-600 text-white"
+                            : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                        }`}
+                      >
+                        <span className="mr-1.5">
+                          {icon}
+                        </span>
+                        {label}
+                      </button>
+                    ),
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPreviewFullscreenOpen(
+                      false,
+                    )
+                  }
+                  className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
+                >
+                  ✕ Fermer
+                </button>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-auto p-3 sm:p-6">
+              <div className="mx-auto max-w-[1400px] rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-2xl sm:p-5">
+                <ResponsiveSitePreview
+                  device={previewDevice}
+                  site={site}
+                  designStyle={designStyle}
+                  accentColor={accentColor}
+                  activity={activity}
+                  city={city}
+                />
+
+                <p className="mt-3 text-center text-xs text-slate-500">
+                  {
+                    previewViewports[
+                      previewDevice
+                    ].label
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
     </main>
   );
 }
