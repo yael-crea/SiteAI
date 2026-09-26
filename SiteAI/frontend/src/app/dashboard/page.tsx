@@ -1581,7 +1581,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div id="mes-sites" className="scroll-mt-28">
+        <div id="mes-sites" className="hidden scroll-mt-28 md:block">
         <div className="mt-10 rounded-2xl border border-slate-800 bg-slate-900 p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <input
@@ -2057,11 +2057,7 @@ export default function DashboardPage() {
 
           <button
             type="button"
-            onClick={() =>
-              document
-                .getElementById("mes-sites")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" })
-            }
+            onClick={() => router.push("/sites")}
             className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-slate-300"
             aria-label="Mes sites"
           >
