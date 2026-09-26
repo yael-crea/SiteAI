@@ -24,10 +24,12 @@ type Lead = {
   status: LeadStatus;
   note: string;
   followUpAt: string | null;
+  archived: boolean;
   createdAt: string;
 };
 
 type StatusFilter = "all" | LeadStatus;
+type ArchiveView = "active" | "archived";
 
 const statusOptions: Array<{
   value: LeadStatus;
@@ -110,6 +112,15 @@ export default function ProspectsPage() {
 
   const [statusFilter, setStatusFilter] =
     useState<StatusFilter>("all");
+
+  const [archiveView, setArchiveView] =
+    useState<ArchiveView>("active");
+
+  const [search, setSearch] =
+    useState("");
+
+  const [siteFilter, setSiteFilter] =
+    useState("all");
 
   const [updatingID, setUpdatingID] =
     useState<number | null>(null);
@@ -255,7 +266,7 @@ export default function ProspectsPage() {
     try {
       const response =
         await authenticatedFetch(
-          "/leads",
+          "/leads?includeArchived=true",
         );
 
       if (!response.ok) {
@@ -287,7 +298,10 @@ export default function ProspectsPage() {
 
   async function saveLead(
     leadID: number,
-    statusOverride?: LeadStatus,
+    overrides?: {
+      status?: LeadStatus;
+      archived?: boolean;
+    },
   ) {
     const lead =
       leads.find(
@@ -300,8 +314,12 @@ export default function ProspectsPage() {
     }
 
     const nextStatus =
-      statusOverride ??
+      overrides?.status ??
       lead.status;
+
+    const nextArchived =
+      overrides?.archived ??
+      lead.archived;
 
     setUpdatingID(leadID);
     setSavedID(null);
@@ -319,6 +337,8 @@ export default function ProspectsPage() {
               followUpAt:
                 lead.followUpAt ||
                 null,
+              archived:
+                nextArchived,
             }),
           },
         );
@@ -342,6 +362,8 @@ export default function ProspectsPage() {
                     ...item,
                     status:
                       nextStatus,
+                    archived:
+                      nextArchived,
                   }
                 : item,
           ),
@@ -392,7 +414,9 @@ export default function ProspectsPage() {
 
     void saveLead(
       leadID,
-      status,
+      {
+        status,
+      },
     );
   }
 
@@ -482,6 +506,189 @@ export default function ProspectsPage() {
       .slice(0, 16);
   }
 
+  async function toggleArchive(
+    leadID: number,
+    archived: boolean,
+  ) {
+    const lead =
+      leads.find(
+        (item) =>
+          item.id === leadID,
+      );
+
+    if (!lead) {
+      return;
+    }
+
+    if (
+      archived &&
+      !window.confirm(
+        `Archiver le prospect "${lead.name}" ?`,
+      )
+    ) {
+      return;
+    }
+
+    await saveLead(
+      leadID,
+      {
+        archived,
+      },
+    );
+  }
+
+  function isSameLocalDay(
+    value: string,
+    target: Date,
+  ) {
+    const date =
+      new Date(value);
+
+    if (
+      Number.isNaN(
+        date.getTime(),
+      )
+    ) {
+      return false;
+    }
+
+    return (
+      date.getFullYear() ===
+        target.getFullYear() &&
+      date.getMonth() ===
+        target.getMonth() &&
+      date.getDate() ===
+        target.getDate()
+    );
+  }
+
+  function isOpenLead(
+    lead: Lead,
+  ) {
+    return (
+      !lead.archived &&
+      lead.status !== "won" &&
+      lead.status !== "lost"
+    );
+  }
+
+  function csvCell(
+    value: string | number | boolean | null | undefined,
+  ) {
+    let text =
+      value === null ||
+      value === undefined
+        ? ""
+        : String(value);
+
+    if (
+      /^[=+\-@]/.test(
+        text,
+      )
+    ) {
+      text = `'${text}`;
+    }
+
+    return `"${text.replace(
+      /"/g,
+      '""',
+    )}"`;
+  }
+
+  function exportCSV() {
+    if (
+      filteredLeads.length ===
+      0
+    ) {
+      return;
+    }
+
+    const rows = [
+      [
+        "Statut",
+        "Site",
+        "Nom",
+        "Email",
+        "Téléphone",
+        "Message",
+        "Note interne",
+        "Relance prévue",
+        "Archivé",
+        "Reçu le",
+      ],
+      ...filteredLeads.map(
+        (lead) => [
+          statusLabel(
+            lead.status,
+          ),
+          lead.businessName,
+          lead.name,
+          lead.email,
+          lead.phone,
+          lead.message,
+          lead.note,
+          lead.followUpAt
+            ? formatDate(
+                lead.followUpAt,
+              )
+            : "",
+          lead.archived
+            ? "Oui"
+            : "Non",
+          formatDate(
+            lead.createdAt,
+          ),
+        ],
+      ),
+    ];
+
+    const csv =
+      "\uFEFF" +
+      rows
+        .map((row) =>
+          row
+            .map((cell) =>
+              csvCell(cell),
+            )
+            .join(";"),
+        )
+        .join("\r\n");
+
+    const blob = new Blob(
+      [csv],
+      {
+        type: "text/csv;charset=utf-8;",
+      },
+    );
+
+    const url =
+      URL.createObjectURL(
+        blob,
+      );
+
+    const link =
+      document.createElement(
+        "a",
+      );
+
+    link.href = url;
+    link.download =
+      `prospects-siteai-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+
+    document.body.appendChild(
+      link,
+    );
+
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(
+      url,
+    );
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut();
 
@@ -510,48 +717,171 @@ export default function ProspectsPage() {
     );
   }
 
+  const activeLeads =
+    useMemo(
+      () =>
+        leads.filter(
+          (lead) =>
+            !lead.archived,
+        ),
+      [leads],
+    );
+
+  const archivedLeads =
+    useMemo(
+      () =>
+        leads.filter(
+          (lead) =>
+            lead.archived,
+        ),
+      [leads],
+    );
+
   const counts = {
-    all: leads.length,
-    new: leads.filter(
+    all: activeLeads.length,
+    new: activeLeads.filter(
       (lead) =>
         lead.status === "new",
     ).length,
-    contacted: leads.filter(
-      (lead) =>
-        lead.status ===
-        "contacted",
-    ).length,
-    quote_sent: leads.filter(
-      (lead) =>
-        lead.status ===
-        "quote_sent",
-    ).length,
-    won: leads.filter(
+    contacted:
+      activeLeads.filter(
+        (lead) =>
+          lead.status ===
+          "contacted",
+      ).length,
+    quote_sent:
+      activeLeads.filter(
+        (lead) =>
+          lead.status ===
+          "quote_sent",
+      ).length,
+    won: activeLeads.filter(
       (lead) =>
         lead.status === "won",
     ).length,
-    lost: leads.filter(
+    lost: activeLeads.filter(
       (lead) =>
         lead.status === "lost",
     ).length,
   };
 
-  const filteredLeads =
+  const siteOptions =
     useMemo(() => {
-      if (
-        statusFilter ===
-        "all"
-      ) {
-        return leads;
+      const map =
+        new Map<
+          number,
+          string
+        >();
+
+      for (const lead of leads) {
+        map.set(
+          lead.siteId,
+          lead.businessName,
+        );
       }
 
-      return leads.filter(
-        (lead) =>
-          lead.status ===
-          statusFilter,
+      return Array.from(
+        map.entries(),
+      )
+        .map(
+          ([
+            siteId,
+            businessName,
+          ]) => ({
+            siteId,
+            businessName,
+          }),
+        )
+        .sort((a, b) =>
+          a.businessName.localeCompare(
+            b.businessName,
+            "fr",
+          ),
+        );
+    }, [leads]);
+
+  const today =
+    new Date();
+
+  const followUpTodayCount =
+    activeLeads.filter(
+      (lead) =>
+        isOpenLead(lead) &&
+        lead.followUpAt &&
+        isSameLocalDay(
+          lead.followUpAt,
+          today,
+        ),
+    ).length;
+
+  const overdueCount =
+    activeLeads.filter(
+      (lead) =>
+        isOpenLead(lead) &&
+        lead.followUpAt &&
+        new Date(
+          lead.followUpAt,
+        ).getTime() <
+          Date.now(),
+    ).length;
+
+  const filteredLeads =
+    useMemo(() => {
+      const query =
+        search
+          .trim()
+          .toLowerCase();
+
+      const source =
+        archiveView ===
+        "archived"
+          ? archivedLeads
+          : activeLeads;
+
+      return source.filter(
+        (lead) => {
+          const matchesStatus =
+            statusFilter ===
+              "all" ||
+            lead.status ===
+              statusFilter;
+
+          const matchesSite =
+            siteFilter ===
+              "all" ||
+            String(
+              lead.siteId,
+            ) === siteFilter;
+
+          const searchable =
+            [
+              lead.name,
+              lead.email,
+              lead.phone,
+              lead.businessName,
+            ]
+              .join(" ")
+              .toLowerCase();
+
+          const matchesSearch =
+            query === "" ||
+            searchable.includes(
+              query,
+            );
+
+          return (
+            matchesStatus &&
+            matchesSite &&
+            matchesSearch
+          );
+        },
       );
     }, [
-      leads,
+      activeLeads,
+      archivedLeads,
+      archiveView,
+      search,
+      siteFilter,
       statusFilter,
     ]);
 
@@ -644,14 +974,159 @@ export default function ProspectsPage() {
             </p>
           </div>
 
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={exportCSV}
+              disabled={
+                loading ||
+                filteredLeads.length ===
+                  0
+              }
+              className="rounded-xl border border-emerald-800 px-5 py-3 font-bold text-emerald-300 hover:bg-emerald-950 disabled:opacity-50"
+            >
+              📥 Export CSV
+            </button>
+
+            <button
+              type="button"
+              onClick={loadLeads}
+              disabled={loading}
+              className="rounded-xl border border-slate-700 px-5 py-3 font-bold hover:border-blue-500 disabled:opacity-50"
+            >
+              ↻ Actualiser
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-5">
+            <p className="text-sm text-blue-300">
+              À relancer aujourd&apos;hui
+            </p>
+
+            <p className="mt-2 text-3xl font-black text-blue-400">
+              {followUpTodayCount}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-amber-900/70 bg-amber-950/20 p-5">
+            <p className="text-sm text-amber-300">
+              Relances en retard
+            </p>
+
+            <p className="mt-2 text-3xl font-black text-amber-400">
+              {overdueCount}
+            </p>
+          </div>
+
           <button
             type="button"
-            onClick={loadLeads}
-            disabled={loading}
-            className="rounded-xl border border-slate-700 px-5 py-3 font-bold hover:border-blue-500 disabled:opacity-50"
+            onClick={() =>
+              setArchiveView(
+                "archived",
+              )
+            }
+            className={`rounded-2xl border p-5 text-left transition ${
+              archiveView ===
+              "archived"
+                ? "border-slate-400 bg-slate-800"
+                : "border-slate-800 bg-slate-900 hover:border-slate-700"
+            }`}
           >
-            ↻ Actualiser
+            <p className="text-sm text-slate-400">
+              Archivés
+            </p>
+
+            <p className="mt-2 text-3xl font-black">
+              {
+                archivedLeads.length
+              }
+            </p>
           </button>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <div className="grid gap-3 lg:grid-cols-[1fr_260px_auto]">
+            <input
+              type="search"
+              value={search}
+              onChange={(event) =>
+                setSearch(
+                  event.target.value,
+                )
+              }
+              placeholder="Rechercher par nom, email, téléphone ou entreprise..."
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+            />
+
+            <select
+              value={siteFilter}
+              onChange={(event) =>
+                setSiteFilter(
+                  event.target.value,
+                )
+              }
+              className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+            >
+              <option value="all">
+                Tous les sites
+              </option>
+
+              {siteOptions.map(
+                (site) => (
+                  <option
+                    key={
+                      site.siteId
+                    }
+                    value={
+                      site.siteId
+                    }
+                  >
+                    {
+                      site.businessName
+                    }
+                  </option>
+                ),
+              )}
+            </select>
+
+            <div className="flex rounded-xl border border-slate-700 bg-slate-950 p-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setArchiveView(
+                    "active",
+                  )
+                }
+                className={`rounded-lg px-4 py-2 text-sm font-bold ${
+                  archiveView ===
+                  "active"
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400"
+                }`}
+              >
+                Actifs
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setArchiveView(
+                    "archived",
+                  )
+                }
+                className={`rounded-lg px-4 py-2 text-sm font-bold ${
+                  archiveView ===
+                  "archived"
+                    ? "bg-slate-700 text-white"
+                    : "text-slate-400"
+                }`}
+              >
+                Archivés
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -737,8 +1212,7 @@ export default function ProspectsPage() {
             </p>
 
             <p className="mt-2 text-slate-500">
-              Aucun prospect ne
-              correspond à ce statut.
+              Aucun prospect ne correspond aux filtres sélectionnés.
             </p>
           </div>
         ) : (
@@ -747,7 +1221,11 @@ export default function ProspectsPage() {
               (lead) => (
                 <article
                   key={lead.id}
-                  className="rounded-3xl border border-slate-800 bg-slate-900 p-6"
+                  className={`rounded-3xl border p-6 ${
+                    lead.archived
+                      ? "border-slate-800 bg-slate-900/60"
+                      : "border-slate-800 bg-slate-900"
+                  }`}
                 >
                   <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
                     <div>
@@ -767,6 +1245,26 @@ export default function ProspectsPage() {
                             lead.status,
                           )}
                         </span>
+
+                        {lead.archived && (
+                          <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-bold text-slate-300">
+                            Archivé
+                          </span>
+                        )}
+
+                        {!lead.archived &&
+                          lead.followUpAt &&
+                          isOpenLead(
+                            lead,
+                          ) &&
+                          new Date(
+                            lead.followUpAt,
+                          ).getTime() <
+                            Date.now() && (
+                            <span className="rounded-full border border-amber-800 bg-amber-950/40 px-3 py-1 text-xs font-bold text-amber-300">
+                              Relance en retard
+                            </span>
+                          )}
                       </div>
 
                       <p className="mt-2 text-sm text-blue-400">
@@ -799,7 +1297,8 @@ export default function ProspectsPage() {
                         }
                         disabled={
                           updatingID ===
-                          lead.id
+                            lead.id ||
+                          lead.archived
                         }
                         className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm font-bold outline-none focus:border-blue-500 disabled:opacity-50"
                       >
@@ -823,6 +1322,24 @@ export default function ProspectsPage() {
                         )}
                       </select>
 
+                      {lead.email && (
+                        <a
+                          href={`mailto:${lead.email}`}
+                          className="rounded-xl border border-blue-800 px-4 py-3 text-center text-sm font-bold text-blue-300 hover:bg-blue-950"
+                        >
+                          ✉️ Email
+                        </a>
+                      )}
+
+                      {lead.phone && (
+                        <a
+                          href={`tel:${lead.phone}`}
+                          className="rounded-xl border border-emerald-800 px-4 py-3 text-center text-sm font-bold text-emerald-300 hover:bg-emerald-950"
+                        >
+                          📞 Appeler
+                        </a>
+                      )}
+
                       {lead.publicSlug && (
                         <button
                           type="button"
@@ -835,9 +1352,32 @@ export default function ProspectsPage() {
                           }
                           className="rounded-xl border border-slate-700 px-4 py-3 text-sm font-bold hover:border-blue-500"
                         >
-                          🌍 Voir le site
+                          🌍 Site
                         </button>
                       )}
+
+                      <button
+                        type="button"
+                        disabled={
+                          updatingID ===
+                          lead.id
+                        }
+                        onClick={() =>
+                          toggleArchive(
+                            lead.id,
+                            !lead.archived,
+                          )
+                        }
+                        className={`rounded-xl border px-4 py-3 text-sm font-bold disabled:opacity-50 ${
+                          lead.archived
+                            ? "border-blue-800 text-blue-300 hover:bg-blue-950"
+                            : "border-slate-700 text-slate-300 hover:bg-slate-800"
+                        }`}
+                      >
+                        {lead.archived
+                          ? "↩️ Restaurer"
+                          : "📦 Archiver"}
+                      </button>
                     </div>
                   </div>
 

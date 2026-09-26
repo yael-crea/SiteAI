@@ -396,6 +396,7 @@ type Lead struct {
 	Status       string     `json:"status"`
 	Note         string     `json:"note"`
 	FollowUpAt   *time.Time `json:"followUpAt"`
+	Archived     bool       `json:"archived"`
 	CreatedAt    time.Time  `json:"createdAt"`
 }
 
@@ -403,6 +404,7 @@ type LeadUpdateInput struct {
 	Status     string  `json:"status"`
 	Note       string  `json:"note"`
 	FollowUpAt *string `json:"followUpAt"`
+	Archived   bool    `json:"archived"`
 }
 
 type PageViewInput struct {
@@ -916,6 +918,13 @@ func createTables(ctx context.Context) error {
 		`
 
         ALTER TABLE leads
+        ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT FALSE;
+
+        `,
+
+		`
+
+        ALTER TABLE leads
         ADD COLUMN IF NOT EXISTS notification_sent_at TIMESTAMPTZ NULL;
 
         `,
@@ -933,6 +942,14 @@ func createTables(ctx context.Context) error {
         CREATE INDEX IF NOT EXISTS idx_leads_site_created_at
 
         ON leads(site_id, created_at DESC);
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_leads_user_archived_created_at
+
+        ON leads(user_id, archived, created_at DESC);
 
         `,
 
@@ -1954,14 +1971,16 @@ func leadByIDHandler(
 		SET
 			status = $1,
 			note = $2,
-			follow_up_at = $3
+			follow_up_at = $3,
+			archived = $4
 		WHERE
-			id = $4
-			AND user_id = $5::uuid;
+			id = $5
+			AND user_id = $6::uuid;
 		`,
 		status,
 		note,
 		followUpAt,
+		input.Archived,
 		leadID,
 		user.ID,
 	)
@@ -1997,6 +2016,7 @@ func leadByIDHandler(
 			"status":     status,
 			"note":       note,
 			"followUpAt": followUpAt,
+			"archived":   input.Archived,
 		},
 	)
 }
@@ -2557,6 +2577,13 @@ func listLeadsHandler(
 		return
 	}
 
+	includeArchived := strings.EqualFold(
+		strings.TrimSpace(
+			r.URL.Query().Get("includeArchived"),
+		),
+		"true",
+	)
+
 	rows, err := db.Query(
 		r.Context(),
 		`
@@ -2572,15 +2599,19 @@ func listLeadsHandler(
 			l.status,
 			COALESCE(l.note, ''),
 			l.follow_up_at,
+			COALESCE(l.archived, FALSE),
 			l.created_at
 		FROM leads l
 		INNER JOIN sites s
 			ON s.id = l.site_id
-		WHERE l.user_id = $1::uuid
+		WHERE
+			l.user_id = $1::uuid
+			AND ($2::boolean = TRUE OR l.archived = FALSE)
 		ORDER BY l.created_at DESC
 		LIMIT 500;
 		`,
 		user.ID,
+		includeArchived,
 	)
 
 	if err != nil {
@@ -2613,6 +2644,7 @@ func listLeadsHandler(
 			&lead.Status,
 			&lead.Note,
 			&lead.FollowUpAt,
+			&lead.Archived,
 			&lead.CreatedAt,
 		)
 
@@ -7892,7 +7924,7 @@ func enableCORS(w http.ResponseWriter) {
 
 		"Access-Control-Allow-Methods",
 
-		"GET, POST, PUT, DELETE, OPTIONS",
+		"GET, POST, PUT, PATCH, DELETE, OPTIONS",
 	)
 
 	w.Header().Set(
