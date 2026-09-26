@@ -924,69 +924,29 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              <div className="grid gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    router.push("/prospects");
-                  }}
-                  className="relative w-full rounded-xl border border-emerald-800 px-4 py-3 text-left text-sm font-bold text-emerald-300 transition hover:bg-emerald-950"
-                >
-                  📥 Prospects
-                  {!leadsLoading && newLeadsCount > 0 && (
-                    <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950">
-                      {newLeadsCount}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    router.push("/pricing");
-                  }}
-                  className="w-full rounded-xl border border-violet-700 px-4 py-3 text-left text-sm font-bold text-violet-300 transition hover:bg-violet-950"
-                >
-                  💳 Abonnement
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    createSite();
-                  }}
-                  className="w-full rounded-xl bg-blue-600 px-4 py-3 text-left text-sm font-bold transition hover:bg-blue-500"
-                >
-                  + Nouveau site
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    void handleLogout();
-                  }}
-                  className="w-full rounded-xl border border-red-900 px-4 py-3 text-left text-sm font-semibold text-red-400 transition hover:bg-red-950"
-                >
-                  Déconnexion
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  void handleLogout();
+                }}
+                className="w-full rounded-xl border border-red-900 px-4 py-3 text-left text-sm font-semibold text-red-400 transition hover:bg-red-950"
+              >
+                Déconnexion
+              </button>
             </div>
           )}
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-12">
+      <section id="dashboard-top" className="mx-auto max-w-7xl px-4 py-8 pb-28 sm:px-6 sm:py-12 md:pb-12">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-blue-400">
               Dashboard
             </p>
 
-            <h1 className="mt-3 text-3xl font-black sm:text-4xl md:text-5xl">
+            <h1 className="mt-3 text-4xl font-black md:text-5xl">
               Mes sites
             </h1>
 
@@ -1311,8 +1271,8 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="mt-7 w-full overflow-hidden pb-2">
-                <div className="grid grid-cols-[repeat(30,minmax(0,1fr))] items-end gap-1 sm:flex sm:min-w-[720px] sm:gap-2">
+              <div className="mt-7 overflow-x-auto pb-2">
+                <div className="flex min-w-[720px] items-end gap-2">
                   {commercialStats.daily.map(
                     (item, index) => {
                       const height =
@@ -1336,7 +1296,7 @@ export default function DashboardPage() {
                       return (
                         <div
                           key={item.date.toISOString()}
-                          className="flex min-w-0 flex-col items-center justify-end sm:flex-1"
+                          className="flex min-w-0 flex-1 flex-col items-center justify-end"
                           title={`${formatShortDay(item.date)} : ${item.count} prospect${item.count > 1 ? "s" : ""}`}
                         >
                           <span className="mb-2 text-[10px] font-bold text-slate-500">
@@ -1365,25 +1325,9 @@ export default function DashboardPage() {
                   )}
                 </div>
               </div>
-
-              <div className="mt-5 grid grid-cols-3 gap-2 sm:hidden">
-                {commercialStats.daily.map((item) => (
-                  <div
-                    key={`mobile-${item.date.toISOString()}`}
-                    className="rounded-xl border border-slate-800 bg-slate-950/70 px-2 py-2 text-center"
-                  >
-                    <p className="text-[10px] text-slate-500">
-                      {formatShortDay(item.date)}
-                    </p>
-                    <p className="mt-1 text-sm font-black text-slate-200">
-                      {item.count}
-                    </p>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-5 sm:p-6">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
               <h3 className="font-black">
                 Répartition du pipeline
               </h3>
@@ -1637,6 +1581,7 @@ export default function DashboardPage() {
           </div>
         )}
 
+        <div id="mes-sites" className="scroll-mt-28">
         <div className="mt-10 rounded-2xl border border-slate-800 bg-slate-900 p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <input
@@ -1647,11 +1592,11 @@ export default function DashboardPage() {
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500 lg:max-w-xl"
             />
 
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setFilter("all")}
-                className={`w-full rounded-lg px-4 py-2 text-sm font-semibold sm:w-auto ${
+                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
                   filter === "all"
                     ? "bg-blue-600"
                     : "bg-slate-800 text-slate-400 hover:text-white"
@@ -1663,7 +1608,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setFilter("published")}
-                className={`w-full rounded-lg px-4 py-2 text-sm font-semibold sm:w-auto ${
+                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
                   filter === "published"
                     ? "bg-emerald-600"
                     : "bg-slate-800 text-slate-400 hover:text-white"
@@ -1675,7 +1620,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setFilter("draft")}
-                className={`w-full rounded-lg px-4 py-2 text-sm font-semibold sm:w-auto ${
+                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
                   filter === "draft"
                     ? "bg-amber-600"
                     : "bg-slate-800 text-slate-400 hover:text-white"
@@ -1692,7 +1637,7 @@ export default function DashboardPage() {
                   loadLeads();
                   loadAnalytics();
                 }}
-                className="w-full rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-blue-500 sm:w-auto"
+                className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-blue-500"
               >
                 Actualiser
               </button>
@@ -2087,7 +2032,78 @@ export default function DashboardPage() {
             })}
           </div>
         )}
+        </div>
       </section>
+
+      <nav
+        className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-800 bg-slate-950/98 px-2 pt-2 backdrop-blur md:hidden"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
+        aria-label="Navigation mobile"
+      >
+        <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-1">
+          <button
+            type="button"
+            onClick={() =>
+              document
+                .getElementById("dashboard-top")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+            className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-blue-400"
+            aria-label="Accueil du dashboard"
+          >
+            <span className="text-lg">⌂</span>
+            <span>Accueil</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              document
+                .getElementById("mes-sites")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+            className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-slate-300"
+            aria-label="Mes sites"
+          >
+            <span className="text-lg">▣</span>
+            <span>Sites</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={createSite}
+            className="mx-auto flex h-14 w-14 -translate-y-2 items-center justify-center rounded-2xl bg-blue-600 text-3xl font-light text-white shadow-lg shadow-blue-950/60 transition hover:bg-blue-500"
+            aria-label="Créer un nouveau site"
+          >
+            +
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push("/prospects")}
+            className="relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-slate-300"
+            aria-label="Prospects"
+          >
+            <span className="text-lg">✉</span>
+            <span>Prospects</span>
+            {!leadsLoading && newLeadsCount > 0 && (
+              <span className="absolute right-2 top-0 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950">
+                {newLeadsCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push("/pricing")}
+            className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-slate-300"
+            aria-label="Abonnement"
+          >
+            <span className="text-lg">◈</span>
+            <span>Abonnement</span>
+          </button>
+        </div>
+      </nav>
     </main>
   );
 }
