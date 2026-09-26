@@ -188,6 +188,7 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [deletingID, setDeletingID] = useState<number | null>(null);
 
   const [domainPanelSiteID, setDomainPanelSiteID] = useState<number | null>(null);
@@ -845,64 +846,140 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-5">
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard")}
-            className="text-2xl font-black"
-          >
-            Site<span className="text-blue-500">AI</span>
-          </button>
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard")}
+              className="shrink-0 text-2xl font-black"
+            >
+              Site<span className="text-blue-500">AI</span>
+            </button>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right xl:block">
-              <p className="text-xs text-slate-500">Connecté avec</p>
-              <p className="text-sm font-medium">{userEmail}</p>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((current) => !current)}
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-xl font-bold transition hover:border-blue-500 md:hidden"
+              aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? "✕" : "☰"}
+            </button>
+
+            <div className="hidden items-center gap-3 md:flex">
+              <div className="hidden text-right xl:block">
+                <p className="text-xs text-slate-500">Connecté avec</p>
+                <p className="text-sm font-medium">{userEmail}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => router.push("/prospects")}
+                className="relative rounded-xl border border-emerald-800 px-4 py-2 text-sm font-bold text-emerald-300 transition hover:bg-emerald-950"
+              >
+                📥 Prospects
+                {!leadsLoading && newLeadsCount > 0 && (
+                  <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950">
+                    {newLeadsCount}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push("/pricing")}
+                className="rounded-xl border border-violet-700 px-4 py-2 text-sm font-bold text-violet-300 transition hover:bg-violet-950"
+              >
+                💳 Abonnement
+              </button>
+
+              <button
+                type="button"
+                onClick={createSite}
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold transition hover:bg-blue-500"
+              >
+                + Nouveau site
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-xl border border-red-900 px-4 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-950"
+              >
+                Déconnexion
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => router.push("/prospects")}
-              className="relative rounded-xl border border-emerald-800 px-4 py-2 text-sm font-bold text-emerald-300 transition hover:bg-emerald-950"
-            >
-              📥 Prospects
-              {!leadsLoading && newLeadsCount > 0 && (
-                <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950">
-                  {newLeadsCount}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => router.push("/pricing")}
-              className="rounded-xl border border-violet-700 px-4 py-2 text-sm font-bold text-violet-300 transition hover:bg-violet-950"
-            >
-              💳 Abonnement
-            </button>
-
-            <button
-              type="button"
-              onClick={createSite}
-              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold transition hover:bg-blue-500"
-            >
-              + Nouveau site
-            </button>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-xl border border-red-900 px-4 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-950"
-            >
-              Déconnexion
-            </button>
           </div>
+
+          {mobileMenuOpen && (
+            <div className="mt-4 border-t border-slate-800 pt-4 md:hidden">
+              {userEmail && (
+                <div className="mb-3 rounded-xl bg-slate-900 px-4 py-3">
+                  <p className="text-xs text-slate-500">Connecté avec</p>
+                  <p className="mt-1 break-all text-sm font-medium text-slate-200">
+                    {userEmail}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    router.push("/prospects");
+                  }}
+                  className="relative w-full rounded-xl border border-emerald-800 px-4 py-3 text-left text-sm font-bold text-emerald-300 transition hover:bg-emerald-950"
+                >
+                  📥 Prospects
+                  {!leadsLoading && newLeadsCount > 0 && (
+                    <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950">
+                      {newLeadsCount}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    router.push("/pricing");
+                  }}
+                  className="w-full rounded-xl border border-violet-700 px-4 py-3 text-left text-sm font-bold text-violet-300 transition hover:bg-violet-950"
+                >
+                  💳 Abonnement
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    createSite();
+                  }}
+                  className="w-full rounded-xl bg-blue-600 px-4 py-3 text-left text-sm font-bold transition hover:bg-blue-500"
+                >
+                  + Nouveau site
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    void handleLogout();
+                  }}
+                  className="w-full rounded-xl border border-red-900 px-4 py-3 text-left text-sm font-semibold text-red-400 transition hover:bg-red-950"
+                >
+                  Déconnexion
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-6 py-12">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-blue-400">
