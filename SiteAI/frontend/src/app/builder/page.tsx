@@ -1227,9 +1227,9 @@ export default function Home() {
     }
   }
 
-  async function saveCurrentSite() {
+  async function saveCurrentSite(): Promise<SavedSite | null> {
     if (!site) {
-      return;
+      return null;
     }
 
     setSaving(true);
@@ -1371,18 +1371,19 @@ export default function Home() {
       );
 
       await loadSavedSites();
+      return saved;
     } catch (err) {
       console.error(err);
 
-      setSaveError(
-        "Impossible de sauvegarder.",
-      );
+      setSaveError("La sauvegarde a échoué. Tes modifications restent dans cet éditeur. Réessaie avant de quitter la page.");
+      return null;
     } finally {
       setSaving(false);
     }
   }
 
   async function publishCurrentSite() {
+    if (saving || publishing) return;
     if (
       savedSiteID === null
     ) {
@@ -1398,9 +1399,12 @@ export default function Home() {
     setSaveMessage("");
 
     try {
+      // Publish only after the current editor content has been saved successfully.
+      const latestSavedSite = await saveCurrentSite();
+      if (!latestSavedSite) return;
       const response =
         await authenticatedFetch(
-          `/sites/${savedSiteID}/publish`,
+          `/sites/${latestSavedSite.id}/publish`,
           {
             method: "POST",
           },
@@ -4967,7 +4971,7 @@ export default function Home() {
                       onClick={
                         saveCurrentSite
                       }
-                      disabled={saving}
+                      disabled={saving || publishing}
                       className="w-full rounded-xl bg-green-600 px-6 py-4 font-bold hover:bg-green-500 disabled:opacity-50"
                     >
                       {saving
@@ -4987,15 +4991,45 @@ export default function Home() {
             {site && (
               <div data-mobile-panel="publication" className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
                 <h2 className="text-xl font-bold">
-                  💾 Sauvegarde et publication
+                  Sauvegarde et publication
                 </h2>
+
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  {openedSite?.published
+                    ? "Ton site est en ligne. Enregistrer met aussi à jour sa version publique."
+                    : "Enregistre ton brouillon, puis publie-le quand tu es prêt."}
+                </p>
+                <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-950 p-4">
+                  <h3 className="font-semibold">Avant de partager ton site</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">Ces repères sont des conseils : ils ne bloquent pas la publication.</p>
+                  <ul className="mt-4 space-y-3 text-sm">
+                    {[
+                      {label: "Nom de l’entreprise", ready: Boolean(site.businessName.trim()), step: 1},
+                      {label: "Numéro de téléphone", ready: Boolean(site.phone.trim()), step: 1},
+                      {label: "Présentation de l’activité", ready: Boolean(site.heroTitle.trim() && site.heroText.trim()), step: 1},
+                      {label: "Au moins un service visible", ready: site.sections.some(section => !section.hidden && section.title.trim()), step: 1},
+                      {label: "Une photo pour présenter ton entreprise", ready: Boolean(site.heroImageUrl || site.gallery?.length), step: 1},
+                    ].map(item => (
+                      <li key={item.label} className="flex items-center justify-between gap-3">
+                        <span><span aria-hidden="true" className={item.ready ? "text-emerald-400" : "text-amber-300"}>{item.ready ? "✓ " : "○ "}</span>{item.label}
+                          <span className="sr-only">{item.ready ? " : renseigné" : " : à compléter"}</span>
+                        </span>
+                        {!item.ready && <button type="button" onClick={() => {
+                          navigateMobileStep(item.step); setDesktopPanel("contenu"); setEditorCollapsed(false);
+                        }} className="shrink-0 rounded-lg px-2 py-2 text-xs font-semibold text-blue-300 hover:bg-slate-800">Compléter</button>}
+                      </li>
+                    ))}
+                  </ul>
+                  <button type="button" onClick={() => { navigateMobileStep(3); setDesktopPanel("apercu"); }}
+                    className="mt-4 w-full rounded-xl border border-slate-700 px-3 py-3 text-sm font-semibold hover:border-blue-500">Vérifier l’aperçu</button>
+                </div>
 
                 <button
                   type="button"
                   onClick={
                     saveCurrentSite
                   }
-                  disabled={saving}
+                  disabled={saving || publishing}
                   className="mt-5 w-full rounded-xl bg-green-600 px-6 py-4 font-bold hover:bg-green-500 disabled:opacity-50"
                 >
                   {saving
@@ -5015,13 +5049,13 @@ export default function Home() {
                         publishCurrentSite
                       }
                       disabled={
-                        publishing
+                        publishing || saving || editLoading || loading
                       }
                       className="mt-3 w-full rounded-xl bg-blue-600 px-6 py-4 font-bold hover:bg-blue-500 disabled:opacity-50"
                     >
                       {publishing
-                        ? "Publication..."
-                        : "🚀 Publier le site"}
+                        ? "Enregistrement et publication..."
+                        : "🚀 Enregistrer et publier"}
                     </button>
                   )}
 
