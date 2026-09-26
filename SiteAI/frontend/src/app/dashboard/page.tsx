@@ -70,6 +70,7 @@ type LeadSummary = {
   businessName: string;
   status: string;
   archived?: boolean;
+  quoteAmountCents: number;
   createdAt: string;
 };
 
@@ -154,6 +155,21 @@ function formatShortDay(date: Date) {
     day: "2-digit",
     month: "2-digit",
   });
+}
+
+function formatCurrency(
+  cents: number,
+) {
+  return new Intl.NumberFormat(
+    "fr-FR",
+    {
+      style: "currency",
+      currency: "EUR",
+      maximumFractionDigits: 2,
+    },
+  ).format(
+    (cents || 0) / 100,
+  );
 }
 
 export default function DashboardPage() {
@@ -710,6 +726,68 @@ export default function DashboardPage() {
       ),
     );
 
+    const openPipelineValue =
+      leads30d
+        .filter(
+          (lead) =>
+            lead.status === "new" ||
+            lead.status === "contacted" ||
+            lead.status === "quote_sent",
+        )
+        .reduce(
+          (total, lead) =>
+            total +
+            (lead.quoteAmountCents || 0),
+          0,
+        );
+
+    const wonValue =
+      leads30d
+        .filter(
+          (lead) =>
+            lead.status === "won",
+        )
+        .reduce(
+          (total, lead) =>
+            total +
+            (lead.quoteAmountCents || 0),
+          0,
+        );
+
+    const lostValue =
+      leads30d
+        .filter(
+          (lead) =>
+            lead.status === "lost",
+        )
+        .reduce(
+          (total, lead) =>
+            total +
+            (lead.quoteAmountCents || 0),
+          0,
+        );
+
+    const quotedLeads =
+      leads30d.filter(
+        (lead) =>
+          (lead.quoteAmountCents || 0) >
+          0,
+      );
+
+    const averageQuoteValue =
+      quotedLeads.length > 0
+        ? Math.round(
+            quotedLeads.reduce(
+              (total, lead) =>
+                total +
+                (lead.quoteAmountCents ||
+                  0),
+              0,
+            ) /
+              quotedLeads.length,
+          )
+        : 0;
+
     return {
       total30d: leads30d.length,
       new30d,
@@ -721,6 +799,10 @@ export default function DashboardPage() {
       winRate,
       daily,
       maxDaily,
+      openPipelineValue,
+      wonValue,
+      lostValue,
+      averageQuoteValue,
     };
   }, [leads]);
 
@@ -1065,6 +1147,72 @@ export default function DashboardPage() {
               </p>
               <p className="mt-2 text-xs text-slate-600">
                 Gagnés / prospects créés
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-5">
+              <p className="text-sm text-violet-300">
+                Pipeline ouvert
+              </p>
+
+              <p className="mt-2 text-3xl font-black text-violet-400">
+                {formatCurrency(
+                  commercialStats.openPipelineValue,
+                )}
+              </p>
+
+              <p className="mt-2 text-xs text-slate-600">
+                Valeur des opportunités ouvertes
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-5">
+              <p className="text-sm text-emerald-300">
+                CA gagné
+              </p>
+
+              <p className="mt-2 text-3xl font-black text-emerald-400">
+                {formatCurrency(
+                  commercialStats.wonValue,
+                )}
+              </p>
+
+              <p className="mt-2 text-xs text-slate-600">
+                Prospects gagnés sur 30 jours
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-red-900/70 bg-red-950/20 p-5">
+              <p className="text-sm text-red-300">
+                CA perdu
+              </p>
+
+              <p className="mt-2 text-3xl font-black text-red-400">
+                {formatCurrency(
+                  commercialStats.lostValue,
+                )}
+              </p>
+
+              <p className="mt-2 text-xs text-slate-600">
+                Opportunités perdues sur 30 jours
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-5">
+              <p className="text-sm text-blue-300">
+                Devis moyen
+              </p>
+
+              <p className="mt-2 text-3xl font-black text-blue-400">
+                {formatCurrency(
+                  commercialStats.averageQuoteValue,
+                )}
+              </p>
+
+              <p className="mt-2 text-xs text-slate-600">
+                Moyenne des montants renseignés
               </p>
             </div>
           </div>
