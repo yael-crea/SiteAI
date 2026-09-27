@@ -50,7 +50,7 @@ import (
 
 var db *pgxpool.Pool
 
-const currentCGVVersion = "2026-09-27"
+const currentCGVVersion = "2026-09-25"
 const aiHourlyLimit = 20
 
 const leadRateLimit = 5
@@ -84,22 +84,22 @@ type BusinessInput struct {
 	Phone string `json:"phone"`
 
 	Services []string `json:"services"`
+
+	Goal string `json:"goal"`
+
+	TargetAudience string `json:"targetAudience"`
+
+	Tone string `json:"tone"`
+
+	CommunicationStyle string `json:"communicationStyle"`
+
+	PrimaryAction string `json:"primaryAction"`
 }
 
 type SiteSection struct {
 	Title string `json:"title"`
 
 	Text string `json:"text"`
-
-	IconMode string `json:"iconMode"`
-
-	Icon string `json:"icon"`
-
-	ImageMode string `json:"imageMode"`
-
-	ImageURL string `json:"imageUrl"`
-
-	Hidden bool `json:"hidden"`
 }
 
 type SiteBenefit struct {
@@ -112,36 +112,6 @@ type FAQItem struct {
 	Question string `json:"question"`
 
 	Answer string `json:"answer"`
-}
-
-type DesignSettings struct {
-	TitleScale     string `json:"titleScale,omitempty"`
-	TextScale      string `json:"textScale,omitempty"`
-	TitleWeight    string `json:"titleWeight,omitempty"`
-	TitleCase      string `json:"titleCase,omitempty"`
-	LineHeight     string `json:"lineHeight,omitempty"`
-	CardRadius     string `json:"cardRadius,omitempty"`
-	ShadowStrength string `json:"shadowStrength,omitempty"`
-	ImageRadius    string `json:"imageRadius,omitempty"`
-	ImageRatio     string `json:"imageRatio,omitempty"`
-	ImageFit       string `json:"imageFit,omitempty"`
-	ButtonSize     string `json:"buttonSize,omitempty"`
-
-	Font string `json:"font"`
-
-	ButtonStyle string `json:"buttonStyle"`
-
-	CardStyle string `json:"cardStyle"`
-
-	LogoSize string `json:"logoSize"`
-
-	HeroLayout string `json:"heroLayout"`
-
-	ContentWidth string `json:"contentWidth"`
-
-	Spacing string `json:"spacing"`
-
-	Background string `json:"background"`
 }
 
 type GeneratedSite struct {
@@ -184,29 +154,6 @@ type GeneratedSite struct {
 	ContactTitle string `json:"contactTitle"`
 
 	ContactText string `json:"contactText"`
-
-	LayoutOrder []string `json:"layoutOrder"`
-
-	HiddenBlocks []string `json:"hiddenBlocks"`
-
-	DesignSettings DesignSettings `json:"designSettings"`
-
-	Testimonials []Testimonial `json:"testimonials"`
-
-	ServiceArea string `json:"serviceArea"`
-
-	OpeningHours string `json:"openingHours"`
-
-	ClientName string `json:"clientName"`
-
-	ClientEmail string `json:"clientEmail"`
-}
-
-type Testimonial struct {
-	Name   string `json:"name"`
-	Role   string `json:"role"`
-	Text   string `json:"text"`
-	Rating int    `json:"rating"`
 }
 
 type AIContent struct {
@@ -262,8 +209,7 @@ type ModifySiteOutput struct {
 }
 
 type SaveSiteInput struct {
-	ExpectedRevision *int64        `json:"expectedRevision,omitempty"`
-	Site             GeneratedSite `json:"site"`
+	Site GeneratedSite `json:"site"`
 
 	Activity string `json:"activity"`
 
@@ -275,9 +221,7 @@ type SaveSiteInput struct {
 }
 
 type SavedSite struct {
-	DraftRevision     int64 `json:"draftRevision"`
-	PublishedRevision int64 `json:"publishedRevision"`
-	ID                int64 `json:"id"`
+	ID int64 `json:"id"`
 
 	BusinessName string `json:"businessName"`
 
@@ -429,7 +373,6 @@ type StripeEvent struct {
 }
 
 type BillingStatus struct {
-	IsOwner             bool       `json:"isOwner"`
 	Plan                string     `json:"plan"`
 	Status              string     `json:"status"`
 	HasSubscription     bool       `json:"hasSubscription"`
@@ -500,21 +443,20 @@ type LeadInput struct {
 }
 
 type Lead struct {
-	NotificationStatus string     `json:"notificationStatus"`
-	ID                 int64      `json:"id"`
-	SiteID             int64      `json:"siteId"`
-	PublicSlug         string     `json:"publicSlug"`
-	BusinessName       string     `json:"businessName"`
-	Name               string     `json:"name"`
-	Email              string     `json:"email"`
-	Phone              string     `json:"phone"`
-	Message            string     `json:"message"`
-	Status             string     `json:"status"`
-	Note               string     `json:"note"`
-	FollowUpAt         *time.Time `json:"followUpAt"`
-	Archived           bool       `json:"archived"`
-	QuoteAmountCents   int64      `json:"quoteAmountCents"`
-	CreatedAt          time.Time  `json:"createdAt"`
+	ID               int64      `json:"id"`
+	SiteID           int64      `json:"siteId"`
+	PublicSlug       string     `json:"publicSlug"`
+	BusinessName     string     `json:"businessName"`
+	Name             string     `json:"name"`
+	Email            string     `json:"email"`
+	Phone            string     `json:"phone"`
+	Message          string     `json:"message"`
+	Status           string     `json:"status"`
+	Note             string     `json:"note"`
+	FollowUpAt       *time.Time `json:"followUpAt"`
+	Archived         bool       `json:"archived"`
+	QuoteAmountCents int64      `json:"quoteAmountCents"`
+	CreatedAt        time.Time  `json:"createdAt"`
 }
 
 type LeadUpdateInput struct {
@@ -530,12 +472,6 @@ type PageViewInput struct {
 	VisitorID  string `json:"visitorId"`
 }
 
-type AnalyticsEventInput struct {
-	PublicSlug string `json:"publicSlug"`
-	VisitorID  string `json:"visitorId"`
-	EventType  string `json:"eventType"`
-}
-
 type SiteAnalyticsSummary struct {
 	SiteID         int64   `json:"siteId"`
 	PublicSlug     string  `json:"publicSlug"`
@@ -543,8 +479,6 @@ type SiteAnalyticsSummary struct {
 	Views30d       int64   `json:"views30d"`
 	Visitors30d    int64   `json:"visitors30d"`
 	Leads30d       int64   `json:"leads30d"`
-	PhoneClicks30d int64   `json:"phoneClicks30d"`
-	EmailClicks30d int64   `json:"emailClicks30d"`
 	ConversionRate float64 `json:"conversionRate"`
 }
 
@@ -552,8 +486,6 @@ type AnalyticsSummary struct {
 	Views30d       int64                  `json:"views30d"`
 	Visitors30d    int64                  `json:"visitors30d"`
 	Leads30d       int64                  `json:"leads30d"`
-	PhoneClicks30d int64                  `json:"phoneClicks30d"`
-	EmailClicks30d int64                  `json:"emailClicks30d"`
 	ConversionRate float64                `json:"conversionRate"`
 	Sites          []SiteAnalyticsSummary `json:"sites"`
 }
@@ -656,7 +588,6 @@ func main() {
 	http.HandleFunc("/leads/", leadByIDHandler)
 
 	http.HandleFunc("/analytics/pageview", analyticsPageViewHandler)
-	http.HandleFunc("/analytics/event", analyticsEventHandler)
 	http.HandleFunc("/analytics/summary", analyticsSummaryHandler)
 
 	http.HandleFunc("/stripe/checkout", stripeCheckoutHandler)
@@ -1135,44 +1066,6 @@ func createTables(ctx context.Context) error {
 
 		`
 
-        CREATE TABLE IF NOT EXISTS site_events (
-
-            id BIGSERIAL PRIMARY KEY,
-
-            site_id BIGINT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
-
-            user_id UUID NOT NULL,
-
-            public_slug TEXT NOT NULL,
-
-            visitor_id TEXT NOT NULL DEFAULT '',
-
-            event_type TEXT NOT NULL,
-
-            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-
-        );
-
-        `,
-
-		`
-
-        CREATE INDEX IF NOT EXISTS idx_site_events_site_created_at
-
-        ON site_events(site_id, created_at DESC);
-
-        `,
-
-		`
-
-        CREATE INDEX IF NOT EXISTS idx_site_events_user_type_created_at
-
-        ON site_events(user_id, event_type, created_at DESC);
-
-        `,
-
-		`
-
         CREATE TABLE IF NOT EXISTS admin_users (
 
             user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -1196,9 +1089,6 @@ func createTables(ctx context.Context) error {
 
 	}
 
-	if _, err := db.Exec(ctx, versionMigrationSQL); err != nil {
-		return err
-	}
 	fmt.Println("Table sites prête")
 
 	return nil
@@ -1344,10 +1234,6 @@ func requireAdmin(
 	user, authenticated := requireUser(w, r)
 	if !authenticated {
 		return SupabaseUser{}, false
-	}
-
-	if isOwnerUser(user.ID) {
-		return user, true
 	}
 
 	var isAdmin bool
@@ -1840,59 +1726,6 @@ func analyticsPageViewHandler(
 	)
 }
 
-func isAllowedAnalyticsEvent(value string) bool {
-	switch value {
-	case "phone_click", "email_click", "form_submit":
-		return true
-	default:
-		return false
-	}
-}
-
-func analyticsEventHandler(w http.ResponseWriter, r *http.Request) {
-	enableCORS(w)
-	if r.Method == http.MethodOptions {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-	if r.Method != http.MethodPost {
-		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
-		return
-	}
-	r.Body = http.MaxBytesReader(w, r.Body, 8*1024)
-	var input AnalyticsEventInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Données invalides", http.StatusBadRequest)
-		return
-	}
-	input.PublicSlug = strings.TrimSpace(input.PublicSlug)
-	input.VisitorID = strings.TrimSpace(input.VisitorID)
-	input.EventType = strings.TrimSpace(input.EventType)
-	if input.PublicSlug == "" || len(input.PublicSlug) > 200 || len(input.VisitorID) > 120 || !isAllowedAnalyticsEvent(input.EventType) {
-		http.Error(w, "Événement invalide", http.StatusBadRequest)
-		return
-	}
-	var siteID int64
-	var ownerUserID string
-	err := db.QueryRow(r.Context(), `SELECT id, user_id::text FROM sites WHERE public_slug = $1 AND published = TRUE LIMIT 1;`, input.PublicSlug).Scan(&siteID, &ownerUserID)
-	if errors.Is(err, pgx.ErrNoRows) {
-		http.Error(w, "Site introuvable", http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		log.Println("Erreur analytics événement :", err)
-		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
-		return
-	}
-	_, err = db.Exec(r.Context(), `INSERT INTO site_events (site_id, user_id, public_slug, visitor_id, event_type, created_at) VALUES ($1, $2::uuid, $3, $4, $5, NOW());`, siteID, ownerUserID, input.PublicSlug, input.VisitorID, input.EventType)
-	if err != nil {
-		log.Println("Erreur enregistrement événement :", err)
-		http.Error(w, "Impossible d'enregistrer l'événement", http.StatusInternalServerError)
-		return
-	}
-	writeJSON(w, http.StatusCreated, map[string]bool{"success": true})
-}
-
 func analyticsSummaryHandler(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -1947,17 +1780,7 @@ func analyticsSummaryHandler(
 				WHERE
 					l.site_id = s.id
 					AND l.created_at >= NOW() - INTERVAL '30 days'
-			), 0) AS leads_30d,
-			COALESCE((
-				SELECT COUNT(*) FROM site_events e
-				WHERE e.site_id = s.id AND e.event_type = 'phone_click'
-				  AND e.created_at >= NOW() - INTERVAL '30 days'
-			), 0) AS phone_clicks_30d,
-			COALESCE((
-				SELECT COUNT(*) FROM site_events e
-				WHERE e.site_id = s.id AND e.event_type = 'email_click'
-				  AND e.created_at >= NOW() - INTERVAL '30 days'
-			), 0) AS email_clicks_30d
+			), 0) AS leads_30d
 		FROM sites s
 		WHERE s.user_id = $1::uuid
 		ORDER BY s.updated_at DESC;
@@ -1998,8 +1821,6 @@ func analyticsSummaryHandler(
 			&site.Views30d,
 			&site.Visitors30d,
 			&site.Leads30d,
-			&site.PhoneClicks30d,
-			&site.EmailClicks30d,
 		); err != nil {
 			log.Println(
 				"Erreur lecture analytics :",
@@ -2029,9 +1850,6 @@ func analyticsSummaryHandler(
 
 		summary.Leads30d +=
 			site.Leads30d
-
-		summary.PhoneClicks30d += site.PhoneClicks30d
-		summary.EmailClicks30d += site.EmailClicks30d
 
 		summary.Sites = append(
 			summary.Sites,
@@ -2585,7 +2403,7 @@ func createLeadHandler(
 			http.StatusCreated,
 			map[string]any{
 				"success": true,
-				"message": "Votre demande a bien été enregistrée.",
+				"message": "Votre demande a bien été envoyée.",
 			},
 		)
 		return
@@ -2804,7 +2622,6 @@ func createLeadHandler(
 	}
 
 	if strings.TrimSpace(notificationEmail) != "" && strings.TrimSpace(os.Getenv("RESEND_API_KEY")) != "" {
-		setLeadNotificationStatus(leadID, "pending")
 		go func(leadID int64, toEmail string, businessName string, leadInput LeadInput) {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
@@ -2817,13 +2634,8 @@ func createLeadHandler(
 				leadInput,
 			); err != nil {
 				log.Println("Notification prospect non envoyée :", err)
-				setLeadNotificationStatus(leadID, "failed")
-			} else {
-				setLeadNotificationStatus(leadID, "sent")
 			}
 		}(leadID, notificationEmail, businessName, input)
-	} else {
-		setLeadNotificationStatus(leadID, "unconfigured")
 	}
 
 	writeJSON(
@@ -2869,7 +2681,7 @@ func listLeadsHandler(
 			l.follow_up_at,
 			COALESCE(l.archived, FALSE),
 			COALESCE(l.quote_amount_cents, 0),
-			l.created_at, l.notification_status
+			l.created_at
 		FROM leads l
 		INNER JOIN sites s
 			ON s.id = l.site_id
@@ -2915,7 +2727,7 @@ func listLeadsHandler(
 			&lead.FollowUpAt,
 			&lead.Archived,
 			&lead.QuoteAmountCents,
-			&lead.CreatedAt, &lead.NotificationStatus,
+			&lead.CreatedAt,
 		)
 
 		if err != nil {
@@ -2982,6 +2794,7 @@ func healthHandler(
 		return
 
 	}
+
 	writeJSON(
 
 		w,
@@ -3008,46 +2821,11 @@ func healthHandler(
 
 }
 
-var errMonthlyAIQuota = errors.New("monthly AI quota reached")
-
-func aiMonthlyLimit(status BillingStatus) int {
-	if status.IsOwner {
-		return -1
-	}
-	if !isActiveBillingStatus(status.Status) {
-		return 15
-	}
-	switch strings.ToLower(strings.TrimSpace(status.Plan)) {
-	case "essentiel":
-		return 50
-	case "pro":
-		return 200
-	case "agence":
-		return 1000
-	default:
-		return 15
-	}
-}
-
-func subscriptionEndsPublication(status string) bool {
-	switch strings.ToLower(strings.TrimSpace(status)) {
-	case "canceled", "unpaid", "incomplete_expired":
-		return true
-	default:
-		return false
-	}
-}
-
 func consumeAIUsage(
 	ctx context.Context,
 	userID string,
 	action string,
 ) (int64, int, bool, error) {
-	billing, _, _, err := getBillingStatus(ctx, userID)
-	if err != nil {
-		return 0, 0, false, err
-	}
-	monthlyLimit := aiMonthlyLimit(billing)
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return 0, 0, false, err
@@ -3064,26 +2842,20 @@ func consumeAIUsage(
 		return 0, 0, false, err
 	}
 
-	var used, monthlyUsed int
+	var used int
 
 	err = tx.QueryRow(
 		ctx,
 		`
-        SELECT
-          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 hour'),
-          COUNT(*) FILTER (WHERE created_at >= (date_trunc('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'))
-        FROM ai_usage
-        WHERE user_id = $1::uuid
-          AND created_at >= LEAST(NOW() - INTERVAL '1 hour', (date_trunc('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'));
+		SELECT COUNT(*)
+		FROM ai_usage
+		WHERE user_id = $1::uuid
+		  AND created_at >= NOW() - INTERVAL '1 hour';
 		`,
 		userID,
-	).Scan(&used, &monthlyUsed)
+	).Scan(&used)
 	if err != nil {
 		return 0, 0, false, err
-	}
-
-	if monthlyLimit >= 0 && monthlyUsed >= monthlyLimit {
-		return 0, 0, false, errMonthlyAIQuota
 	}
 
 	if used >= aiHourlyLimit {
@@ -3133,10 +2905,6 @@ func enforceAIRateLimit(
 		action,
 	)
 
-	if errors.Is(err, errMonthlyAIQuota) {
-		http.Error(w, "Quota IA mensuel atteint. Les demandes de création et de modification sont comptées ensemble. Le quota revient au début du prochain mois UTC ; consulte les formules pour augmenter ta limite.", http.StatusTooManyRequests)
-		return 0, false
-	}
 	if err != nil {
 		log.Println("Erreur rate limit IA :", err)
 
@@ -3241,6 +3009,16 @@ func generateHandler(
 	input.City = strings.TrimSpace(input.City)
 
 	input.Phone = strings.TrimSpace(input.Phone)
+
+	input.Goal = strings.TrimSpace(input.Goal)
+
+	input.TargetAudience = strings.TrimSpace(input.TargetAudience)
+
+	input.Tone = strings.TrimSpace(input.Tone)
+
+	input.CommunicationStyle = strings.TrimSpace(input.CommunicationStyle)
+
+	input.PrimaryAction = strings.TrimSpace(input.PrimaryAction)
 
 	if input.BusinessName == "" ||
 
@@ -3588,14 +3366,6 @@ func siteByIDHandler(
 
 	}
 
-	if len(parts) == 2 && parts[1] == "versions" {
-		siteVersionsHandler(w, r, id, user.ID)
-		return
-	}
-	if len(parts) == 2 && parts[1] == "restore-version" {
-		restoreSiteVersionHandler(w, r, id, user.ID)
-		return
-	}
 	if len(parts) >= 2 && parts[1] == "domain" {
 
 		if len(parts) == 2 {
@@ -3825,13 +3595,13 @@ func publicSitemapSitesHandler(
 		`
 		SELECT
 			public_slug,
-			COALESCE(published_at, updated_at)
+			updated_at
 		FROM sites
 		WHERE
 			published = TRUE
 			AND public_slug IS NOT NULL
 			AND public_slug <> ''
-		ORDER BY COALESCE(published_at, updated_at) DESC;
+		ORDER BY updated_at DESC;
 		`,
 	)
 
@@ -3967,19 +3737,19 @@ func publicSiteHandler(
 
     SELECT
 
-        published_snapshot->'site'->>'businessName' AS business_name,
+        business_name,
 
-        published_snapshot->>'activity' AS activity,
+        activity,
 
-        published_snapshot->>'city' AS city,
+        city,
 
-        published_snapshot->'site'->>'phone' AS phone,
+        phone,
 
-        published_snapshot->>'designStyle' AS design_style,
+        design_style,
 
-        published_snapshot->>'accentColor' AS accent_color,
+        accent_color,
 
-        published_snapshot->'site' AS site_data,
+        site_data,
 
         public_slug,
 
@@ -3991,7 +3761,7 @@ func publicSiteHandler(
 
         public_slug = $1
 
-        AND published = TRUE AND published_snapshot IS NOT NULL;
+        AND published = TRUE;
 
     `
 
@@ -4091,10 +3861,6 @@ func publicSiteHandler(
 
 	}
 
-	// Les informations d'organisation d'une agence restent privées.
-	publicSite.Site.ClientName = ""
-	publicSite.Site.ClientEmail = ""
-
 	writeJSON(
 
 		w,
@@ -4131,18 +3897,18 @@ func publicDomainHandler(
 
 	query := `
 	SELECT
-		published_snapshot->'site'->>'businessName' AS business_name,
-		published_snapshot->>'activity' AS activity,
-		published_snapshot->>'city' AS city,
-		published_snapshot->'site'->>'phone' AS phone,
-		published_snapshot->>'designStyle' AS design_style,
-		published_snapshot->>'accentColor' AS accent_color,
-		published_snapshot->'site' AS site_data,
+		business_name,
+		activity,
+		city,
+		phone,
+		design_style,
+		accent_color,
+		site_data,
 		public_slug,
 		published_at
 	FROM sites
 	WHERE LOWER(custom_domain) = LOWER($1)
-	  AND published = TRUE AND published_snapshot IS NOT NULL
+	  AND published = TRUE
 	LIMIT 1;
 	`
 
@@ -4176,8 +3942,6 @@ func publicDomainHandler(
 		http.Error(w, "Site invalide", http.StatusInternalServerError)
 		return
 	}
-	publicSite.Site.ClientName = ""
-	publicSite.Site.ClientEmail = ""
 
 	writeJSON(w, http.StatusOK, publicSite)
 }
@@ -4279,7 +4043,7 @@ func addDomainHandler(
 		if !isActiveBillingStatus(billingStatus.Status) {
 			http.Error(
 				w,
-				"Un abonnement actif est nécessaire pour connecter un domaine personnel.",
+				"Un abonnement Pro ou Agence actif est nécessaire pour utiliser un domaine personnalisé.",
 				http.StatusForbidden,
 			)
 			return
@@ -4287,7 +4051,7 @@ func addDomainHandler(
 
 		http.Error(
 			w,
-			"La connexion d’un domaine personnel est incluse dans les trois formules payantes.",
+			"Les domaines personnalisés sont disponibles avec les formules Pro ou Agence.",
 			http.StatusForbidden,
 		)
 		return
@@ -4395,7 +4159,7 @@ func verifyDomainHandler(
 		if !isActiveBillingStatus(billingStatus.Status) {
 			http.Error(
 				w,
-				"Un abonnement actif est nécessaire pour vérifier un domaine personnel.",
+				"Un abonnement Pro ou Agence actif est nécessaire pour vérifier un domaine personnalisé.",
 				http.StatusForbidden,
 			)
 			return
@@ -4403,7 +4167,7 @@ func verifyDomainHandler(
 
 		http.Error(
 			w,
-			"La connexion d’un domaine personnel est incluse dans les trois formules payantes.",
+			"Les domaines personnalisés sont disponibles avec les formules Pro ou Agence.",
 			http.StatusForbidden,
 		)
 		return
@@ -4543,8 +4307,225 @@ func updateStoredDomainVerification(
 	return err
 }
 
-func createSiteHandler(w http.ResponseWriter, r *http.Request, userID, userEmail string) {
-	saveDraftHandler(w, r, 0, userID, userEmail)
+func createSiteHandler(
+
+	w http.ResponseWriter,
+
+	r *http.Request,
+
+	userID string,
+
+	userEmail string,
+
+) {
+
+	var input SaveSiteInput
+
+	err := json.NewDecoder(r.Body).Decode(&input)
+
+	if err != nil {
+
+		http.Error(
+
+			w,
+
+			"JSON invalide",
+
+			http.StatusBadRequest,
+		)
+
+		return
+
+	}
+
+	if strings.TrimSpace(
+
+		input.Site.BusinessName,
+	) == "" {
+
+		http.Error(
+
+			w,
+
+			"Site invalide",
+
+			http.StatusBadRequest,
+		)
+
+		return
+
+	}
+
+	input.DesignStyle = normalizeDesignStyle(
+
+		input.DesignStyle,
+	)
+
+	input.AccentColor = normalizeAccentColor(
+
+		input.AccentColor,
+
+		"#2563eb",
+	)
+
+	siteJSON, err := json.Marshal(input.Site)
+
+	if err != nil {
+
+		http.Error(
+
+			w,
+
+			"Site invalide",
+
+			http.StatusInternalServerError,
+		)
+
+		return
+
+	}
+
+	query := `
+
+    INSERT INTO sites (
+
+        user_id,
+
+        business_name,
+
+        activity,
+
+        city,
+
+        phone,
+
+        notification_email,
+
+        design_style,
+
+        accent_color,
+
+        site_data
+
+    )
+
+    VALUES (
+
+        $1::uuid,
+
+        $2,
+
+        $3,
+
+        $4,
+
+        $5,
+
+        $6,
+
+        $7,
+
+        $8,
+
+        $9::jsonb
+
+    )
+
+    RETURNING
+
+        id,
+
+        created_at,
+
+        updated_at;
+
+    `
+
+	var saved SavedSite
+
+	err = db.QueryRow(
+
+		r.Context(),
+
+		query,
+
+		userID,
+
+		input.Site.BusinessName,
+
+		input.Activity,
+
+		input.City,
+
+		input.Site.Phone,
+
+		strings.TrimSpace(userEmail),
+
+		input.DesignStyle,
+
+		input.AccentColor,
+
+		string(siteJSON),
+	).Scan(
+
+		&saved.ID,
+
+		&saved.CreatedAt,
+
+		&saved.UpdatedAt,
+	)
+
+	if err != nil {
+
+		log.Println(
+
+			"Erreur sauvegarde :",
+
+			err,
+		)
+
+		http.Error(
+
+			w,
+
+			"Impossible de sauvegarder",
+
+			http.StatusInternalServerError,
+		)
+
+		return
+
+	}
+
+	saved.BusinessName = input.Site.BusinessName
+
+	saved.Activity = input.Activity
+
+	saved.City = input.City
+
+	saved.Phone = input.Site.Phone
+
+	saved.DesignStyle = input.DesignStyle
+
+	saved.AccentColor = input.AccentColor
+
+	saved.Site = input.Site
+
+	saved.Published = false
+
+	saved.PublicSlug = ""
+
+	saved.PublishedAt = nil
+
+	writeJSON(
+
+		w,
+
+		http.StatusCreated,
+
+		saved,
+	)
+
 }
 
 func listSitesHandler(
@@ -4585,7 +4566,7 @@ func listSitesHandler(
 
         created_at,
 
-        updated_at, draft_revision, published_revision
+        updated_at
 
     FROM sites
 
@@ -4655,7 +4636,7 @@ func listSitesHandler(
 
 			&saved.CreatedAt,
 
-			&saved.UpdatedAt, &saved.DraftRevision, &saved.PublishedRevision,
+			&saved.UpdatedAt,
 		)
 
 		if err != nil {
@@ -4797,8 +4778,184 @@ func getSiteHandler(
 
 }
 
-func updateSiteHandler(w http.ResponseWriter, r *http.Request, id int64, userID string) {
-	saveDraftHandler(w, r, id, userID, "")
+func updateSiteHandler(
+
+	w http.ResponseWriter,
+
+	r *http.Request,
+
+	id int64,
+
+	userID string,
+
+) {
+
+	var input SaveSiteInput
+
+	err := json.NewDecoder(r.Body).Decode(&input)
+
+	if err != nil {
+
+		http.Error(
+
+			w,
+
+			"JSON invalide",
+
+			http.StatusBadRequest,
+		)
+
+		return
+
+	}
+
+	input.DesignStyle = normalizeDesignStyle(
+
+		input.DesignStyle,
+	)
+
+	input.AccentColor = normalizeAccentColor(
+
+		input.AccentColor,
+
+		"#2563eb",
+	)
+
+	siteJSON, err := json.Marshal(input.Site)
+
+	if err != nil {
+
+		http.Error(
+
+			w,
+
+			"Site invalide",
+
+			http.StatusInternalServerError,
+		)
+
+		return
+
+	}
+
+	query := `
+
+    UPDATE sites
+
+    SET
+
+        business_name = $1,
+
+        activity = $2,
+
+        city = $3,
+
+        phone = $4,
+
+        design_style = $5,
+
+        accent_color = $6,
+
+        site_data = $7::jsonb,
+
+        updated_at = NOW()
+
+    WHERE
+
+        id = $8
+
+        AND user_id = $9::uuid;
+
+    `
+
+	result, err := db.Exec(
+
+		r.Context(),
+
+		query,
+
+		input.Site.BusinessName,
+
+		input.Activity,
+
+		input.City,
+
+		input.Site.Phone,
+
+		input.DesignStyle,
+
+		input.AccentColor,
+
+		string(siteJSON),
+
+		id,
+
+		userID,
+	)
+
+	if err != nil {
+
+		http.Error(
+
+			w,
+
+			"Impossible de modifier le site",
+
+			http.StatusInternalServerError,
+		)
+
+		return
+
+	}
+
+	if result.RowsAffected() == 0 {
+
+		http.Error(
+
+			w,
+
+			"Site introuvable",
+
+			http.StatusNotFound,
+		)
+
+		return
+
+	}
+
+	saved, err := getSavedSiteByID(
+
+		r.Context(),
+
+		id,
+
+		userID,
+	)
+
+	if err != nil {
+
+		http.Error(
+
+			w,
+
+			"Impossible de relire le site",
+
+			http.StatusInternalServerError,
+		)
+
+		return
+
+	}
+
+	writeJSON(
+
+		w,
+
+		http.StatusOK,
+
+		saved,
+	)
+
 }
 
 func deleteSiteHandler(
@@ -4878,8 +5035,269 @@ func deleteSiteHandler(
 
 }
 
-func publishSiteHandler(w http.ResponseWriter, r *http.Request, id int64, userID string) {
-	publishDraftHandler(w, r, id, userID)
+func publishSiteHandler(
+
+	w http.ResponseWriter,
+
+	r *http.Request,
+
+	id int64,
+
+	userID string,
+
+) {
+
+	saved, err := getSavedSiteByID(
+
+		r.Context(),
+
+		id,
+
+		userID,
+	)
+
+	if err != nil {
+
+		if errors.Is(
+
+			err,
+
+			pgx.ErrNoRows,
+		) {
+
+			http.Error(
+
+				w,
+
+				"Site introuvable",
+
+				http.StatusNotFound,
+			)
+
+			return
+
+		}
+
+		http.Error(
+
+			w,
+
+			"Erreur serveur",
+
+			http.StatusInternalServerError,
+		)
+
+		return
+
+	}
+
+	if !saved.Published {
+		billingStatus, _, _, billingErr := getBillingStatus(r.Context(), userID)
+		if billingErr != nil {
+			http.Error(
+				w,
+				"Impossible de vérifier l'abonnement",
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		entitlements := billingEntitlements(billingStatus)
+		if entitlements.MaxPublishedSites == 0 {
+			http.Error(
+				w,
+				"Un abonnement actif est nécessaire pour publier un site.",
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		var publishedCount int
+		countErr := db.QueryRow(
+			r.Context(),
+			`
+			SELECT COUNT(*)
+			FROM sites
+			WHERE
+				user_id = $1::uuid
+				AND published = TRUE
+				AND id <> $2;
+			`,
+			userID,
+			id,
+		).Scan(&publishedCount)
+		if countErr != nil {
+			http.Error(
+				w,
+				"Impossible de vérifier la limite de publication",
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		if publishedCount >= entitlements.MaxPublishedSites {
+			http.Error(
+				w,
+				publishedSiteLimitMessage(billingStatus.Plan, entitlements.MaxPublishedSites),
+				http.StatusForbidden,
+			)
+			return
+		}
+	}
+
+	publicSlug := saved.PublicSlug
+
+	if publicSlug == "" {
+
+		baseSlug := slugify(
+
+			saved.BusinessName,
+		)
+
+		if baseSlug == "" {
+
+			baseSlug = "site"
+
+		}
+
+		publicSlug, err = createUniquePublicSlug(
+
+			r.Context(),
+
+			baseSlug,
+
+			id,
+		)
+
+		if err != nil {
+
+			http.Error(
+
+				w,
+
+				"Impossible de créer l'adresse publique",
+
+				http.StatusInternalServerError,
+			)
+
+			return
+
+		}
+
+	}
+
+	query := `
+
+    UPDATE sites
+
+    SET
+
+        published = TRUE,
+
+        public_slug = $1,
+
+        published_at = NOW(),
+
+        updated_at = NOW()
+
+    WHERE
+
+        id = $2
+
+        AND user_id = $3::uuid;
+
+    `
+
+	result, err := db.Exec(
+
+		r.Context(),
+
+		query,
+
+		publicSlug,
+
+		id,
+
+		userID,
+	)
+
+	if err != nil {
+
+		log.Println(
+
+			"Erreur publication :",
+
+			err,
+		)
+
+		http.Error(
+
+			w,
+
+			"Impossible de publier le site",
+
+			http.StatusInternalServerError,
+		)
+
+		return
+
+	}
+
+	if result.RowsAffected() == 0 {
+
+		http.Error(
+
+			w,
+
+			"Site introuvable",
+
+			http.StatusNotFound,
+		)
+
+		return
+
+	}
+
+	publishedSite, err := getSavedSiteByID(
+
+		r.Context(),
+
+		id,
+
+		userID,
+	)
+
+	if err != nil {
+
+		http.Error(
+
+			w,
+
+			"Site publié mais impossible à relire",
+
+			http.StatusInternalServerError,
+		)
+
+		return
+
+	}
+
+	fmt.Println(
+
+		"Site publié :",
+
+		publishedSite.BusinessName,
+	)
+
+	writeJSON(
+
+		w,
+
+		http.StatusOK,
+
+		publishedSite,
+	)
+
 }
 
 func unpublishSiteHandler(
@@ -5083,8 +5501,119 @@ func createUniquePublicSlug(
 
 }
 
-func getSavedSiteByID(ctx context.Context, id int64, userID string) (SavedSite, error) {
-	return scanSavedSite(db.QueryRow(ctx, "SELECT "+savedColumns+" FROM sites WHERE id=$1 AND user_id=$2::uuid", id, userID))
+func getSavedSiteByID(
+
+	ctx context.Context,
+
+	id int64,
+
+	userID string,
+
+) (SavedSite, error) {
+
+	query := `
+
+    SELECT
+
+        id,
+
+        business_name,
+
+        activity,
+
+        city,
+
+        phone,
+
+        design_style,
+
+        accent_color,
+
+        site_data,
+
+        published,
+
+        COALESCE(public_slug, ''),
+
+        published_at,
+
+        created_at,
+
+        updated_at
+
+    FROM sites
+
+    WHERE
+
+        id = $1
+
+        AND user_id = $2::uuid;
+
+    `
+
+	var saved SavedSite
+
+	var siteJSON []byte
+
+	err := db.QueryRow(
+
+		ctx,
+
+		query,
+
+		id,
+
+		userID,
+	).Scan(
+
+		&saved.ID,
+
+		&saved.BusinessName,
+
+		&saved.Activity,
+
+		&saved.City,
+
+		&saved.Phone,
+
+		&saved.DesignStyle,
+
+		&saved.AccentColor,
+
+		&siteJSON,
+
+		&saved.Published,
+
+		&saved.PublicSlug,
+
+		&saved.PublishedAt,
+
+		&saved.CreatedAt,
+
+		&saved.UpdatedAt,
+	)
+
+	if err != nil {
+
+		return SavedSite{}, err
+
+	}
+
+	err = json.Unmarshal(
+
+		siteJSON,
+
+		&saved.Site,
+	)
+
+	if err != nil {
+
+		return SavedSite{}, err
+
+	}
+
+	return saved, nil
+
 }
 
 func generateSiteWithAI(
@@ -5108,6 +5637,31 @@ func generateSiteWithAI(
 
 		services = "Aucun service détaillé fourni. Déduire uniquement des catégories de services générales et plausibles à partir de l'activité, sans inventer de spécialité, certification, tarif ou promesse."
 
+	}
+
+	goal := input.Goal
+	if goal == "" {
+		goal = "générer des prises de contact qualifiées"
+	}
+
+	targetAudience := input.TargetAudience
+	if targetAudience == "" {
+		targetAudience = "clientèle locale générale adaptée à l'activité"
+	}
+
+	tone := input.Tone
+	if tone == "" {
+		tone = "professionnel et chaleureux"
+	}
+
+	communicationStyle := input.CommunicationStyle
+	if communicationStyle == "" {
+		communicationStyle = "clair et concis"
+	}
+
+	primaryAction := input.PrimaryAction
+	if primaryAction == "" {
+		primaryAction = "nous contacter"
 	}
 
 	instructions := `
@@ -5145,7 +5699,12 @@ PERSONNALISATION :
 - utilise la ville de manière naturelle, sans bourrage de mots-clés
 - si des services sont fournis, donne-leur la priorité
 - si aucun service détaillé n'est fourni, reste sur des catégories générales cohérentes avec l'activité
-- les CTA doivent correspondre au métier : par exemple demander un devis, prendre contact, réserver, appeler ou découvrir les services, sans promettre une fonctionnalité qui n'existe pas
+- prends réellement en compte l'objectif du site, la clientèle cible, le ton et le style de communication fournis
+- le hero doit parler en priorité au public cible et soutenir l'objectif principal
+- les sections doivent être ordonnées selon ce qui aide le mieux à atteindre l'objectif
+- le CTA principal doit suivre l'action souhaitée quand elle est compatible avec les fonctionnalités réelles du site
+- si l'action souhaitée suppose une fonctionnalité non disponible, reformule vers une prise de contact cohérente au lieu de promettre cette fonctionnalité
+- les CTA doivent rester courts, naturels et spécifiques au métier
 
 STRUCTURE À PRODUIRE :
 - metaTitle : titre SEO naturel, idéalement autour de 50 à 60 caractères
@@ -5177,12 +5736,27 @@ Téléphone : %s
 
 Services fournis : %s
 
-Crée une version complète et personnalisée du contenu du site.`,
+Objectif principal du site : %s
+
+Clientèle cible : %s
+
+Ton souhaité : %s
+
+Style de communication : %s
+
+Action principale souhaitée : %s
+
+Crée une version complète et réellement personnalisée du contenu du site en utilisant ces préférences sans inventer de faits.`,
 		input.BusinessName,
 		input.Activity,
 		input.City,
 		input.Phone,
 		services,
+		goal,
+		targetAudience,
+		tone,
+		communicationStyle,
+		primaryAction,
 	)
 
 	outputText, err := callOpenAI(
@@ -5256,17 +5830,6 @@ Crée une version complète et personnalisée du contenu du site.`,
 		ContactTitle: content.ContactTitle,
 
 		ContactText: content.ContactText,
-
-		LayoutOrder: []string{
-			"about",
-			"services",
-			"process",
-			"faq",
-			"gallery",
-			"contact",
-		},
-
-		HiddenBlocks: []string{},
 	}, nil
 
 }
@@ -5339,7 +5902,7 @@ SÉCURITÉ DU CONTENU :
 - éviter les superlatifs non prouvés
 
 DESIGN :
-- designStyle doit être exactement moderne, elegant, artisan, minimaliste, nature, premium, dynamique, tradition ou creatif. Conserve le style actuel sauf demande explicite de changement.
+- designStyle doit être exactement moderne, elegant ou artisan
 - accentColor doit être une couleur hexadécimale valide
 - ne change le style ou la couleur que si la demande le justifie
 
@@ -5527,35 +6090,6 @@ Retourne le site complet après modification.`,
 
 		result.Site.Sections = input.Site.Sections
 
-	} else {
-
-		// Les icônes de services sont un choix manuel de l'utilisateur.
-		// L'éditeur IA ne doit pas les écraser.
-		for index := range result.Site.Sections {
-
-			if index >= len(input.Site.Sections) {
-
-				continue
-
-			}
-
-			result.Site.Sections[index].IconMode =
-				input.Site.Sections[index].IconMode
-
-			result.Site.Sections[index].Icon =
-				input.Site.Sections[index].Icon
-
-			result.Site.Sections[index].ImageMode =
-				input.Site.Sections[index].ImageMode
-
-			result.Site.Sections[index].ImageURL =
-				input.Site.Sections[index].ImageURL
-
-			result.Site.Sections[index].Hidden =
-				input.Site.Sections[index].Hidden
-
-		}
-
 	}
 
 	if len(
@@ -5599,28 +6133,6 @@ Retourne le site complet après modification.`,
 	result.Site.LogoURL = input.Site.LogoURL
 	result.Site.HeroImageURL = input.Site.HeroImageURL
 	result.Site.Gallery = input.Site.Gallery
-	result.Site.LayoutOrder = input.Site.LayoutOrder
-	result.Site.HiddenBlocks = input.Site.HiddenBlocks
-	result.Site.Testimonials = input.Site.Testimonials
-	result.Site.ServiceArea = input.Site.ServiceArea
-	result.Site.OpeningHours = input.Site.OpeningHours
-	result.Site.ClientName = input.Site.ClientName
-	result.Site.ClientEmail = input.Site.ClientEmail
-
-	if len(result.Site.LayoutOrder) == 0 {
-		result.Site.LayoutOrder = []string{
-			"about",
-			"services",
-			"process",
-			"faq",
-			"gallery",
-			"contact",
-		}
-	}
-
-	if result.Site.HiddenBlocks == nil {
-		result.Site.HiddenBlocks = []string{}
-	}
 
 	result.Site.Slug = slugify(
 
@@ -6054,7 +6566,7 @@ func modifiedSiteSchema() map[string]any {
 
 					"elegant",
 
-					"artisan", "minimaliste", "nature", "premium", "dynamique", "tradition", "creatif",
+					"artisan",
 				},
 			},
 
@@ -6796,23 +7308,6 @@ func doStripeForm(
 	return nil
 }
 
-// The owner identity is configured only on the backend. Never trust a client role.
-func isOwnerUser(userID string) bool {
-	configured := strings.TrimSpace(os.Getenv("SITEAI_OWNER_USER_ID"))
-	return configured != "" && strings.EqualFold(configured, strings.TrimSpace(userID))
-}
-
-func applyOwnerAccess(status *BillingStatus, userID string) {
-	if !isOwnerUser(userID) {
-		return
-	}
-	status.IsOwner = true
-	status.Plan = "owner"
-	status.Status = "active"
-	// Preserve real Stripe metadata so an existing subscription remains manageable.
-	applyBillingEntitlements(status)
-}
-
 func getBillingStatus(
 	ctx context.Context,
 	userID string,
@@ -6859,7 +7354,6 @@ func getBillingStatus(
 		}
 
 		applyBillingEntitlements(&status)
-		applyOwnerAccess(&status, userID)
 
 		return status, "", "", nil
 	}
@@ -6882,7 +7376,6 @@ func getBillingStatus(
 	}
 
 	applyBillingEntitlements(&billingStatus)
-	applyOwnerAccess(&billingStatus, userID)
 
 	return billingStatus, customerID, subscriptionID, nil
 }
@@ -6894,9 +7387,6 @@ func isActiveBillingStatus(status string) bool {
 }
 
 func billingEntitlements(status BillingStatus) PlanEntitlements {
-	if status.IsOwner {
-		return PlanEntitlements{MaxPublishedSites: -1, CustomDomainAllowed: true}
-	}
 	if !isActiveBillingStatus(status.Status) {
 		return PlanEntitlements{}
 	}
@@ -6905,12 +7395,12 @@ func billingEntitlements(status BillingStatus) PlanEntitlements {
 	case "essentiel":
 		return PlanEntitlements{
 			MaxPublishedSites:   1,
-			CustomDomainAllowed: true,
+			CustomDomainAllowed: false,
 		}
 
 	case "pro":
 		return PlanEntitlements{
-			MaxPublishedSites:   1,
+			MaxPublishedSites:   3,
 			CustomDomainAllowed: true,
 		}
 
@@ -6938,10 +7428,10 @@ func applyBillingEntitlements(status *BillingStatus) {
 func publishedSiteLimitMessage(plan string, maxSites int) string {
 	switch strings.ToLower(strings.TrimSpace(plan)) {
 	case "essentiel":
-		return "Limite de la formule Essentiel atteinte : 1 site publié maximum. Dépublie ce site ou passe à Agence pour gérer plusieurs clients."
+		return "Limite de la formule Essentiel atteinte : 1 site publié maximum. Passe à Pro pour publier jusqu'à 3 sites."
 
 	case "pro":
-		return "Limite de la formule Pro atteinte : 1 site publié maximum. Passe à Agence pour gérer jusqu'à 10 sites clients."
+		return "Limite de la formule Pro atteinte : 3 sites publiés maximum. Passe à Agence pour publier jusqu'à 10 sites."
 
 	case "agence":
 		return "Limite de la formule Agence atteinte : 10 sites publiés maximum."
@@ -7257,11 +7747,6 @@ func stripeCheckoutHandler(
 	status, _, _, err := getBillingStatus(r.Context(), user.ID)
 	if err != nil {
 		http.Error(w, "Impossible de lire l'abonnement", http.StatusInternalServerError)
-		return
-	}
-
-	if status.IsOwner {
-		http.Error(w, "Ton accès propriétaire inclut toutes les fonctionnalités sans abonnement.", http.StatusConflict)
 		return
 	}
 
@@ -7742,12 +8227,7 @@ func syncStripeSubscription(
 		}
 	}
 
-	tx, err := db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-	_, err = tx.Exec(
+	_, err := db.Exec(
 		ctx,
 		`
 		INSERT INTO user_billing (
@@ -7793,60 +8273,12 @@ func syncStripeSubscription(
 		subscription.CancelAtPeriodEnd,
 	)
 
-	if err != nil {
-		return err
-	}
-	if subscriptionEndsPublication(subscription.Status) && !isOwnerUser(userID) {
-		_, err = tx.Exec(ctx, "UPDATE sites SET published = FALSE, updated_at = NOW() WHERE user_id = $1::uuid AND published = TRUE;", userID)
-		if err != nil {
-			return err
-		}
-	}
-	return tx.Commit(ctx)
-}
-
-func limitRunes(value string, maximum int) string {
-	value = strings.TrimSpace(value)
-	runes := []rune(value)
-	if len(runes) > maximum {
-		return string(runes[:maximum])
-	}
-	return value
-}
-
-func normalizeGrowthFields(site *GeneratedSite) {
-	if site == nil {
-		return
-	}
-	site.ServiceArea = limitRunes(site.ServiceArea, 240)
-	site.OpeningHours = limitRunes(site.OpeningHours, 240)
-	site.ClientName = limitRunes(site.ClientName, 160)
-	site.ClientEmail = strings.ToLower(limitRunes(site.ClientEmail, 254))
-	normalized := make([]Testimonial, 0, 6)
-	for _, item := range site.Testimonials {
-		if len(normalized) >= 6 {
-			break
-		}
-		item.Name = limitRunes(item.Name, 100)
-		item.Role = limitRunes(item.Role, 100)
-		item.Text = limitRunes(item.Text, 600)
-		if item.Name == "" || item.Text == "" {
-			continue
-		}
-		if item.Rating < 3 || item.Rating > 5 {
-			item.Rating = 5
-		}
-		normalized = append(normalized, item)
-	}
-	site.Testimonials = normalized
+	return err
 }
 
 func normalizeDesignStyle(value string) string {
 
 	switch value {
-
-	case "minimaliste", "nature", "premium", "dynamique", "tradition", "creatif":
-		return value
 
 	case "elegant":
 
