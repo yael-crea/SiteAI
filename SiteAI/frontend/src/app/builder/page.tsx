@@ -726,6 +726,21 @@ export default function Home() {
   const [services, setServices] =
     useState("");
 
+  const [siteGoal, setSiteGoal] =
+    useState("generer des demandes de contact");
+
+  const [targetAudience, setTargetAudience] =
+    useState("");
+
+  const [desiredTone, setDesiredTone] =
+    useState("professionnel et chaleureux");
+
+  const [communicationStyle, setCommunicationStyle] =
+    useState("clair et concis");
+
+  const [primaryAction, setPrimaryAction] =
+    useState("nous contacter");
+
   const suggestedActivity = activityExamples.find(example =>
     example.keywords.some(keyword => normalizeActivity(activity).includes(keyword)),
   );
@@ -1177,6 +1192,12 @@ export default function Home() {
               phone,
               services:
                 serviceList,
+              goal: siteGoal,
+              targetAudience:
+                targetAudience.trim(),
+              tone: desiredTone,
+              communicationStyle,
+              primaryAction,
             }),
           },
         );
@@ -1954,6 +1975,20 @@ export default function Home() {
     setCity("Montpellier");
     setPhone("");
     setServices("");
+
+    setSiteGoal(
+      "generer des demandes de contact",
+    );
+    setTargetAudience("");
+    setDesiredTone(
+      "professionnel et chaleureux",
+    );
+    setCommunicationStyle(
+      "clair et concis",
+    );
+    setPrimaryAction(
+      "nous contacter",
+    );
 
     setDesignStyle(
       "moderne",
@@ -3679,6 +3714,159 @@ export default function Home() {
                   </>}
                   <p role="status" className="mt-3 text-xs text-slate-400">{selectedServices.length} prestation{selectedServices.length > 1 ? "s" : ""} renseignée{selectedServices.length > 1 ? "s" : ""}</p>
                 </div>
+
+                {!site && (
+                  <div className="rounded-2xl border border-blue-900/60 bg-blue-950/20 p-4 sm:p-5">
+                    <div>
+                      <p className="font-black text-blue-300">
+                        ✨ Rendre le site plus personnalisé
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-400">
+                        Ces choix sont facultatifs, mais ils permettent à l&apos;IA d&apos;adapter davantage le contenu à tes clients et à ton objectif.
+                      </p>
+                    </div>
+
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <label htmlFor="site-goal" className="mb-2 block text-xs font-bold text-slate-400">
+                          Objectif principal
+                        </label>
+                        <select
+                          id="site-goal"
+                          value={siteGoal}
+                          onChange={(event) =>
+                            setSiteGoal(event.target.value)
+                          }
+                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                        >
+                          <option value="generer des demandes de contact">
+                            Générer des demandes de contact
+                          </option>
+                          <option value="obtenir des demandes de devis">
+                            Obtenir des demandes de devis
+                          </option>
+                          <option value="obtenir des rendez-vous">
+                            Obtenir des rendez-vous
+                          </option>
+                          <option value="presenter clairement les services">
+                            Présenter clairement les services
+                          </option>
+                          <option value="attirer des clients en etablissement">
+                            Attirer des clients en établissement
+                          </option>
+                          <option value="renforcer la presence locale">
+                            Renforcer la présence locale
+                          </option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label htmlFor="target-audience" className="mb-2 block text-xs font-bold text-slate-400">
+                          Clientèle cible
+                        </label>
+                        <input
+                          id="target-audience"
+                          value={targetAudience}
+                          onChange={(event) =>
+                            setTargetAudience(event.target.value)
+                          }
+                          placeholder="Ex. familles, entreprises, femmes 18–40 ans..."
+                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="desired-tone" className="mb-2 block text-xs font-bold text-slate-400">
+                          Ton souhaité
+                        </label>
+                        <select
+                          id="desired-tone"
+                          value={desiredTone}
+                          onChange={(event) =>
+                            setDesiredTone(event.target.value)
+                          }
+                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                        >
+                          <option value="professionnel et chaleureux">
+                            Professionnel et chaleureux
+                          </option>
+                          <option value="premium et elegant">
+                            Premium et élégant
+                          </option>
+                          <option value="moderne et dynamique">
+                            Moderne et dynamique
+                          </option>
+                          <option value="simple et rassurant">
+                            Simple et rassurant
+                          </option>
+                          <option value="direct et commercial">
+                            Direct et commercial
+                          </option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label htmlFor="communication-style" className="mb-2 block text-xs font-bold text-slate-400">
+                          Style de communication
+                        </label>
+                        <select
+                          id="communication-style"
+                          value={communicationStyle}
+                          onChange={(event) =>
+                            setCommunicationStyle(event.target.value)
+                          }
+                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                        >
+                          <option value="clair et concis">
+                            Clair et concis
+                          </option>
+                          <option value="pedagogique">
+                            Pédagogique
+                          </option>
+                          <option value="local et humain">
+                            Local et humain
+                          </option>
+                          <option value="commercial sans exageration">
+                            Commercial sans exagération
+                          </option>
+                          <option value="haut de gamme">
+                            Haut de gamme
+                          </option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label htmlFor="primary-action" className="mb-2 block text-xs font-bold text-slate-400">
+                          Action principale souhaitée
+                        </label>
+                        <select
+                          id="primary-action"
+                          value={primaryAction}
+                          onChange={(event) =>
+                            setPrimaryAction(event.target.value)
+                          }
+                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                        >
+                          <option value="nous contacter">
+                            Nous contacter
+                          </option>
+                          <option value="appeler">
+                            Appeler
+                          </option>
+                          <option value="demander un devis">
+                            Demander un devis
+                          </option>
+                          <option value="prendre rendez-vous">
+                            Prendre rendez-vous
+                          </option>
+                          <option value="decouvrir les services">
+                            Découvrir les services
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <p className="mb-2 text-sm text-slate-400">
