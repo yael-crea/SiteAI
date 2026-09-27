@@ -30,6 +30,13 @@ type SavedSite = {
 
 type FilterType = "all" | "published" | "draft";
 
+type ShareFeedback = {
+  siteID: number;
+  message: string;
+  error?: boolean;
+};
+
+
 type DomainVerification = {
   type: string;
   domain?: string;
@@ -191,6 +198,7 @@ export default function DashboardPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [deletingID, setDeletingID] = useState<number | null>(null);
   const [duplicatingID, setDuplicatingID] = useState<number | null>(null);
+  const [shareFeedback, setShareFeedback] = useState<ShareFeedback | null>(null);
 
   const [domainPanelSiteID, setDomainPanelSiteID] = useState<number | null>(null);
   const [domainInput, setDomainInput] = useState("");
@@ -390,6 +398,111 @@ export default function DashboardPage() {
   function viewPublicSite(slug: string) {
     if (!slug) return;
     window.open(`/site/${slug}`, "_blank", "noopener,noreferrer");
+  }
+
+  function publicSiteUrl(slug: string) {
+    if (typeof window === "undefined") {
+      return `/site/${encodeURIComponent(slug)}`;
+    }
+
+    return `${window.location.origin}/site/${encodeURIComponent(slug)}`;
+  }
+
+  async function copyText(value: string) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textarea);
+
+    if (!copied) {
+      throw new Error("copy-failed");
+    }
+  }
+
+  async function copyPublicSite(
+    siteID: number,
+    slug: string,
+  ) {
+    if (!slug) return;
+
+    try {
+      await copyText(publicSiteUrl(slug));
+
+      setShareFeedback({
+        siteID,
+        message: "✓ Lien copié",
+      });
+    } catch (err) {
+      console.error(err);
+
+      setShareFeedback({
+        siteID,
+        message: "Impossible de copier le lien.",
+        error: true,
+      });
+    }
+  }
+
+  async function sharePublicSite(
+    siteID: number,
+    slug: string,
+    businessName: string,
+  ) {
+    if (!slug) return;
+
+    const url = publicSiteUrl(slug);
+
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({
+          title: businessName || "Site professionnel",
+          text: `Découvre le site de ${businessName || "cette entreprise"}.`,
+          url,
+        });
+
+        setShareFeedback({
+          siteID,
+          message: "Options de partage ouvertes.",
+        });
+
+        return;
+      }
+
+      await copyText(url);
+
+      setShareFeedback({
+        siteID,
+        message: "✓ Lien copié pour le partager",
+      });
+    } catch (err) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "name" in err &&
+        err.name === "AbortError"
+      ) {
+        return;
+      }
+
+      console.error(err);
+
+      setShareFeedback({
+        siteID,
+        message: "Impossible d’ouvrir le partage.",
+        error: true,
+      });
+    }
   }
 
   async function duplicateSite(
@@ -2000,6 +2113,50 @@ export default function DashboardPage() {
                         >
                           🚀 Publier
                         </button>
+                      )}
+
+                      {savedSite.published && savedSite.publicSlug && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void copyPublicSite(
+                                savedSite.id,
+                                savedSite.publicSlug,
+                              )
+                            }
+                            className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-semibold text-slate-200 hover:border-blue-500 hover:bg-slate-800"
+                          >
+                            🔗 Copier
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void sharePublicSite(
+                                savedSite.id,
+                                savedSite.publicSlug,
+                                savedSite.businessName,
+                              )
+                            }
+                            className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-semibold text-slate-200 hover:border-blue-500 hover:bg-slate-800"
+                          >
+                            📤 Partager
+                          </button>
+
+                          {shareFeedback?.siteID === savedSite.id && (
+                            <p
+                              role="status"
+                              className={`col-span-2 text-center text-xs ${
+                                shareFeedback.error
+                                  ? "text-amber-300"
+                                  : "text-emerald-300"
+                              }`}
+                            >
+                              {shareFeedback.message}
+                            </p>
+                          )}
+                        </>
                       )}
 
                       {billingLoading ? (
