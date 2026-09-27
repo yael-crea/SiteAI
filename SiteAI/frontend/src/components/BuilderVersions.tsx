@@ -38,10 +38,10 @@ export default function BuilderVersions<T>({ entries, error, disabled, onSave, o
   const [message, setMessage] = useState("");
   return <>
     <button type="button" disabled={disabled} onClick={() => {setMessage(""); dialog.current?.showModal();}}
-      className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">Versions</button>
+      className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">Versions appareil</button>
     <dialog ref={dialog} className="m-auto max-h-[85dvh] w-[calc(100%_-_2rem)] max-w-lg overflow-y-auto rounded-2xl border border-slate-700 bg-slate-950 p-6 text-white backdrop:bg-black/70" aria-labelledby="versions-title">
       <div className="flex items-center justify-between gap-4"><h2 id="versions-title" className="text-xl font-bold">Versions sur cet appareil</h2><button type="button" onClick={() => dialog.current?.close()} className="rounded-lg border border-slate-700 px-3 py-2">Fermer</button></div>
-      <p className="mt-3 text-sm leading-6 text-slate-400">Les 8 dernières versions sont conservées dans ce navigateur. Restaurer modifie uniquement l’éditeur : il faudra enregistrer pour mettre à jour le site.</p>
+      <p className="mt-3 text-sm leading-6 text-slate-400">Les 8 dernières versions sont conservées dans ce navigateur. Restaurer modifie uniquement l’éditeur : enregistre le brouillon dans ton compte, puis publie quand tu es prêt.</p>
       <button type="button" disabled={disabled} onClick={() => setMessage(onSave() ? "Version actuelle conservée." : "La version n’a pas été conservée.")} className="mt-4 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold disabled:opacity-30">Conserver cette version</button>
       <p role="status" className="mt-3 text-sm text-blue-200">{message}</p>
       {error && <p role="alert" className="mt-3 text-sm text-amber-300">{error}</p>}

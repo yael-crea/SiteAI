@@ -12,6 +12,8 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import SitePreview, { type PreviewEditTarget } from "@/components/SitePreview";
+import AccountVersions, { type AccountVersion } from "@/components/AccountVersions";
+import { actionError } from "@/lib/actionErrors";
 import PublicationSuccess from "@/components/PublicationSuccess";
 import BuilderVersions, { useBuilderVersions } from "@/components/BuilderVersions";
 import { useBuilderDraft } from "@/lib/useBuilderDraft";
@@ -121,6 +123,8 @@ type ModifyResponse = {
 };
 
 type SavedSite = {
+  draftRevision: number;
+  publishedRevision: number;
   id: number;
   businessName: string;
   activity: string;
@@ -771,6 +775,10 @@ export default function Home() {
   const [savedSiteID, setSavedSiteID] =
     useState<number | null>(null);
 
+  const [draftRevision, setDraftRevision] = useState<number | null>(null);
+  const [restoringVersion, setRestoringVersion] = useState(false);
+  const [saveConflict, setSaveConflict] = useState(false);
+
   const [sitesLoading, setSitesLoading] =
     useState(false);
 
@@ -820,7 +828,7 @@ export default function Home() {
     useState("");
 
 
-  const busy = loading || editLoading || saving || publishing || openingSite || logoUploading || heroImageUploading || galleryUploading || serviceImageUploadingIndex !== null;
+  const busy = restoringVersion || loading || editLoading || saving || publishing || openingSite || logoUploading || heroImageUploading || galleryUploading || serviceImageUploadingIndex !== null;
   const draftSnapshot: BuilderSnapshot = {site, businessName, activity, city, phone, services, designStyle, accentColor};
   const draft = useBuilderDraft<BuilderSnapshot>({
     storageKey: draftUserId ? `siteai:draft:v1:${draftUserId}:${savedSiteID ?? "new"}` : null,
@@ -846,6 +854,28 @@ export default function Home() {
     restoreSnapshot(snapshot);
     setSaveMessage("Version restaurée dans l’éditeur uniquement. Enregistre quand tu es prêt.");
     return true;
+  }
+
+  async function loadAccountVersions(): Promise<AccountVersion[]> {
+    if (savedSiteID === null) return [];
+    const response = await authenticatedFetch(`/sites/${savedSiteID}/versions`);
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  }
+
+  async function restoreAccountVersion(versionId: number) {
+    setRestoringVersion(true);
+    try {
+      const current = await saveCurrentSite();
+      if (!current) throw new Error("La sauvegarde préalable a échoué. Ferme cette fenêtre pour lire le message et conserver tes modifications.");
+      const response = await authenticatedFetch(`/sites/${current.id}/restore-version`, {method: "POST", body: JSON.stringify({versionId, expectedRevision: current.draftRevision})});
+      if (!response.ok) throw new Error(await response.text());
+      const restored: SavedSite = await response.json();
+      setDraftRevision(restored.draftRevision);
+      restoreSnapshot(savedSnapshot(restored));
+      await loadSavedSites();
+      setSaveMessage("Version restaurée et enregistrée dans ton compte. Le site public reste inchangé jusqu’à Publier les modifications.");
+    } finally {setRestoringVersion(false)}
   }
 
   function completeCheck(id: string) {
@@ -1201,7 +1231,7 @@ export default function Home() {
       };
 
       draft.clearDraft();
-      setSavedSiteID(null);
+      setSavedSiteID(null); setDraftRevision(null);
       setPublishedResult(null);
       setSite(generatedSite);
       setDesktopPanel("apercu");
@@ -1405,6 +1435,9 @@ export default function Home() {
       return null;
     }
 
+    if (savedSiteID !== null && (draftRevision === null || !Number.isSafeInteger(draftRevision))) {
+      setSaveError("Le serveur doit être mis à jour avant d’enregistrer un brouillon privé. Attends le déploiement Railway, puis rouvre ce site."); return null;
+    }
     const previousSaved = currentSavedSite();
     if (previousSaved) versions.checkpoint(savedSnapshot(previousSaved), "Avant enregistrement");
     setSaving(true);
@@ -1448,6 +1481,7 @@ export default function Home() {
     setSite(synchronizedSite);
 
     const body = {
+      expectedRevision: draftRevision,
       site: synchronizedSite,
       activity,
       city,
@@ -1489,6 +1523,7 @@ export default function Home() {
       }
 
       if (!response.ok) {
+        setSaveConflict(response.status === 409);
         const message =
           await response.text();
 
@@ -1501,8 +1536,10 @@ export default function Home() {
       const saved: SavedSite =
         await response.json();
 
-      versions.checkpoint(savedSnapshot(saved), saved.published ? "Version mise en ligne" : "Version enregistrée", `siteai:versions:v1:${draftUserId}:${saved.id}`);
+      versions.checkpoint(savedSnapshot(saved), "Brouillon enregistré", `siteai:versions:v1:${draftUserId}:${saved.id}`);
       if (savedSiteID === null) draft.clearDraft();
+      setDraftRevision(saved.draftRevision);
+      setSaveConflict(false);
       setSavedSiteID(
         saved.id,
       );
@@ -1546,19 +1583,19 @@ export default function Home() {
 
       setSaveMessage(
         saved.published
-          ? "✅ Modifications enregistrées et visibles sur le site public."
+          ? "Brouillon enregistré dans ton compte. Le site public reste inchangé."
           : savedSiteID === null
-            ? "✅ Site sauvegardé."
-            : "✅ Modifications enregistrées.",
+            ? "Brouillon enregistré dans ton compte."
+            : "Brouillon enregistré dans ton compte.",
       );
 
-      if (saved.published && saved.publicSlug) setPublishedResult({publicSlug: saved.publicSlug, businessName: saved.businessName});
+
       await loadSavedSites();
       return saved;
     } catch (err) {
       console.error(err);
 
-      setSaveError("La sauvegarde a échoué. Tes modifications restent dans cet éditeur. Réessaie avant de quitter la page.");
+      setSaveError(actionError(err, "La sauvegarde a échoué. Tes modifications restent dans cet éditeur. Réessaie avant de quitter la page."));
       return null;
     } finally {
       setSaving(false);
@@ -1575,11 +1612,12 @@ export default function Home() {
       // Publish only after the current editor content has been saved successfully.
       const latestSavedSite = await saveCurrentSite();
       if (!latestSavedSite) return;
+      if (!Number.isSafeInteger(latestSavedSite.draftRevision)) { setSaveError("Attends la mise à jour du serveur Railway puis rouvre ce site avant de publier."); return; }
       const response =
         await authenticatedFetch(
           `/sites/${latestSavedSite.id}/publish`,
           {
-            method: "POST",
+            method: "POST", body: JSON.stringify({expectedRevision: latestSavedSite.draftRevision}),
           },
         );
 
@@ -1744,6 +1782,8 @@ export default function Home() {
       const saved: SavedSite =
         await response.json();
 
+      setDraftRevision(saved.draftRevision);
+      setSaveConflict(false);
       setSavedSiteID(
         saved.id,
       );
@@ -1904,7 +1944,7 @@ export default function Home() {
       "siteai_site_to_open",
     );
 
-    setSavedSiteID(null);
+    setSavedSiteID(null); setDraftRevision(null);
     setSite(null);
     setMobileStep(0);
     setDesktopPanel(null);
@@ -2073,7 +2113,7 @@ export default function Home() {
       console.error(err);
 
       setLogoError(
-        "Impossible d'envoyer le logo.",
+        actionError(err, "Logo non envoyé. Utilise JPG, PNG, WebP ou AVIF (5 Mo maximum), puis réessaie."),
       );
     } finally {
       setLogoUploading(false);
@@ -2195,7 +2235,7 @@ export default function Home() {
       console.error(err);
 
       setHeroImageError(
-        "Impossible d'envoyer l'image de couverture.",
+        actionError(err, "Photo non envoyée. Vérifie le format et la taille du fichier puis réessaie."),
       );
     } finally {
       setHeroImageUploading(false);
@@ -2373,7 +2413,7 @@ export default function Home() {
 
       setServiceImageErrorIndex(index);
       setServiceImageError(
-        "Impossible d'envoyer la photo du service.",
+        actionError(err, "Photo non envoyée. Vérifie le format et la taille du fichier puis réessaie."),
       );
     } finally {
       setServiceImageUploadingIndex(null);
@@ -2614,7 +2654,7 @@ export default function Home() {
       }
 
       setGalleryError(
-        "Impossible d'envoyer les photos de la galerie.",
+        actionError(err, "Photo non envoyée. Vérifie le format et la taille du fichier puis réessaie."),
       );
     } finally {
       setGalleryUploading(false);
@@ -3355,10 +3395,13 @@ export default function Home() {
           <button type="button" disabled={!draft.canUndo || busy} onClick={draft.undo} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">↶ Annuler</button>
           <button type="button" disabled={!draft.canRedo || busy} onClick={draft.redo} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">↷ Rétablir</button>
           {site && <button type="button" aria-pressed={previewEditing} onClick={() => setPreviewEditing(value => !value)} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${previewEditing ? "border-blue-400 bg-blue-500/10 text-blue-200" : "border-slate-700"}`}>{previewEditing ? "Modifier en cliquant : actif" : "Modifier en cliquant"}</button>}
+          {site && <AccountVersions siteId={savedSiteID} disabled={busy} load={loadAccountVersions} restore={restoreAccountVersion} />}
           {site && <BuilderVersions entries={versions.entries} error={versions.error} disabled={busy || !draftReady}
             onSave={() => versions.checkpoint(draftSnapshot, "Version conservée")} onRestore={restoreVersion} />}
           <p role="status" className="text-xs text-slate-400">{draft.status === "saved" ? "Brouillon enregistré sur cet appareil" : draft.status === "saving" ? "Enregistrement du brouillon…" : draft.status === "error" ? "Brouillon non enregistré : stockage indisponible" : "Brouillon local · publication manuelle"}</p>
         </div>
+        {site && savedSiteID !== null && <p className="mt-2 text-xs text-slate-400">{openedSite?.published ? (openedSite.draftRevision !== openedSite.publishedRevision ? "Site en ligne · un brouillon enregistré attend sa publication" : "Site en ligne · dernière version enregistrée publiée") : "Brouillon privé dans ton compte"} · Les changements dans l’éditeur doivent être enregistrés.</p>}
+        {saveConflict && <p role="alert" className="mt-2 text-sm text-amber-300">Une version plus récente existe. Utilise Versions appareil pour conserver ton travail, puis <button type="button" disabled={busy || savedSiteID === null} onClick={() => {if(savedSiteID !== null) {setSaveConflict(false); void openSavedSite(savedSiteID)}}} className="underline disabled:opacity-40">rouvre le brouillon du compte</button>.</p>}
         {versions.error && <p role="alert" className="mt-2 text-xs text-amber-300">{versions.error}</p>}
         {draft.status === "error" && <button type="button" onClick={draft.retrySave} className="mt-2 text-xs text-blue-300 underline">Réessayer la sauvegarde locale</button>}
         {draft.restoredDraft && <div className="mt-2 flex flex-wrap items-center gap-3 rounded-xl border border-blue-800 bg-blue-950/30 p-3 text-sm">
@@ -4956,11 +4999,11 @@ export default function Home() {
                       {saving
                         ? "Enregistrement..."
                         : openedSite?.published
-                          ? "💾 Enregistrer et mettre à jour le site public"
+                          ? "Enregistrer le brouillon"
                           : savedSiteID ===
                               null
                             ? "💾 Sauvegarder le site"
-                            : openedSite?.published ? "💾 Mettre à jour le site public" : "💾 Enregistrer les modifications"}
+                            : openedSite?.published ? "Enregistrer le brouillon" : "💾 Enregistrer les modifications"}
                     </button>
                   </div>
                 )}
@@ -4976,7 +5019,7 @@ export default function Home() {
 
                 <p className="mt-2 text-sm leading-6 text-slate-400">
                   {openedSite?.published
-                    ? "Site en ligne : le bouton Mettre à jour le site public applique tes modifications immédiatement. Le brouillon automatique reste uniquement sur cet appareil."
+                    ? "Ton site reste en ligne avec sa version publiée. Enregistrer conserve un brouillon dans ton compte ; seul Publier les modifications change le site public."
                     : "Ton aperçu reste privé. Publier mon site enregistre tes modifications et le met en ligne en une seule action."}
                 </p>
                 <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-950 p-4">
@@ -5002,14 +5045,14 @@ export default function Home() {
                     saveCurrentSite
                   }
                   disabled={saving || publishing}
-                  className={`mt-5 w-full rounded-xl px-6 py-4 font-bold disabled:opacity-50 ${openedSite?.published ? "bg-blue-600 hover:bg-blue-500" : "border border-slate-700 hover:bg-slate-800"}`}
+                  className="mt-5 w-full rounded-xl border border-slate-700 px-6 py-4 font-bold hover:bg-slate-800 disabled:opacity-50"
                 >
                   {saving
                     ? "Sauvegarde..."
-                    : openedSite?.published ? "Mettre à jour le site public" : "Enregistrer sans publier"}
+                    : "Enregistrer le brouillon"}
                 </button>
 
-                {!openedSite?.published && (
+                {site && (
                     <button
                       type="button"
                       onClick={
@@ -5022,7 +5065,7 @@ export default function Home() {
                     >
                       {publishing
                         ? "Enregistrement et publication..."
-                        : "Publier mon site"}
+                        : openedSite?.published ? "Publier les modifications" : "Publier mon site"}
                     </button>
                   )}
 

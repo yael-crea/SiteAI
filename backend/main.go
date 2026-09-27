@@ -262,7 +262,8 @@ type ModifySiteOutput struct {
 }
 
 type SaveSiteInput struct {
-	Site GeneratedSite `json:"site"`
+	ExpectedRevision *int64        `json:"expectedRevision,omitempty"`
+	Site             GeneratedSite `json:"site"`
 
 	Activity string `json:"activity"`
 
@@ -274,7 +275,9 @@ type SaveSiteInput struct {
 }
 
 type SavedSite struct {
-	ID int64 `json:"id"`
+	DraftRevision     int64 `json:"draftRevision"`
+	PublishedRevision int64 `json:"publishedRevision"`
+	ID                int64 `json:"id"`
 
 	BusinessName string `json:"businessName"`
 
@@ -497,20 +500,21 @@ type LeadInput struct {
 }
 
 type Lead struct {
-	ID               int64      `json:"id"`
-	SiteID           int64      `json:"siteId"`
-	PublicSlug       string     `json:"publicSlug"`
-	BusinessName     string     `json:"businessName"`
-	Name             string     `json:"name"`
-	Email            string     `json:"email"`
-	Phone            string     `json:"phone"`
-	Message          string     `json:"message"`
-	Status           string     `json:"status"`
-	Note             string     `json:"note"`
-	FollowUpAt       *time.Time `json:"followUpAt"`
-	Archived         bool       `json:"archived"`
-	QuoteAmountCents int64      `json:"quoteAmountCents"`
-	CreatedAt        time.Time  `json:"createdAt"`
+	NotificationStatus string     `json:"notificationStatus"`
+	ID                 int64      `json:"id"`
+	SiteID             int64      `json:"siteId"`
+	PublicSlug         string     `json:"publicSlug"`
+	BusinessName       string     `json:"businessName"`
+	Name               string     `json:"name"`
+	Email              string     `json:"email"`
+	Phone              string     `json:"phone"`
+	Message            string     `json:"message"`
+	Status             string     `json:"status"`
+	Note               string     `json:"note"`
+	FollowUpAt         *time.Time `json:"followUpAt"`
+	Archived           bool       `json:"archived"`
+	QuoteAmountCents   int64      `json:"quoteAmountCents"`
+	CreatedAt          time.Time  `json:"createdAt"`
 }
 
 type LeadUpdateInput struct {
@@ -1192,6 +1196,9 @@ func createTables(ctx context.Context) error {
 
 	}
 
+	if _, err := db.Exec(ctx, versionMigrationSQL); err != nil {
+		return err
+	}
 	fmt.Println("Table sites prête")
 
 	return nil
@@ -2578,7 +2585,7 @@ func createLeadHandler(
 			http.StatusCreated,
 			map[string]any{
 				"success": true,
-				"message": "Votre demande a bien été envoyée.",
+				"message": "Votre demande a bien été enregistrée.",
 			},
 		)
 		return
@@ -2797,6 +2804,7 @@ func createLeadHandler(
 	}
 
 	if strings.TrimSpace(notificationEmail) != "" && strings.TrimSpace(os.Getenv("RESEND_API_KEY")) != "" {
+		setLeadNotificationStatus(leadID, "pending")
 		go func(leadID int64, toEmail string, businessName string, leadInput LeadInput) {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
@@ -2809,8 +2817,13 @@ func createLeadHandler(
 				leadInput,
 			); err != nil {
 				log.Println("Notification prospect non envoyée :", err)
+				setLeadNotificationStatus(leadID, "failed")
+			} else {
+				setLeadNotificationStatus(leadID, "sent")
 			}
 		}(leadID, notificationEmail, businessName, input)
+	} else {
+		setLeadNotificationStatus(leadID, "unconfigured")
 	}
 
 	writeJSON(
@@ -2856,7 +2869,7 @@ func listLeadsHandler(
 			l.follow_up_at,
 			COALESCE(l.archived, FALSE),
 			COALESCE(l.quote_amount_cents, 0),
-			l.created_at
+			l.created_at, l.notification_status
 		FROM leads l
 		INNER JOIN sites s
 			ON s.id = l.site_id
@@ -2902,7 +2915,7 @@ func listLeadsHandler(
 			&lead.FollowUpAt,
 			&lead.Archived,
 			&lead.QuoteAmountCents,
-			&lead.CreatedAt,
+			&lead.CreatedAt, &lead.NotificationStatus,
 		)
 
 		if err != nil {
@@ -3575,6 +3588,14 @@ func siteByIDHandler(
 
 	}
 
+	if len(parts) == 2 && parts[1] == "versions" {
+		siteVersionsHandler(w, r, id, user.ID)
+		return
+	}
+	if len(parts) == 2 && parts[1] == "restore-version" {
+		restoreSiteVersionHandler(w, r, id, user.ID)
+		return
+	}
 	if len(parts) >= 2 && parts[1] == "domain" {
 
 		if len(parts) == 2 {
@@ -3804,13 +3825,13 @@ func publicSitemapSitesHandler(
 		`
 		SELECT
 			public_slug,
-			updated_at
+			COALESCE(published_at, updated_at)
 		FROM sites
 		WHERE
 			published = TRUE
 			AND public_slug IS NOT NULL
 			AND public_slug <> ''
-		ORDER BY updated_at DESC;
+		ORDER BY COALESCE(published_at, updated_at) DESC;
 		`,
 	)
 
@@ -3946,19 +3967,19 @@ func publicSiteHandler(
 
     SELECT
 
-        business_name,
+        published_snapshot->'site'->>'businessName' AS business_name,
 
-        activity,
+        published_snapshot->>'activity' AS activity,
 
-        city,
+        published_snapshot->>'city' AS city,
 
-        phone,
+        published_snapshot->'site'->>'phone' AS phone,
 
-        design_style,
+        published_snapshot->>'designStyle' AS design_style,
 
-        accent_color,
+        published_snapshot->>'accentColor' AS accent_color,
 
-        site_data,
+        published_snapshot->'site' AS site_data,
 
         public_slug,
 
@@ -3970,7 +3991,7 @@ func publicSiteHandler(
 
         public_slug = $1
 
-        AND published = TRUE;
+        AND published = TRUE AND published_snapshot IS NOT NULL;
 
     `
 
@@ -4110,18 +4131,18 @@ func publicDomainHandler(
 
 	query := `
 	SELECT
-		business_name,
-		activity,
-		city,
-		phone,
-		design_style,
-		accent_color,
-		site_data,
+		published_snapshot->'site'->>'businessName' AS business_name,
+		published_snapshot->>'activity' AS activity,
+		published_snapshot->>'city' AS city,
+		published_snapshot->'site'->>'phone' AS phone,
+		published_snapshot->>'designStyle' AS design_style,
+		published_snapshot->>'accentColor' AS accent_color,
+		published_snapshot->'site' AS site_data,
 		public_slug,
 		published_at
 	FROM sites
 	WHERE LOWER(custom_domain) = LOWER($1)
-	  AND published = TRUE
+	  AND published = TRUE AND published_snapshot IS NOT NULL
 	LIMIT 1;
 	`
 
@@ -4522,226 +4543,8 @@ func updateStoredDomainVerification(
 	return err
 }
 
-func createSiteHandler(
-
-	w http.ResponseWriter,
-
-	r *http.Request,
-
-	userID string,
-
-	userEmail string,
-
-) {
-
-	var input SaveSiteInput
-
-	err := json.NewDecoder(r.Body).Decode(&input)
-
-	if err != nil {
-
-		http.Error(
-
-			w,
-
-			"JSON invalide",
-
-			http.StatusBadRequest,
-		)
-
-		return
-
-	}
-
-	if strings.TrimSpace(
-
-		input.Site.BusinessName,
-	) == "" {
-
-		http.Error(
-
-			w,
-
-			"Site invalide",
-
-			http.StatusBadRequest,
-		)
-
-		return
-
-	}
-
-	input.DesignStyle = normalizeDesignStyle(
-
-		input.DesignStyle,
-	)
-
-	input.AccentColor = normalizeAccentColor(
-
-		input.AccentColor,
-
-		"#2563eb",
-	)
-
-	normalizeGrowthFields(&input.Site)
-	siteJSON, err := json.Marshal(input.Site)
-
-	if err != nil {
-
-		http.Error(
-
-			w,
-
-			"Site invalide",
-
-			http.StatusInternalServerError,
-		)
-
-		return
-
-	}
-
-	query := `
-
-    INSERT INTO sites (
-
-        user_id,
-
-        business_name,
-
-        activity,
-
-        city,
-
-        phone,
-
-        notification_email,
-
-        design_style,
-
-        accent_color,
-
-        site_data
-
-    )
-
-    VALUES (
-
-        $1::uuid,
-
-        $2,
-
-        $3,
-
-        $4,
-
-        $5,
-
-        $6,
-
-        $7,
-
-        $8,
-
-        $9::jsonb
-
-    )
-
-    RETURNING
-
-        id,
-
-        created_at,
-
-        updated_at;
-
-    `
-
-	var saved SavedSite
-
-	err = db.QueryRow(
-
-		r.Context(),
-
-		query,
-
-		userID,
-
-		input.Site.BusinessName,
-
-		input.Activity,
-
-		input.City,
-
-		input.Site.Phone,
-
-		strings.TrimSpace(userEmail),
-
-		input.DesignStyle,
-
-		input.AccentColor,
-
-		string(siteJSON),
-	).Scan(
-
-		&saved.ID,
-
-		&saved.CreatedAt,
-
-		&saved.UpdatedAt,
-	)
-
-	if err != nil {
-
-		log.Println(
-
-			"Erreur sauvegarde :",
-
-			err,
-		)
-
-		http.Error(
-
-			w,
-
-			"Impossible de sauvegarder",
-
-			http.StatusInternalServerError,
-		)
-
-		return
-
-	}
-
-	saved.BusinessName = input.Site.BusinessName
-
-	saved.Activity = input.Activity
-
-	saved.City = input.City
-
-	saved.Phone = input.Site.Phone
-
-	saved.DesignStyle = input.DesignStyle
-
-	saved.AccentColor = input.AccentColor
-
-	saved.Site = input.Site
-
-	saved.Published = false
-
-	saved.PublicSlug = ""
-
-	saved.PublishedAt = nil
-
-	writeJSON(
-
-		w,
-
-		http.StatusCreated,
-
-		saved,
-	)
-
+func createSiteHandler(w http.ResponseWriter, r *http.Request, userID, userEmail string) {
+	saveDraftHandler(w, r, 0, userID, userEmail)
 }
 
 func listSitesHandler(
@@ -4782,7 +4585,7 @@ func listSitesHandler(
 
         created_at,
 
-        updated_at
+        updated_at, draft_revision, published_revision
 
     FROM sites
 
@@ -4852,7 +4655,7 @@ func listSitesHandler(
 
 			&saved.CreatedAt,
 
-			&saved.UpdatedAt,
+			&saved.UpdatedAt, &saved.DraftRevision, &saved.PublishedRevision,
 		)
 
 		if err != nil {
@@ -4994,185 +4797,8 @@ func getSiteHandler(
 
 }
 
-func updateSiteHandler(
-
-	w http.ResponseWriter,
-
-	r *http.Request,
-
-	id int64,
-
-	userID string,
-
-) {
-
-	var input SaveSiteInput
-
-	err := json.NewDecoder(r.Body).Decode(&input)
-
-	if err != nil {
-
-		http.Error(
-
-			w,
-
-			"JSON invalide",
-
-			http.StatusBadRequest,
-		)
-
-		return
-
-	}
-
-	input.DesignStyle = normalizeDesignStyle(
-
-		input.DesignStyle,
-	)
-
-	input.AccentColor = normalizeAccentColor(
-
-		input.AccentColor,
-
-		"#2563eb",
-	)
-
-	normalizeGrowthFields(&input.Site)
-	siteJSON, err := json.Marshal(input.Site)
-
-	if err != nil {
-
-		http.Error(
-
-			w,
-
-			"Site invalide",
-
-			http.StatusInternalServerError,
-		)
-
-		return
-
-	}
-
-	query := `
-
-    UPDATE sites
-
-    SET
-
-        business_name = $1,
-
-        activity = $2,
-
-        city = $3,
-
-        phone = $4,
-
-        design_style = $5,
-
-        accent_color = $6,
-
-        site_data = $7::jsonb,
-
-        updated_at = NOW()
-
-    WHERE
-
-        id = $8
-
-        AND user_id = $9::uuid;
-
-    `
-
-	result, err := db.Exec(
-
-		r.Context(),
-
-		query,
-
-		input.Site.BusinessName,
-
-		input.Activity,
-
-		input.City,
-
-		input.Site.Phone,
-
-		input.DesignStyle,
-
-		input.AccentColor,
-
-		string(siteJSON),
-
-		id,
-
-		userID,
-	)
-
-	if err != nil {
-
-		http.Error(
-
-			w,
-
-			"Impossible de modifier le site",
-
-			http.StatusInternalServerError,
-		)
-
-		return
-
-	}
-
-	if result.RowsAffected() == 0 {
-
-		http.Error(
-
-			w,
-
-			"Site introuvable",
-
-			http.StatusNotFound,
-		)
-
-		return
-
-	}
-
-	saved, err := getSavedSiteByID(
-
-		r.Context(),
-
-		id,
-
-		userID,
-	)
-
-	if err != nil {
-
-		http.Error(
-
-			w,
-
-			"Impossible de relire le site",
-
-			http.StatusInternalServerError,
-		)
-
-		return
-
-	}
-
-	writeJSON(
-
-		w,
-
-		http.StatusOK,
-
-		saved,
-	)
-
+func updateSiteHandler(w http.ResponseWriter, r *http.Request, id int64, userID string) {
+	saveDraftHandler(w, r, id, userID, "")
 }
 
 func deleteSiteHandler(
@@ -5252,269 +4878,8 @@ func deleteSiteHandler(
 
 }
 
-func publishSiteHandler(
-
-	w http.ResponseWriter,
-
-	r *http.Request,
-
-	id int64,
-
-	userID string,
-
-) {
-
-	saved, err := getSavedSiteByID(
-
-		r.Context(),
-
-		id,
-
-		userID,
-	)
-
-	if err != nil {
-
-		if errors.Is(
-
-			err,
-
-			pgx.ErrNoRows,
-		) {
-
-			http.Error(
-
-				w,
-
-				"Site introuvable",
-
-				http.StatusNotFound,
-			)
-
-			return
-
-		}
-
-		http.Error(
-
-			w,
-
-			"Erreur serveur",
-
-			http.StatusInternalServerError,
-		)
-
-		return
-
-	}
-
-	if !saved.Published {
-		billingStatus, _, _, billingErr := getBillingStatus(r.Context(), userID)
-		if billingErr != nil {
-			http.Error(
-				w,
-				"Impossible de vérifier l'abonnement",
-				http.StatusInternalServerError,
-			)
-			return
-		}
-
-		entitlements := billingEntitlements(billingStatus)
-		if entitlements.MaxPublishedSites == 0 {
-			http.Error(
-				w,
-				"Un abonnement actif est nécessaire pour publier un site.",
-				http.StatusForbidden,
-			)
-			return
-		}
-
-		var publishedCount int
-		countErr := db.QueryRow(
-			r.Context(),
-			`
-			SELECT COUNT(*)
-			FROM sites
-			WHERE
-				user_id = $1::uuid
-				AND published = TRUE
-				AND id <> $2;
-			`,
-			userID,
-			id,
-		).Scan(&publishedCount)
-		if countErr != nil {
-			http.Error(
-				w,
-				"Impossible de vérifier la limite de publication",
-				http.StatusInternalServerError,
-			)
-			return
-		}
-
-		if entitlements.MaxPublishedSites > 0 && publishedCount >= entitlements.MaxPublishedSites {
-			http.Error(
-				w,
-				publishedSiteLimitMessage(billingStatus.Plan, entitlements.MaxPublishedSites),
-				http.StatusForbidden,
-			)
-			return
-		}
-	}
-
-	publicSlug := saved.PublicSlug
-
-	if publicSlug == "" {
-
-		baseSlug := slugify(
-
-			saved.BusinessName,
-		)
-
-		if baseSlug == "" {
-
-			baseSlug = "site"
-
-		}
-
-		publicSlug, err = createUniquePublicSlug(
-
-			r.Context(),
-
-			baseSlug,
-
-			id,
-		)
-
-		if err != nil {
-
-			http.Error(
-
-				w,
-
-				"Impossible de créer l'adresse publique",
-
-				http.StatusInternalServerError,
-			)
-
-			return
-
-		}
-
-	}
-
-	query := `
-
-    UPDATE sites
-
-    SET
-
-        published = TRUE,
-
-        public_slug = $1,
-
-        published_at = NOW(),
-
-        updated_at = NOW()
-
-    WHERE
-
-        id = $2
-
-        AND user_id = $3::uuid;
-
-    `
-
-	result, err := db.Exec(
-
-		r.Context(),
-
-		query,
-
-		publicSlug,
-
-		id,
-
-		userID,
-	)
-
-	if err != nil {
-
-		log.Println(
-
-			"Erreur publication :",
-
-			err,
-		)
-
-		http.Error(
-
-			w,
-
-			"Impossible de publier le site",
-
-			http.StatusInternalServerError,
-		)
-
-		return
-
-	}
-
-	if result.RowsAffected() == 0 {
-
-		http.Error(
-
-			w,
-
-			"Site introuvable",
-
-			http.StatusNotFound,
-		)
-
-		return
-
-	}
-
-	publishedSite, err := getSavedSiteByID(
-
-		r.Context(),
-
-		id,
-
-		userID,
-	)
-
-	if err != nil {
-
-		http.Error(
-
-			w,
-
-			"Site publié mais impossible à relire",
-
-			http.StatusInternalServerError,
-		)
-
-		return
-
-	}
-
-	fmt.Println(
-
-		"Site publié :",
-
-		publishedSite.BusinessName,
-	)
-
-	writeJSON(
-
-		w,
-
-		http.StatusOK,
-
-		publishedSite,
-	)
-
+func publishSiteHandler(w http.ResponseWriter, r *http.Request, id int64, userID string) {
+	publishDraftHandler(w, r, id, userID)
 }
 
 func unpublishSiteHandler(
@@ -5718,119 +5083,8 @@ func createUniquePublicSlug(
 
 }
 
-func getSavedSiteByID(
-
-	ctx context.Context,
-
-	id int64,
-
-	userID string,
-
-) (SavedSite, error) {
-
-	query := `
-
-    SELECT
-
-        id,
-
-        business_name,
-
-        activity,
-
-        city,
-
-        phone,
-
-        design_style,
-
-        accent_color,
-
-        site_data,
-
-        published,
-
-        COALESCE(public_slug, ''),
-
-        published_at,
-
-        created_at,
-
-        updated_at
-
-    FROM sites
-
-    WHERE
-
-        id = $1
-
-        AND user_id = $2::uuid;
-
-    `
-
-	var saved SavedSite
-
-	var siteJSON []byte
-
-	err := db.QueryRow(
-
-		ctx,
-
-		query,
-
-		id,
-
-		userID,
-	).Scan(
-
-		&saved.ID,
-
-		&saved.BusinessName,
-
-		&saved.Activity,
-
-		&saved.City,
-
-		&saved.Phone,
-
-		&saved.DesignStyle,
-
-		&saved.AccentColor,
-
-		&siteJSON,
-
-		&saved.Published,
-
-		&saved.PublicSlug,
-
-		&saved.PublishedAt,
-
-		&saved.CreatedAt,
-
-		&saved.UpdatedAt,
-	)
-
-	if err != nil {
-
-		return SavedSite{}, err
-
-	}
-
-	err = json.Unmarshal(
-
-		siteJSON,
-
-		&saved.Site,
-	)
-
-	if err != nil {
-
-		return SavedSite{}, err
-
-	}
-
-	return saved, nil
-
+func getSavedSiteByID(ctx context.Context, id int64, userID string) (SavedSite, error) {
+	return scanSavedSite(db.QueryRow(ctx, "SELECT "+savedColumns+" FROM sites WHERE id=$1 AND user_id=$2::uuid", id, userID))
 }
 
 func generateSiteWithAI(

@@ -40,13 +40,13 @@ func publicSitesIndexHandler(
 		`
 		SELECT
 			public_slug,
-			updated_at
+			COALESCE(published_at, updated_at)
 		FROM sites
 		WHERE
 			published = TRUE
 			AND public_slug IS NOT NULL
 			AND public_slug <> ''
-		ORDER BY updated_at DESC;
+		ORDER BY COALESCE(published_at, updated_at) DESC;
 		`,
 	)
 

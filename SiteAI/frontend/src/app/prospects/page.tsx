@@ -1,4 +1,5 @@
 "use client";
+import { notificationLabel } from "@/lib/actionErrors";
 
 
 
@@ -27,6 +28,7 @@ type LeadStatus =
 
 
 type Lead = {
+  notificationStatus?: string;
 
   id: number;
 
@@ -3223,6 +3225,7 @@ export default function ProspectsPage() {
                       }
 
                     </p>
+                    <p className="mt-4 rounded-xl border border-slate-700 p-3 text-xs leading-5 text-slate-400">{notificationLabel(lead.notificationStatus)}</p>
 
                   </div>
 

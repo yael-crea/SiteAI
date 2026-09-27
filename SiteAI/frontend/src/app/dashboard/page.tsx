@@ -28,6 +28,8 @@ type GeneratedSite = {
 };
 
 type SavedSite = {
+  draftRevision?: number;
+  publishedRevision?: number;
   id: number;
   businessName: string;
   activity: string;
@@ -1757,6 +1759,7 @@ export default function DashboardPage() {
                     )}
 
                     <div className="absolute left-4 top-4">
+                      {savedSite.published && savedSite.draftRevision !== undefined && savedSite.draftRevision !== savedSite.publishedRevision && <span className="mr-2 rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-300">Brouillon à publier</span>}
                       {savedSite.published ? (
                         <span className="rounded-full bg-emerald-950/90 px-3 py-1 text-xs font-bold text-emerald-400">
                           ● Publié
@@ -2089,7 +2092,7 @@ export default function DashboardPage() {
 
                             {domainError && (
                               <p className="mt-4 rounded-xl border border-red-900 bg-red-950/30 p-3 text-sm text-red-400">
-                                {domainError}
+                                {domainError}<span className="mt-2 block text-xs">Pour un domaine non vérifié, compare les enregistrements DNS avec ceux demandés ci-dessus, puis relance la vérification après leur propagation. Une erreur de connexion peut être temporaire ; ton site reste accessible via son adresse SiteAI.</span>
                               </p>
                             )}
                           </>
