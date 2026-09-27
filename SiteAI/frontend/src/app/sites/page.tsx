@@ -1,12 +1,10 @@
 "use client";
-import { type DesignStyle } from "@/lib/designStyles";
-
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-
+type DesignStyle = "moderne" | "elegant" | "artisan";
 
 type GeneratedSite = {
   businessName: string;
@@ -32,6 +30,40 @@ type SavedSite = {
 
 type FilterType = "all" | "published" | "draft";
 
+type DomainVerification = {
+  type: string;
+  domain?: string;
+  value?: string;
+  reason?: string;
+};
+
+type RecommendedRecord = {
+  rank: string;
+  value: unknown;
+};
+
+type DomainStatus = {
+  domain: string;
+  verified: boolean;
+  configured: boolean;
+  configuredBy?: string;
+  verification?: DomainVerification[];
+  recommendedCNAME?: RecommendedRecord[];
+  recommendedIPv4?: RecommendedRecord[];
+  message?: string;
+};
+
+type BillingStatus = {
+  plan: string;
+  status: string;
+  hasSubscription: boolean;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd?: string;
+  canManage: boolean;
+  maxPublishedSites?: number;
+  customDomainAllowed?: boolean;
+};
+
 export default function SitesPage() {
   const router = useRouter();
 
@@ -42,6 +74,19 @@ export default function SitesPage() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [error, setError] = useState("");
   const [deletingID, setDeletingID] = useState<number | null>(null);
+
+  const [billingLoading, setBillingLoading] = useState(true);
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
+
+  const [domainPanelSiteID, setDomainPanelSiteID] =
+    useState<number | null>(null);
+  const [domainInput, setDomainInput] = useState("");
+  const [domainStatus, setDomainStatus] =
+    useState<DomainStatus | null>(null);
+  const [domainLoading, setDomainLoading] = useState(false);
+  const [domainActionLoading, setDomainActionLoading] =
+    useState(false);
+  const [domainError, setDomainError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -62,7 +107,10 @@ export default function SitesPage() {
         if (!active) return;
 
         setAuthLoading(false);
-        await loadSites();
+        await Promise.all([
+          loadSites(),
+          loadBilling(),
+        ]);
       } catch (err) {
         console.error(err);
 
@@ -141,6 +189,31 @@ export default function SitesPage() {
     }
   }
 
+  async function loadBilling() {
+    setBillingLoading(true);
+
+    try {
+      const response =
+        await authenticatedFetch("/stripe/status");
+
+      if (!response.ok) {
+        throw new Error(
+          "Impossible de récupérer l’abonnement.",
+        );
+      }
+
+      const data: BillingStatus =
+        await response.json();
+
+      setBilling(data);
+    } catch (err) {
+      console.error(err);
+      setBilling(null);
+    } finally {
+      setBillingLoading(false);
+    }
+  }
+
   function createSite() {
     sessionStorage.removeItem("siteai_site_to_open");
     router.push("/builder");
@@ -189,11 +262,268 @@ export default function SitesPage() {
       setSites((currentSites) =>
         currentSites.filter((site) => site.id !== id),
       );
+
+      if (domainPanelSiteID === id) {
+        closeDomainPanel();
+      }
     } catch (err) {
       console.error(err);
       setError("Impossible de supprimer ce site.");
     } finally {
       setDeletingID(null);
+    }
+  }
+
+  async function openDomainPanel(siteID: number) {
+    if (domainPanelSiteID === siteID) {
+      closeDomainPanel();
+      return;
+    }
+
+    setDomainPanelSiteID(siteID);
+    setDomainInput("");
+    setDomainStatus(null);
+    setDomainError("");
+
+    await loadDomainStatus(siteID);
+  }
+
+  function closeDomainPanel() {
+    setDomainPanelSiteID(null);
+    setDomainInput("");
+    setDomainStatus(null);
+    setDomainError("");
+    setDomainLoading(false);
+    setDomainActionLoading(false);
+  }
+
+  async function loadDomainStatus(siteID: number) {
+    setDomainLoading(true);
+    setDomainError("");
+
+    try {
+      const response =
+        await authenticatedFetch(
+          `/sites/${siteID}/domain`,
+        );
+
+      if (!response.ok) {
+        const message =
+          await response.text();
+
+        throw new Error(
+          message ||
+            "Impossible de récupérer le domaine.",
+        );
+      }
+
+      const data: DomainStatus =
+        await response.json();
+
+      setDomainStatus(data);
+
+      if (data.domain) {
+        setDomainInput(data.domain);
+      }
+    } catch (err) {
+      console.error(err);
+      setDomainError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de récupérer le domaine.",
+      );
+    } finally {
+      setDomainLoading(false);
+    }
+  }
+
+  async function addDomain(siteID: number) {
+    const cleanDomain = domainInput
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .split("/")[0];
+
+    if (!cleanDomain) {
+      setDomainError(
+        "Entre un domaine, par exemple : monentreprise.fr",
+      );
+      return;
+    }
+
+    setDomainActionLoading(true);
+    setDomainError("");
+
+    try {
+      const response =
+        await authenticatedFetch(
+          `/sites/${siteID}/domain`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              domain: cleanDomain,
+            }),
+          },
+        );
+
+      if (!response.ok) {
+        const message =
+          await response.text();
+
+        throw new Error(
+          message ||
+            "Impossible d'ajouter ce domaine.",
+        );
+      }
+
+      const data: DomainStatus =
+        await response.json();
+
+      setDomainStatus(data);
+      setDomainInput(
+        data.domain || cleanDomain,
+      );
+    } catch (err) {
+      console.error(err);
+      setDomainError(
+        err instanceof Error
+          ? err.message
+          : "Impossible d'ajouter le domaine.",
+      );
+    } finally {
+      setDomainActionLoading(false);
+    }
+  }
+
+  async function verifyDomain(siteID: number) {
+    setDomainActionLoading(true);
+    setDomainError("");
+
+    try {
+      const response =
+        await authenticatedFetch(
+          `/sites/${siteID}/domain/verify`,
+          {
+            method: "POST",
+          },
+        );
+
+      if (!response.ok) {
+        const message =
+          await response.text();
+
+        throw new Error(
+          message ||
+            "Impossible de vérifier le domaine.",
+        );
+      }
+
+      const data: DomainStatus =
+        await response.json();
+
+      setDomainStatus(data);
+    } catch (err) {
+      console.error(err);
+      setDomainError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de vérifier le domaine.",
+      );
+    } finally {
+      setDomainActionLoading(false);
+    }
+  }
+
+  async function deleteDomain(siteID: number) {
+    if (!domainStatus?.domain) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Retirer le domaine "${domainStatus.domain}" de ce site ?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDomainActionLoading(true);
+    setDomainError("");
+
+    try {
+      const response =
+        await authenticatedFetch(
+          `/sites/${siteID}/domain`,
+          {
+            method: "DELETE",
+          },
+        );
+
+      if (!response.ok) {
+        const message =
+          await response.text();
+
+        throw new Error(
+          message ||
+            "Impossible de retirer le domaine.",
+        );
+      }
+
+      const data: DomainStatus =
+        await response.json();
+
+      setDomainStatus(data);
+      setDomainInput("");
+    } catch (err) {
+      console.error(err);
+      setDomainError(
+        err instanceof Error
+          ? err.message
+          : "Impossible de supprimer le domaine.",
+      );
+    } finally {
+      setDomainActionLoading(false);
+    }
+  }
+
+  function openCustomDomain() {
+    if (!domainStatus?.domain) {
+      return;
+    }
+
+    window.open(
+      `https://${domainStatus.domain}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
+
+  function formatRecordValue(
+    value: unknown,
+  ) {
+    if (typeof value === "string") {
+      return value;
+    }
+
+    if (
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      return String(value);
+    }
+
+    if (
+      value === null ||
+      value === undefined
+    ) {
+      return "";
+    }
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
     }
   }
 
@@ -229,6 +559,14 @@ export default function SitesPage() {
   ).length;
 
   const draftCount = sites.length - publishedCount;
+
+  const subscriptionActive =
+    billing?.status === "active" ||
+    billing?.status === "trialing";
+
+  const customDomainAllowed =
+    subscriptionActive &&
+    billing?.customDomainAllowed === true;
 
   if (authLoading) {
     return (
@@ -384,6 +722,8 @@ export default function SitesPage() {
               const heroImage =
                 savedSite.site?.heroImageUrl;
               const logo = savedSite.site?.logoUrl;
+              const domainPanelOpen =
+                domainPanelSiteID === savedSite.id;
 
               return (
                 <article
@@ -460,6 +800,356 @@ export default function SitesPage() {
                             🌍 Voir le site en ligne
                           </button>
                         )}
+
+                      {billingLoading ? (
+                        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                          <p className="text-sm font-bold text-slate-400">
+                            🌐 Domaine personnalisé
+                          </p>
+                          <p className="mt-2 text-xs text-slate-600">
+                            Vérification de ton abonnement...
+                          </p>
+                        </div>
+                      ) : customDomainAllowed ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openDomainPanel(savedSite.id)
+                            }
+                            className={`w-full rounded-xl border px-4 py-3 text-sm font-bold transition ${
+                              domainPanelOpen
+                                ? "border-blue-500 bg-blue-500/10 text-blue-300"
+                                : "border-blue-800 text-blue-400 hover:bg-blue-950"
+                            }`}
+                          >
+                            {domainPanelOpen
+                              ? "✕ Fermer le domaine"
+                              : "🌐 Gérer mon domaine"}
+                          </button>
+
+                          {domainPanelOpen && (
+                            <div className="rounded-2xl border border-blue-900/60 bg-slate-950 p-4">
+                              <div>
+                                <p className="font-black">
+                                  🌐 Domaine personnalisé
+                                </p>
+                                <p className="mt-1 text-xs leading-5 text-slate-500">
+                                  Exemple : monentreprise.fr
+                                </p>
+                              </div>
+
+                              {domainLoading ? (
+                                <p className="mt-4 text-sm text-slate-400">
+                                  Chargement...
+                                </p>
+                              ) : (
+                                <>
+                                  <input
+                                    value={domainInput}
+                                    onChange={(event) =>
+                                      setDomainInput(
+                                        event.target.value,
+                                      )
+                                    }
+                                    placeholder="monentreprise.fr"
+                                    disabled={
+                                      domainActionLoading
+                                    }
+                                    className="mt-4 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                                  />
+
+                                  {!domainStatus?.domain && (
+                                    <button
+                                      type="button"
+                                      disabled={
+                                        domainActionLoading
+                                      }
+                                      onClick={() =>
+                                        addDomain(
+                                          savedSite.id,
+                                        )
+                                      }
+                                      className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500 disabled:opacity-50"
+                                    >
+                                      {domainActionLoading
+                                        ? "Ajout..."
+                                        : "Ajouter le domaine"}
+                                    </button>
+                                  )}
+
+                                  {domainStatus?.domain && (
+                                    <div className="mt-5 space-y-4">
+                                      <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                                        <p className="text-xs uppercase text-slate-500">
+                                          Domaine
+                                        </p>
+
+                                        <p className="mt-2 break-all font-black">
+                                          {
+                                            domainStatus.domain
+                                          }
+                                        </p>
+
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                          <span
+                                            className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                              domainStatus.verified
+                                                ? "bg-emerald-500/10 text-emerald-400"
+                                                : "bg-amber-500/10 text-amber-400"
+                                            }`}
+                                          >
+                                            {domainStatus.verified
+                                              ? "✓ Vérifié"
+                                              : "En attente de vérification"}
+                                          </span>
+
+                                          <span
+                                            className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                              domainStatus.configured
+                                                ? "bg-emerald-500/10 text-emerald-400"
+                                                : "bg-orange-500/10 text-orange-400"
+                                            }`}
+                                          >
+                                            {domainStatus.configured
+                                              ? "✓ DNS configuré"
+                                              : "DNS à configurer"}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {(domainStatus.verification ??
+                                        []).length > 0 && (
+                                        <div className="rounded-xl border border-amber-800/50 bg-amber-950/20 p-4">
+                                          <p className="font-bold text-amber-300">
+                                            Vérification du domaine
+                                          </p>
+                                          <p className="mt-2 text-xs leading-5 text-slate-400">
+                                            Ajoute ces informations chez le fournisseur où ton domaine a été acheté.
+                                          </p>
+
+                                          <div className="mt-4 space-y-3">
+                                            {(
+                                              domainStatus.verification ??
+                                              []
+                                            ).map(
+                                              (
+                                                verification,
+                                                index,
+                                              ) => (
+                                                <div
+                                                  key={index}
+                                                  className="rounded-lg bg-slate-950 p-3 text-xs"
+                                                >
+                                                  <p>
+                                                    Type :{" "}
+                                                    <strong>
+                                                      {
+                                                        verification.type
+                                                      }
+                                                    </strong>
+                                                  </p>
+
+                                                  {verification.domain && (
+                                                    <p className="mt-1 break-all">
+                                                      Nom :{" "}
+                                                      {
+                                                        verification.domain
+                                                      }
+                                                    </p>
+                                                  )}
+
+                                                  {verification.value && (
+                                                    <p className="mt-1 break-all">
+                                                      Valeur :{" "}
+                                                      {
+                                                        verification.value
+                                                      }
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              ),
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {(domainStatus.recommendedCNAME ??
+                                        []).length > 0 && (
+                                        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                                          <p className="font-bold">
+                                            CNAME recommandé
+                                          </p>
+
+                                          <div className="mt-3 space-y-2">
+                                            {(
+                                              domainStatus.recommendedCNAME ??
+                                              []
+                                            ).map(
+                                              (
+                                                record,
+                                                index,
+                                              ) => (
+                                                <div
+                                                  key={index}
+                                                  className="rounded-lg bg-slate-950 p-3 text-xs"
+                                                >
+                                                  <p className="break-all">
+                                                    {formatRecordValue(
+                                                      record.value,
+                                                    )}
+                                                  </p>
+                                                </div>
+                                              ),
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {(domainStatus.recommendedIPv4 ??
+                                        []).length > 0 && (
+                                        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                                          <p className="font-bold">
+                                            Adresse IPv4 recommandée
+                                          </p>
+
+                                          <div className="mt-3 space-y-2">
+                                            {(
+                                              domainStatus.recommendedIPv4 ??
+                                              []
+                                            ).map(
+                                              (
+                                                record,
+                                                index,
+                                              ) => (
+                                                <div
+                                                  key={index}
+                                                  className="rounded-lg bg-slate-950 p-3 text-xs"
+                                                >
+                                                  <p className="break-all">
+                                                    {formatRecordValue(
+                                                      record.value,
+                                                    )}
+                                                  </p>
+                                                </div>
+                                              ),
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {domainStatus.message && (
+                                        <p className="rounded-xl bg-slate-900 p-3 text-xs leading-5 text-slate-400">
+                                          {
+                                            domainStatus.message
+                                          }
+                                        </p>
+                                      )}
+
+                                      <button
+                                        type="button"
+                                        disabled={
+                                          domainActionLoading
+                                        }
+                                        onClick={() =>
+                                          verifyDomain(
+                                            savedSite.id,
+                                          )
+                                        }
+                                        className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500 disabled:opacity-50"
+                                      >
+                                        {domainActionLoading
+                                          ? "Vérification..."
+                                          : "🔄 Vérifier le domaine"}
+                                      </button>
+
+                                      {domainStatus.verified &&
+                                        domainStatus.configured && (
+                                          <button
+                                            type="button"
+                                            onClick={
+                                              openCustomDomain
+                                            }
+                                            className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold hover:bg-emerald-500"
+                                          >
+                                            🌍 Ouvrir le domaine
+                                          </button>
+                                        )}
+
+                                      <button
+                                        type="button"
+                                        disabled={
+                                          domainActionLoading
+                                        }
+                                        onClick={() =>
+                                          deleteDomain(
+                                            savedSite.id,
+                                          )
+                                        }
+                                        className="w-full rounded-xl border border-red-900 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-950 disabled:opacity-50"
+                                      >
+                                        Retirer le domaine
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {domainError && (
+                                    <p className="mt-4 rounded-xl border border-red-900 bg-red-950/30 p-3 text-sm text-red-400">
+                                      {domainError}
+                                    </p>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      ) : billing ? (
+                        <div className="rounded-2xl border border-violet-700/70 bg-gradient-to-br from-violet-950/50 to-slate-950 p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 gap-3">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-xl">
+                                🔒
+                              </div>
+
+                              <div className="min-w-0">
+                                <p className="font-black text-violet-200">
+                                  Domaine personnalisé
+                                </p>
+                                <p className="mt-1 text-xs leading-5 text-slate-400">
+                                  Disponible avec Pro ou Agence.
+                                </p>
+                              </div>
+                            </div>
+
+                            <span className="shrink-0 rounded-full border border-violet-700 bg-violet-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-violet-300">
+                              Pro
+                            </span>
+                          </div>
+
+                          <p className="mt-4 text-xs leading-5 text-slate-500">
+                            Avec un abonnement Pro ou Agence, tu peux utiliser une adresse comme monentreprise.fr à la place de l&apos;URL SiteAI.
+                          </p>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.push("/pricing")
+                            }
+                            className="mt-4 w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white hover:bg-violet-500"
+                          >
+                            Voir Pro et Agence
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                          <p className="text-sm font-bold text-slate-300">
+                            🌐 Domaine personnalisé
+                          </p>
+                          <p className="mt-2 text-xs leading-5 text-slate-500">
+                            Impossible de vérifier ton abonnement pour le moment.
+                          </p>
+                        </div>
+                      )}
 
                       <button
                         type="button"
