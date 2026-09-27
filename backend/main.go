@@ -453,6 +453,7 @@ type BillingStatus struct {
 	CanManage           bool       `json:"canManage"`
 	MaxPublishedSites   int        `json:"maxPublishedSites"`
 	CustomDomainAllowed bool       `json:"customDomainAllowed"`
+	IsAdmin             bool       `json:"isAdmin"`
 }
 
 type PlanEntitlements struct {
@@ -1303,6 +1304,31 @@ func requireUser(
 
 }
 
+func isAdminUser(
+	ctx context.Context,
+	userID string,
+) (bool, error) {
+	var isAdmin bool
+
+	err := db.QueryRow(
+		ctx,
+		`
+		SELECT EXISTS(
+			SELECT 1
+			FROM admin_users
+			WHERE user_id = $1::uuid
+		);
+		`,
+		userID,
+	).Scan(&isAdmin)
+
+	if err != nil {
+		return false, err
+	}
+
+	return isAdmin, nil
+}
+
 func requireAdmin(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -1312,19 +1338,10 @@ func requireAdmin(
 		return SupabaseUser{}, false
 	}
 
-	var isAdmin bool
-
-	err := db.QueryRow(
+	isAdmin, err := isAdminUser(
 		r.Context(),
-		`
-		SELECT EXISTS(
-			SELECT 1
-			FROM admin_users
-			WHERE user_id = $1::uuid
-		);
-		`,
 		user.ID,
-	).Scan(&isAdmin)
+	)
 
 	if err != nil {
 		log.Println("Erreur vérification admin :", err)
@@ -7671,6 +7688,15 @@ func getBillingStatus(
 	ctx context.Context,
 	userID string,
 ) (BillingStatus, string, string, error) {
+	isAdmin, adminErr := isAdminUser(
+		ctx,
+		userID,
+	)
+
+	if adminErr != nil {
+		return BillingStatus{}, "", "", adminErr
+	}
+
 	var customerID string
 	var subscriptionID string
 	var priceID string
@@ -7705,16 +7731,23 @@ func getBillingStatus(
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		status := BillingStatus{
+		billingStatus := BillingStatus{
 			Plan:            "free",
 			Status:          "inactive",
 			HasSubscription: false,
 			CanManage:       false,
+			IsAdmin:         isAdmin,
 		}
 
-		applyBillingEntitlements(&status)
+		if isAdmin {
+			billingStatus.Plan = "agence"
+			billingStatus.Status = "active"
+			billingStatus.HasSubscription = true
+		}
 
-		return status, "", "", nil
+		applyBillingEntitlements(&billingStatus)
+
+		return billingStatus, "", "", nil
 	}
 
 	if err != nil {
@@ -7732,6 +7765,18 @@ func getBillingStatus(
 		CancelAtPeriodEnd: cancelAtPeriodEnd,
 		CurrentPeriodEnd:  currentPeriodEnd,
 		CanManage:         customerID != "",
+		IsAdmin:           isAdmin,
+	}
+
+	if isAdmin {
+		// Un administrateur SiteAI garde tous les droits produit,
+		// indépendamment de son abonnement Stripe.
+		// On expose "agence" + "active" pour que le frontend
+		// débloque aussi les fonctions réservées Pro/Agence.
+		billingStatus.Plan = "agence"
+		billingStatus.Status = "active"
+		billingStatus.HasSubscription = true
+		billingStatus.CancelAtPeriodEnd = false
 	}
 
 	applyBillingEntitlements(&billingStatus)
@@ -7746,6 +7791,13 @@ func isActiveBillingStatus(status string) bool {
 }
 
 func billingEntitlements(status BillingStatus) PlanEntitlements {
+	if status.IsAdmin {
+		return PlanEntitlements{
+			MaxPublishedSites:   1000000,
+			CustomDomainAllowed: true,
+		}
+	}
+
 	if !isActiveBillingStatus(status.Status) {
 		return PlanEntitlements{}
 	}
