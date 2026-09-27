@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
+import { normalizeDesignExtras, type DesignExtras } from "@/lib/appearanceSettings";
+import { designExtrasCSS } from "@/lib/designExtrasCSS";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { getQuoteOptions, type Testimonial } from "@/lib/siteGrowth";
 
@@ -49,7 +51,7 @@ type FAQItem = {
 };
 
 
-type DesignSettings = {
+type DesignSettings = DesignExtras & {
   font?: "system" | "modern" | "classic" | "editorial" | "mono";
   buttonStyle?: "square" | "soft" | "pill";
   cardStyle?: "simple" | "bordered" | "shadow";
@@ -217,6 +219,7 @@ function normalizeDesignSettings(
   value?: DesignSettings,
 ) {
   return {
+    ...normalizeDesignExtras(value),
     font:
       value?.font === "modern" ||
       value?.font === "classic" ||
@@ -336,6 +339,17 @@ function DesignShell({
         event.stopPropagation();
         onEdit(target);
       } : undefined}
+      data-title-scale={settings.titleScale}
+      data-text-scale={settings.textScale}
+      data-title-weight={settings.titleWeight}
+      data-title-case={settings.titleCase}
+      data-line-height={settings.lineHeight}
+      data-card-radius={settings.cardRadius}
+      data-shadow-strength={settings.shadowStrength}
+      data-image-radius={settings.imageRadius}
+      data-image-ratio={settings.imageRatio}
+      data-image-fit={settings.imageFit}
+      data-button-size={settings.buttonSize}
       data-theme={theme}
       data-has-hero-image={hasHeroImage}
       data-card-style={settings.cardStyle}
@@ -389,6 +403,8 @@ function DesignShell({
           min-height: 100%;
         }
 
+        .siteai-design-root [data-siteai-hero-actions] a,
+        .siteai-design-root [data-siteai-lead-form] button[type="submit"],
         .siteai-design-root a[class*="rounded"],
         .siteai-design-root button[class*="rounded"] {
           border-radius: var(--siteai-button-radius) !important;
@@ -509,6 +525,7 @@ function DesignShell({
         }
       `}</style>
 
+      <style>{designExtrasCSS}</style>
       {children}
     </div>
   );

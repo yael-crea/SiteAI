@@ -15,6 +15,8 @@ import SitePreview, { type PreviewEditTarget } from "@/components/SitePreview";
 import PublicationSuccess from "@/components/PublicationSuccess";
 import BuilderVersions, { useBuilderVersions } from "@/components/BuilderVersions";
 import { useBuilderDraft } from "@/lib/useBuilderDraft";
+import AppearanceOptions from "@/components/AppearanceOptions";
+import { normalizeDesignExtras, type DesignExtras } from "@/lib/appearanceSettings";
 import StylePicker from "@/components/StylePicker";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { getSiteHealth, smartPalettes, type Testimonial } from "@/lib/siteGrowth";
@@ -47,7 +49,7 @@ type SiteSection = {
   hidden?: boolean;
 };
 
-type DesignSettings = {
+type DesignSettings = DesignExtras & {
   font:
     | "system"
     | "modern"
@@ -154,6 +156,7 @@ function normalizeDesignSettings(
   value?: Partial<DesignSettings> | null,
 ): DesignSettings {
   return {
+    ...normalizeDesignExtras(value),
     font:
       value?.font === "modern" ||
       value?.font === "classic" ||
@@ -4937,271 +4940,9 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <details className="rounded-xl border border-slate-700 p-4"><summary className="cursor-pointer text-sm font-semibold">Plus d’options de design</summary><div className="mt-4">
-                        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="font-bold">
-                              Design avancé
-                            </p>
-                            <p className="mt-1 text-xs leading-5 text-slate-500">
-                              Personnalise le rendu sans toucher au contenu.
-                            </p>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateSiteField(
-                                "designSettings",
-                                {
-                                  ...defaultDesignSettings,
-                                },
-                              )
-                            }
-                            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-slate-500"
-                          >
-                            Réinitialiser
-                          </button>
-                        </div>
-
-                        <div className="mt-5 space-y-5">
-                          <div>
-                            <label className="mb-2 block text-sm text-slate-400">
-                              Police
-                            </label>
-                            <select
-                              value={
-                                normalizeDesignSettings(
-                                  site.designSettings,
-                                ).font
-                              }
-                              onChange={(event) =>
-                                updateDesignSetting(
-                                  "font",
-                                  event.target.value as DesignSettings["font"],
-                                )
-                              }
-                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
-                            >
-                              <option value="system">Système</option>
-                              <option value="modern">Moderne</option>
-                              <option value="classic">Classique</option>
-                              <option value="editorial">Éditorial</option>
-                              <option value="mono">Monospace</option>
-                            </select>
-                          </div>
-
-                          <div>
-                            <p className="mb-2 text-sm text-slate-400">
-                              Boutons
-                            </p>
-                            <div className="grid grid-cols-3 gap-2">
-                              {(
-                                [
-                                  ["square", "Carrés"],
-                                  ["soft", "Arrondis"],
-                                  ["pill", "Pilule"],
-                                ] as const
-                              ).map(([value, label]) => (
-                                <button
-                                  key={value}
-                                  type="button"
-                                  onClick={() =>
-                                    updateDesignSetting(
-                                      "buttonStyle",
-                                      value,
-                                    )
-                                  }
-                                  className={`border px-3 py-3 text-xs font-bold ${
-                                    normalizeDesignSettings(
-                                      site.designSettings,
-                                    ).buttonStyle === value
-                                      ? "border-blue-500 bg-blue-500/10"
-                                      : "border-slate-700"
-                                  } ${
-                                    value === "square"
-                                      ? "rounded-none"
-                                      : value === "pill"
-                                        ? "rounded-full"
-                                        : "rounded-xl"
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div>
-                            <p className="mb-2 text-sm text-slate-400">
-                              Cartes
-                            </p>
-                            <div className="grid grid-cols-3 gap-2">
-                              {(
-                                [
-                                  ["simple", "Simple"],
-                                  ["bordered", "Bordée"],
-                                  ["shadow", "Ombre"],
-                                ] as const
-                              ).map(([value, label]) => (
-                                <button
-                                  key={value}
-                                  type="button"
-                                  onClick={() =>
-                                    updateDesignSetting(
-                                      "cardStyle",
-                                      value,
-                                    )
-                                  }
-                                  className={`rounded-xl border px-3 py-3 text-xs font-bold ${
-                                    normalizeDesignSettings(
-                                      site.designSettings,
-                                    ).cardStyle === value
-                                      ? "border-blue-500 bg-blue-500/10"
-                                      : "border-slate-700"
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <div>
-                              <label className="mb-2 block text-sm text-slate-400">
-                                Taille du logo
-                              </label>
-                              <select
-                                value={
-                                  normalizeDesignSettings(
-                                    site.designSettings,
-                                  ).logoSize
-                                }
-                                onChange={(event) =>
-                                  updateDesignSetting(
-                                    "logoSize",
-                                    event.target.value as DesignSettings["logoSize"],
-                                  )
-                                }
-                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
-                              >
-                                <option value="small">Petit</option>
-                                <option value="medium">Moyen</option>
-                                <option value="large">Grand</option>
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="mb-2 block text-sm text-slate-400">
-                                Largeur
-                              </label>
-                              <select
-                                value={
-                                  normalizeDesignSettings(
-                                    site.designSettings,
-                                  ).contentWidth
-                                }
-                                onChange={(event) =>
-                                  updateDesignSetting(
-                                    "contentWidth",
-                                    event.target.value as DesignSettings["contentWidth"],
-                                  )
-                                }
-                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
-                              >
-                                <option value="normal">Normale</option>
-                                <option value="wide">Large</option>
-                              </select>
-                            </div>
-                          </div>
-
-                          <div>
-                            <p className="mb-2 text-sm text-slate-400">
-                              Hero
-                            </p>
-                            <div className="grid grid-cols-3 gap-2">
-                              {(
-                                [
-                                  ["auto", "Auto"],
-                                  ["left", "À gauche"],
-                                  ["center", "Centré"],
-                                ] as const
-                              ).map(([value, label]) => (
-                                <button
-                                  key={value}
-                                  type="button"
-                                  onClick={() =>
-                                    updateDesignSetting(
-                                      "heroLayout",
-                                      value,
-                                    )
-                                  }
-                                  className={`rounded-xl border px-3 py-3 text-xs font-bold ${
-                                    normalizeDesignSettings(
-                                      site.designSettings,
-                                    ).heroLayout === value
-                                      ? "border-blue-500 bg-blue-500/10"
-                                      : "border-slate-700"
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <div>
-                              <label className="mb-2 block text-sm text-slate-400">
-                                Espacement
-                              </label>
-                              <select
-                                value={
-                                  normalizeDesignSettings(
-                                    site.designSettings,
-                                  ).spacing
-                                }
-                                onChange={(event) =>
-                                  updateDesignSetting(
-                                    "spacing",
-                                    event.target.value as DesignSettings["spacing"],
-                                  )
-                                }
-                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
-                              >
-                                <option value="compact">Compact</option>
-                                <option value="normal">Normal</option>
-                                <option value="airy">Aéré</option>
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="mb-2 block text-sm text-slate-400">
-                                Fond général
-                              </label>
-                              <select
-                                value={
-                                  normalizeDesignSettings(
-                                    site.designSettings,
-                                  ).background
-                                }
-                                onChange={(event) =>
-                                  updateDesignSetting(
-                                    "background",
-                                    event.target.value as DesignSettings["background"],
-                                  )
-                                }
-                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
-                              >
-                                <option value="auto">Selon le style</option>
-                                <option value="light">Clair</option>
-                                <option value="dark">Sombre</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      </div></details>
+                      <AppearanceOptions value={normalizeDesignSettings(site.designSettings)}
+                        onChange={value => updateSiteField("designSettings", value)}
+                        onReset={() => updateSiteField("designSettings", normalizeDesignSettings(getDesignStyle(designStyle).settings))} />
                     </div>
 
                     <button data-desktop-save data-mobile-hide

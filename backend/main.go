@@ -115,6 +115,18 @@ type FAQItem struct {
 }
 
 type DesignSettings struct {
+	TitleScale     string `json:"titleScale,omitempty"`
+	TextScale      string `json:"textScale,omitempty"`
+	TitleWeight    string `json:"titleWeight,omitempty"`
+	TitleCase      string `json:"titleCase,omitempty"`
+	LineHeight     string `json:"lineHeight,omitempty"`
+	CardRadius     string `json:"cardRadius,omitempty"`
+	ShadowStrength string `json:"shadowStrength,omitempty"`
+	ImageRadius    string `json:"imageRadius,omitempty"`
+	ImageRatio     string `json:"imageRatio,omitempty"`
+	ImageFit       string `json:"imageFit,omitempty"`
+	ButtonSize     string `json:"buttonSize,omitempty"`
+
 	Font string `json:"font"`
 
 	ButtonStyle string `json:"buttonStyle"`
