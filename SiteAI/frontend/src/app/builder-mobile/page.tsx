@@ -562,6 +562,18 @@ function FullscreenSitePreview({
   );
 }
 
+
+type EditorSnapshot = {
+  businessName: string;
+  activity: string;
+  city: string;
+  phone: string;
+  services: string;
+  designStyle: DesignStyle;
+  accentColor: string;
+  site: GeneratedSite;
+};
+
 export default function MobileBuilderPage() {
   const router = useRouter();
 
@@ -579,6 +591,19 @@ export default function MobileBuilderPage() {
     useState("");
   const [services, setServices] =
     useState("");
+
+  const [siteGoal, setSiteGoal] =
+    useState("generer des demandes de contact");
+  const [targetAudience, setTargetAudience] =
+    useState("");
+  const [desiredTone, setDesiredTone] =
+    useState("professionnel et chaleureux");
+  const [
+    communicationStyle,
+    setCommunicationStyle,
+  ] = useState("clair et concis");
+  const [primaryAction, setPrimaryAction] =
+    useState("nous contacter");
 
   const [designStyle, setDesignStyle] =
     useState<DesignStyle>("moderne");
@@ -617,6 +642,21 @@ export default function MobileBuilderPage() {
 
   const autosaveReadyRef =
     useRef(false);
+
+  const undoHistoryRef =
+    useRef<string[]>([]);
+
+  const undoTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const undoTrackingReadyRef =
+    useRef(false);
+
+  const undoApplyingRef =
+    useRef(false);
+
+  const [canUndo, setCanUndo] =
+    useState(false);
 
   const [aiInstruction, setAiInstruction] =
     useState("");
@@ -692,6 +732,10 @@ export default function MobileBuilderPage() {
     return () => {
       if (autosaveTimerRef.current) {
         clearTimeout(autosaveTimerRef.current);
+      }
+
+      if (undoTimerRef.current) {
+        clearTimeout(undoTimerRef.current);
       }
     };
   }, []);
@@ -772,6 +816,129 @@ export default function MobileBuilderPage() {
     return response;
   }
 
+  function buildEditorSnapshot(
+    currentSite: GeneratedSite,
+  ): EditorSnapshot {
+    return {
+      businessName,
+      activity,
+      city,
+      phone,
+      services,
+      designStyle,
+      accentColor,
+      site: normalizeSite(currentSite),
+    };
+  }
+
+  function serializeEditorSnapshot(
+    snapshot: EditorSnapshot,
+  ) {
+    return JSON.stringify(snapshot);
+  }
+
+  function initializeUndoHistory(
+    snapshot: EditorSnapshot,
+  ) {
+    const serialized =
+      serializeEditorSnapshot(snapshot);
+
+    undoHistoryRef.current = [
+      serialized,
+    ];
+    undoTrackingReadyRef.current = true;
+    setCanUndo(false);
+  }
+
+  function restoreEditorSnapshot(
+    snapshot: EditorSnapshot,
+  ) {
+    undoApplyingRef.current = true;
+
+    if (undoTimerRef.current) {
+      clearTimeout(
+        undoTimerRef.current,
+      );
+      undoTimerRef.current = null;
+    }
+
+    setBusinessName(
+      snapshot.businessName,
+    );
+    setActivity(snapshot.activity);
+    setCity(snapshot.city);
+    setPhone(snapshot.phone);
+    setServices(snapshot.services);
+    setDesignStyle(
+      snapshot.designStyle,
+    );
+    setAccentColor(
+      snapshot.accentColor,
+    );
+    setSite(
+      normalizeSite(snapshot.site),
+    );
+
+    setMessage(
+      "Dernière modification annulée.",
+    );
+    setError("");
+  }
+
+  function undoLastChange() {
+    if (!site) {
+      return;
+    }
+
+    if (undoTimerRef.current) {
+      clearTimeout(
+        undoTimerRef.current,
+      );
+      undoTimerRef.current = null;
+    }
+
+    const currentSerialized =
+      serializeEditorSnapshot(
+        buildEditorSnapshot(site),
+      );
+
+    const history = [
+      ...undoHistoryRef.current,
+    ];
+
+    if (
+      history.length > 0 &&
+      history[history.length - 1] ===
+        currentSerialized
+    ) {
+      history.pop();
+    }
+
+    const previousSerialized =
+      history[history.length - 1];
+
+    if (!previousSerialized) {
+      setCanUndo(false);
+      return;
+    }
+
+    const previous =
+      JSON.parse(
+        previousSerialized,
+      ) as EditorSnapshot;
+
+    undoHistoryRef.current =
+      history;
+
+    restoreEditorSnapshot(
+      previous,
+    );
+
+    setCanUndo(
+      history.length > 1,
+    );
+  }
+
   async function openSavedSite(id: number) {
     setError("");
     setMessage("");
@@ -824,6 +991,22 @@ export default function MobileBuilderPage() {
 
     autosaveReadyRef.current = true;
     setAutosaveStatus("saved");
+
+    initializeUndoHistory({
+      businessName: saved.businessName,
+      activity: saved.activity,
+      city: saved.city,
+      phone: saved.phone,
+      services: normalized.sections
+        .map(
+          (section) =>
+            section.title,
+        )
+        .join(", "),
+      designStyle: saved.designStyle,
+      accentColor: saved.accentColor,
+      site: normalized,
+    });
   }
 
   function resetForNewSite() {
@@ -836,6 +1019,19 @@ export default function MobileBuilderPage() {
     setCity("Montpellier");
     setPhone("");
     setServices("");
+    setSiteGoal(
+      "generer des demandes de contact",
+    );
+    setTargetAudience("");
+    setDesiredTone(
+      "professionnel et chaleureux",
+    );
+    setCommunicationStyle(
+      "clair et concis",
+    );
+    setPrimaryAction(
+      "nous contacter",
+    );
     setDesignStyle("moderne");
     setAccentColor("#2563eb");
     setSite(null);
@@ -853,6 +1049,18 @@ export default function MobileBuilderPage() {
     lastSavedSnapshotRef.current = "";
     autosaveReadyRef.current = false;
     setAutosaveStatus("idle");
+
+    if (undoTimerRef.current) {
+      clearTimeout(
+        undoTimerRef.current,
+      );
+      undoTimerRef.current = null;
+    }
+
+    undoHistoryRef.current = [];
+    undoTrackingReadyRef.current = false;
+    undoApplyingRef.current = false;
+    setCanUndo(false);
   }
 
   async function generateSite(
@@ -914,6 +1122,12 @@ export default function MobileBuilderPage() {
               city: city.trim(),
               phone: phone.trim(),
               services: serviceList,
+              goal: siteGoal,
+              targetAudience:
+                targetAudience.trim(),
+              tone: desiredTone,
+              communicationStyle,
+              primaryAction,
             }),
           },
         );
@@ -938,6 +1152,19 @@ export default function MobileBuilderPage() {
       autosaveReadyRef.current = true;
       lastSavedSnapshotRef.current = "";
       setAutosaveStatus("pending");
+
+      initializeUndoHistory({
+        businessName:
+          businessName.trim(),
+        activity:
+          activity.trim(),
+        city: city.trim(),
+        phone: phone.trim(),
+        services,
+        designStyle,
+        accentColor,
+        site: normalizedGenerated,
+      });
 
       setStep(2);
       setMessage(
@@ -1372,6 +1599,76 @@ export default function MobileBuilderPage() {
 
   useEffect(() => {
     if (
+      !site ||
+      !undoTrackingReadyRef.current
+    ) {
+      return;
+    }
+
+    if (undoApplyingRef.current) {
+      undoApplyingRef.current = false;
+      return;
+    }
+
+    if (undoTimerRef.current) {
+      clearTimeout(
+        undoTimerRef.current,
+      );
+    }
+
+    const serialized =
+      serializeEditorSnapshot(
+        buildEditorSnapshot(site),
+      );
+
+    undoTimerRef.current =
+      setTimeout(() => {
+        const history =
+          undoHistoryRef.current;
+
+        const last =
+          history[
+            history.length - 1
+          ];
+
+        if (last === serialized) {
+          return;
+        }
+
+        const nextHistory = [
+          ...history,
+          serialized,
+        ].slice(-20);
+
+        undoHistoryRef.current =
+          nextHistory;
+
+        setCanUndo(
+          nextHistory.length > 1,
+        );
+      }, 700);
+
+    return () => {
+      if (undoTimerRef.current) {
+        clearTimeout(
+          undoTimerRef.current,
+        );
+        undoTimerRef.current = null;
+      }
+    };
+  }, [
+    site,
+    businessName,
+    activity,
+    city,
+    phone,
+    services,
+    designStyle,
+    accentColor,
+  ]);
+
+  useEffect(() => {
+    if (
       authLoading ||
       !site ||
       !autosaveReadyRef.current ||
@@ -1506,22 +1803,35 @@ export default function MobileBuilderPage() {
             </div>
 
             {site && (
-              <div
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${
-                  autosaveStatus === "saved"
-                    ? "bg-emerald-500/10 text-emerald-400"
-                    : autosaveStatus === "error"
-                      ? "bg-red-500/10 text-red-400"
-                      : "bg-slate-800 text-slate-400"
-                }`}
-              >
-                {autosaveStatus === "saving"
-                  ? "Sauvegarde..."
-                  : autosaveStatus === "pending"
-                    ? "À enregistrer"
-                    : autosaveStatus === "error"
-                      ? "Erreur sauvegarde"
-                      : "✓ Enregistré"}
+              <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={undoLastChange}
+                  disabled={!canUndo}
+                  className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[10px] font-black text-slate-300 transition hover:border-blue-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+                  title="Annuler la dernière modification"
+                  aria-label="Annuler la dernière modification"
+                >
+                  ↶ Annuler
+                </button>
+
+                <div
+                  className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
+                    autosaveStatus === "saved"
+                      ? "bg-emerald-500/10 text-emerald-400"
+                      : autosaveStatus === "error"
+                        ? "bg-red-500/10 text-red-400"
+                        : "bg-slate-800 text-slate-400"
+                  }`}
+                >
+                  {autosaveStatus === "saving"
+                    ? "Sauvegarde..."
+                    : autosaveStatus === "pending"
+                      ? "À enregistrer"
+                      : autosaveStatus === "error"
+                        ? "Erreur sauvegarde"
+                        : "✓ Enregistré"}
+                </div>
               </div>
             )}
           </div>
@@ -1662,6 +1972,164 @@ export default function MobileBuilderPage() {
                   Sépare les services avec des virgules.
                 </p>
               </div>
+
+              {!site && (
+                <div className="rounded-2xl border border-blue-900/60 bg-blue-950/20 p-4">
+                  <div>
+                    <p className="font-black text-blue-300">
+                      ✨ Rendre le site plus personnalisé
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      Facultatif, mais ces choix aident l&apos;IA à créer un site moins générique.
+                    </p>
+                  </div>
+
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className="mb-2 block text-xs font-bold text-slate-400">
+                        Objectif principal
+                      </label>
+                      <select
+                        value={siteGoal}
+                        onChange={(event) =>
+                          setSiteGoal(
+                            event.target.value,
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                      >
+                        <option value="generer des demandes de contact">
+                          Générer des demandes de contact
+                        </option>
+                        <option value="obtenir des demandes de devis">
+                          Obtenir des demandes de devis
+                        </option>
+                        <option value="obtenir des rendez-vous">
+                          Obtenir des rendez-vous
+                        </option>
+                        <option value="presenter clairement les services">
+                          Présenter clairement les services
+                        </option>
+                        <option value="attirer des clients en etablissement">
+                          Attirer des clients en établissement
+                        </option>
+                        <option value="renforcer la presence locale">
+                          Renforcer la présence locale
+                        </option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-bold text-slate-400">
+                        Clientèle cible
+                      </label>
+                      <input
+                        value={targetAudience}
+                        onChange={(event) =>
+                          setTargetAudience(
+                            event.target.value,
+                          )
+                        }
+                        placeholder="Ex. femmes 18–40 ans, familles, entreprises..."
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-bold text-slate-400">
+                        Ton souhaité
+                      </label>
+                      <select
+                        value={desiredTone}
+                        onChange={(event) =>
+                          setDesiredTone(
+                            event.target.value,
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                      >
+                        <option value="professionnel et chaleureux">
+                          Professionnel et chaleureux
+                        </option>
+                        <option value="premium et elegant">
+                          Premium et élégant
+                        </option>
+                        <option value="moderne et dynamique">
+                          Moderne et dynamique
+                        </option>
+                        <option value="simple et rassurant">
+                          Simple et rassurant
+                        </option>
+                        <option value="direct et commercial">
+                          Direct et commercial
+                        </option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-bold text-slate-400">
+                        Style de communication
+                      </label>
+                      <select
+                        value={communicationStyle}
+                        onChange={(event) =>
+                          setCommunicationStyle(
+                            event.target.value,
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                      >
+                        <option value="clair et concis">
+                          Clair et concis
+                        </option>
+                        <option value="pedagogique">
+                          Pédagogique
+                        </option>
+                        <option value="local et humain">
+                          Local et humain
+                        </option>
+                        <option value="commercial sans exageration">
+                          Commercial sans exagération
+                        </option>
+                        <option value="haut de gamme">
+                          Haut de gamme
+                        </option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs font-bold text-slate-400">
+                        Action principale souhaitée
+                      </label>
+                      <select
+                        value={primaryAction}
+                        onChange={(event) =>
+                          setPrimaryAction(
+                            event.target.value,
+                          )
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                      >
+                        <option value="nous contacter">
+                          Nous contacter
+                        </option>
+                        <option value="appeler">
+                          Appeler
+                        </option>
+                        <option value="demander un devis">
+                          Demander un devis
+                        </option>
+                        <option value="prendre rendez-vous">
+                          Prendre rendez-vous
+                        </option>
+                        <option value="decouvrir les services">
+                          Découvrir les services
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <button
