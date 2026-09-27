@@ -3258,6 +3258,28 @@ export default function Home() {
         </p>
       </div>
       <style>{`
+        [data-builder-editor] { container: siteai-editor / inline-size; min-width: 0; }
+        [data-builder-editor] input,
+        [data-builder-editor] textarea,
+        [data-builder-editor] select { min-width: 0; max-width: 100%; }
+        [data-builder-editor] .grid > *,
+        [data-builder-editor] .flex > * { min-width: 0; }
+        [data-builder-editor] p,
+        [data-builder-editor] button,
+        [data-builder-editor] label { overflow-wrap: anywhere; }
+        /* Controls follow their panel width, not the width of the desktop. */
+        @container siteai-editor (max-width: 420px) {
+          [data-builder-editor] [class~="sm:flex-row"] {
+            flex-direction: column !important;
+            align-items: stretch !important;
+          }
+          [data-builder-editor] [class~="sm:grid-cols-2"],
+          [data-builder-editor] [class~="sm:grid-cols-3"],
+          [data-builder-editor] [class~="md:grid-cols-2"] {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+        }
+
         @media (width >= 48rem) {
           [data-siteai-builder] { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
           [data-siteai-builder] > header { flex-shrink: 0; }
@@ -3567,7 +3589,7 @@ export default function Home() {
 
             {site && (
               <div data-mobile-manual className="rounded-3xl border border-slate-800 bg-slate-900 p-7">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
                   <div>
                     <h2 className="text-xl font-bold">
                       ✍️ Éditeur manuel
@@ -3747,7 +3769,7 @@ export default function Home() {
                                 />
 
                                 <div className="flex items-center justify-between gap-2 p-3">
-                                  <div className="flex gap-2">
+                                  <div className="flex min-w-0 flex-wrap gap-2">
                                     <button
                                       type="button"
                                       disabled={index === 0 || galleryUploading}
@@ -4168,7 +4190,7 @@ export default function Home() {
                     </div></details>
 
                     <div className="border-t border-slate-800 pt-6">
-                      <div className="flex items-center justify-between gap-4">
+                      <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
                         <div>
                           <p className="font-bold">
                             Sections / services
@@ -4206,7 +4228,7 @@ export default function Home() {
                                   : ""
                               }`}
                             >
-                              <div className="mb-4 flex items-center justify-between gap-3">
+                              <div className="mb-4 flex min-w-0 flex-col items-stretch gap-3">
                                 <p className="text-sm font-bold text-slate-300">
                                   Section{" "}
                                   {
@@ -4215,7 +4237,7 @@ export default function Home() {
                                   }
                                 </p>
 
-                                <div className="flex gap-2">
+                                <div className="flex min-w-0 flex-wrap gap-2">
                                   <button
                                     type="button"
                                     disabled={
@@ -4731,7 +4753,7 @@ export default function Home() {
                       </div>
 
                       <details className="rounded-xl border border-slate-700 p-4"><summary className="cursor-pointer text-sm font-semibold">Plus d’options de design</summary><div className="mt-4">
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
                           <div>
                             <p className="font-bold">
                               Design avancé
@@ -5042,7 +5064,7 @@ export default function Home() {
                       {label: "Au moins un service visible", ready: site.sections.some(section => !section.hidden && section.title.trim()), step: 1},
                       {label: "Une photo pour présenter ton entreprise", ready: Boolean(site.heroImageUrl || site.gallery?.length), step: 1},
                     ].map(item => (
-                      <li key={item.label} className="flex items-center justify-between gap-3">
+                      <li key={item.label} className="flex min-w-0 flex-wrap items-center justify-between gap-3">
                         <span><span aria-hidden="true" className={item.ready ? "text-emerald-400" : "text-amber-300"}>{item.ready ? "✓ " : "○ "}</span>{item.label}
                           <span className="sr-only">{item.ready ? " : renseigné" : " : à compléter"}</span>
                         </span>
