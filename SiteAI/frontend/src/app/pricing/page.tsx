@@ -6,13 +6,10 @@ import {
 } from "react";
 
 import Link from "next/link";
+import { plans, CGV_VERSION, freePreviewText, domainText, aiUsageText, cancellationText, priceSuffix, priceTaxText, type PlanName } from "@/lib/commercialPlans";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-type PlanName =
-  | "essentiel"
-  | "pro"
-  | "agence";
 
 type BillingStatus = {
   plan: string;
@@ -23,65 +20,7 @@ type BillingStatus = {
   canManage: boolean;
 };
 
-type Plan = {
-  id: PlanName;
-  name: string;
-  price: string;
-  description: string;
-  highlighted?: boolean;
-  features: string[];
-};
 
-const CGV_VERSION = "2026-09-25";
-
-const plans: Plan[] = [
-  {
-    id: "essentiel",
-    name: "Essentiel",
-    price: "19,90 €",
-    description:
-      "Pour un indépendant ou une petite entreprise qui veut un site professionnel rapidement.",
-    features: [
-      "1 site publié",
-      "Génération avec l’IA",
-      "Templates Moderne, Élégant et Artisan",
-      "Éditeur manuel",
-      "URL publique SiteAI",
-      "Sauvegarde du site",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: "39,90 €",
-    description:
-      "Pour les professionnels qui veulent davantage de possibilités et leur propre domaine.",
-    highlighted: true,
-    features: [
-      "Jusqu’à 3 sites publiés",
-      "Toutes les fonctions Essentiel",
-      "Galerie photos",
-      "SEO avancé",
-      "Domaine personnalisé",
-      "Modification avec l’IA",
-    ],
-  },
-  {
-    id: "agence",
-    name: "Agence",
-    price: "79,90 €",
-    description:
-      "Pour gérer plusieurs clients et plusieurs sites depuis le même compte.",
-    features: [
-      "Jusqu’à 10 sites publiés",
-      "Toutes les fonctions Pro",
-      "Domaines personnalisés",
-      "Gestion multi-sites",
-      "Idéal pour agences et freelances",
-      "Priorité sur les futures fonctions",
-    ],
-  },
-];
 
 function formatDate(
   value?: string,
@@ -656,12 +595,14 @@ export default function PricingPage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-400">
-            Tous les paiements sont
-            gérés par Stripe. Tu peux
-            ensuite gérer ou résilier
-            ton abonnement depuis ton
-            espace client.
+            Prépare ton site gratuitement. Passe à un abonnement mensuel quand tu es prêt à le publier.
           </p>
+        </div>
+
+        <div className="mx-auto mt-8 max-w-3xl rounded-3xl border border-blue-800 bg-blue-950/30 p-6 text-center">
+          <h2 className="text-xl font-black">Découvre ton site avant de payer</h2>
+          <p className="mt-3 text-sm leading-7 text-slate-300">{freePreviewText}</p>
+          <Link href="/builder" className="mt-5 inline-flex rounded-xl bg-blue-600 px-6 py-3 font-bold hover:bg-blue-500">Créer mon aperçu gratuit</Link>
         </div>
 
         {message && (
@@ -767,7 +708,7 @@ export default function PricingPage() {
 
             <p className="mt-3 text-xs leading-5 text-slate-500">
               Tu dois accepter les CGV avant d&apos;être redirigé vers Stripe.
-              Version enregistrée : 25/09/2026.
+              Version enregistrée : 27/09/2026.
             </p>
           </div>
         )}
@@ -791,12 +732,12 @@ export default function PricingPage() {
                 >
                   {plan.highlighted && (
                     <span className="absolute right-5 top-5 rounded-full bg-blue-600 px-3 py-1 text-xs font-black uppercase tracking-wider">
-                      Populaire
+                      Recommandé
                     </span>
                   )}
 
                   <div>
-                    <h2 className="text-2xl font-black">
+                    <h2 className="pt-8 text-2xl font-black">
                       {plan.name}
                     </h2>
 
@@ -812,7 +753,7 @@ export default function PricingPage() {
                       </span>
 
                       <span className="pb-1 text-slate-500">
-                        / mois
+                        {priceSuffix}
                       </span>
                     </div>
                   </div>
@@ -893,12 +834,23 @@ export default function PricingPage() {
           )}
         </div>
 
-        <div className="mx-auto mt-12 max-w-3xl text-center text-sm leading-6 text-slate-500">
-          En environnement de test,
-          utilise uniquement les cartes
-          de test Stripe. Aucun vrai
-          paiement n&apos;est débité.
-        </div>
+
+        <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-slate-400">{priceTaxText}</p>
+        <section aria-label="Ce qui est inclus" className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <h2 className="font-bold text-white">Ton domaine, ton adresse</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-400">{domainText}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <h2 className="font-bold text-white">Une IA avec des limites claires</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-400">{aiUsageText}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <h2 className="font-bold text-white">Si tu résilies</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-400">{cancellationText}</p>
+          </div>
+        </section>
+
       </section>
     </main>
   );

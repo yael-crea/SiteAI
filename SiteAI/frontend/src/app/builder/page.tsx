@@ -1576,12 +1576,12 @@ export default function Home() {
                 plan === "essentiel"
               ) {
                 message =
-                  "Limite de la formule Essentiel atteinte : 1 site publié maximum. Passe à Pro pour publier jusqu'à 3 sites.";
+                  "Limite de la formule Essentiel atteinte : 1 site publié maximum. Dépublie ce site ou passe à Agence pour gérer plusieurs clients.";
               } else if (
                 plan === "pro"
               ) {
                 message =
-                  "Limite de la formule Pro atteinte : 3 sites publiés maximum. Passe à Agence pour publier jusqu'à 10 sites.";
+                  "Limite de la formule Pro atteinte : 1 site publié maximum. Passe à Agence pour gérer jusqu'à 10 sites clients.";
               } else if (
                 plan === "agence"
               ) {

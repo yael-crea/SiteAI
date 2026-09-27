@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { plans, freePreviewText, domainText, aiUsageText, cancellationText, priceSuffix, priceTaxText } from "@/lib/commercialPlans";
 
 const features = [
   {
@@ -19,7 +20,7 @@ const features = [
   {
     icon: "🌐",
     title: "Domaine personnalisé",
-    text: "Avec Pro ou Agence, connecte ton propre nom de domaine à ton site.",
+    text: "Dès Essentiel, connecte ton propre domaine. Achat et renouvellement du domaine séparés.",
   },
   {
     icon: "🖼️",
@@ -47,53 +48,16 @@ const steps = [
   {
     number: "03",
     title: "Publie ton site",
-    text: "Enregistre, publie et partage immédiatement ton adresse avec tes clients.",
+    text: "Une fois satisfait de ton aperçu, choisis une formule mensuelle pour publier et partager ton site.",
   },
 ];
 
-const plans = [
-  {
-    name: "Essentiel",
-    price: "19,90 €",
-    description: "Pour démarrer avec un site professionnel.",
-    features: [
-      "1 site publié",
-      "Génération avec l’IA",
-      "Éditeur manuel",
-      "URL publique SiteAI",
-      "Sauvegarde du site",
-    ],
-    highlighted: false,
-  },
-  {
-    name: "Pro",
-    price: "39,90 €",
-    description: "Pour développer une présence en ligne plus complète.",
-    features: [
-      "Jusqu’à 3 sites publiés",
-      "Toutes les fonctions Essentiel",
-      "Galerie photos",
-      "Domaine personnalisé",
-      "Modification avec l’IA",
-    ],
-    highlighted: true,
-  },
-  {
-    name: "Agence",
-    price: "79,90 €",
-    description: "Pour gérer plusieurs sites depuis un même compte.",
-    features: [
-      "Jusqu’à 10 sites publiés",
-      "Toutes les fonctions Pro",
-      "Domaines personnalisés",
-      "Gestion multi-sites",
-      "Pensé pour agences et freelances",
-    ],
-    highlighted: false,
-  },
-];
+
 
 const faqs = [
+  { question: "Puis-je essayer avant de payer ?", answer: freePreviewText },
+  { question: "Que devient mon site après résiliation ?", answer: cancellationText },
+  { question: "Quelles sont les limites de l’IA ?", answer: aiUsageText },
   {
     question: "Est-ce que je dois savoir coder ?",
     answer:
@@ -107,7 +71,7 @@ const faqs = [
   {
     question: "Puis-je utiliser mon propre domaine ?",
     answer:
-      "Oui avec les formules Pro et Agence. La formule Essentiel utilise l’adresse publique SiteAI.",
+      "Oui, dès Essentiel. La connexion est incluse ; tu achètes et renouvelles ton domaine auprès du fournisseur de ton choix.",
   },
   {
     question: "Puis-je changer de formule ?",
@@ -184,7 +148,7 @@ export default function HomePage() {
                 href="/auth"
                 className="rounded-xl bg-blue-600 px-7 py-4 text-center font-black transition hover:bg-blue-500"
               >
-                Commencer avec SiteAI
+                Créer mon aperçu gratuit
               </Link>
 
               <a
@@ -352,11 +316,11 @@ export default function HomePage() {
               Une formule selon tes besoins.
             </h2>
             <p className="mt-5 text-lg leading-8 text-slate-400">
-              Commence avec Essentiel puis évolue vers Pro ou Agence lorsque
-              ton activité en a besoin.
+              Un aperçu gratuit pour commencer. Essentiel pour ton entreprise, Pro pour davantage d’IA, Agence pour plusieurs clients.
             </p>
           </div>
 
+          <div className="mt-7 text-center"><Link href="/auth" className="inline-flex rounded-xl bg-blue-600 px-6 py-3 font-bold hover:bg-blue-500">Créer mon aperçu gratuit</Link><p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-400">{freePreviewText}</p></div>
           <div className="mt-12 grid gap-7 lg:grid-cols-3">
             {plans.map((plan) => (
               <article
@@ -369,18 +333,18 @@ export default function HomePage() {
               >
                 {plan.highlighted && (
                   <span className="absolute right-5 top-5 rounded-full bg-blue-600 px-3 py-1 text-xs font-black uppercase tracking-wider">
-                    Populaire
+                    Recommandé
                   </span>
                 )}
 
-                <h3 className="text-2xl font-black">{plan.name}</h3>
+                <h3 className="pt-8 text-2xl font-black">{plan.name}</h3>
                 <p className="mt-4 min-h-12 text-sm leading-6 text-slate-400">
                   {plan.description}
                 </p>
 
                 <div className="mt-7 flex items-end gap-2">
                   <span className="text-4xl font-black">{plan.price}</span>
-                  <span className="pb-1 text-slate-300">/ mois</span>
+                  <span className="pb-1 text-slate-300">{priceSuffix}</span>
                 </div>
 
                 <ul className="mt-8 flex-1 space-y-4">
@@ -408,8 +372,25 @@ export default function HomePage() {
               </article>
             ))}
           </div>
+          <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-slate-400">{priceTaxText}</p>
         </div>
       </section>
+
+
+        <section aria-label="Ce qui est inclus" className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <h2 className="font-bold text-white">Ton domaine, ton adresse</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-400">{domainText}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <h2 className="font-bold text-white">Une IA avec des limites claires</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-400">{aiUsageText}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <h2 className="font-bold text-white">Si tu résilies</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-400">{cancellationText}</p>
+          </div>
+        </section>
 
       <section id="faq" className="mx-auto max-w-5xl px-6 py-20">
         <div className="text-center">

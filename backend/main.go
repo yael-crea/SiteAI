@@ -50,7 +50,7 @@ import (
 
 var db *pgxpool.Pool
 
-const currentCGVVersion = "2026-09-25"
+const currentCGVVersion = "2026-09-27"
 const aiHourlyLimit = 20
 
 const leadRateLimit = 5
@@ -2845,11 +2845,43 @@ func healthHandler(
 
 }
 
+var errMonthlyAIQuota = errors.New("monthly AI quota reached")
+
+func aiMonthlyLimit(status BillingStatus) int {
+	if !isActiveBillingStatus(status.Status) {
+		return 3
+	}
+	switch strings.ToLower(strings.TrimSpace(status.Plan)) {
+	case "essentiel":
+		return 50
+	case "pro":
+		return 200
+	case "agence":
+		return 1000
+	default:
+		return 3
+	}
+}
+
+func subscriptionEndsPublication(status string) bool {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "canceled", "unpaid", "incomplete_expired":
+		return true
+	default:
+		return false
+	}
+}
+
 func consumeAIUsage(
 	ctx context.Context,
 	userID string,
 	action string,
 ) (int64, int, bool, error) {
+	billing, _, _, err := getBillingStatus(ctx, userID)
+	if err != nil {
+		return 0, 0, false, err
+	}
+	monthlyLimit := aiMonthlyLimit(billing)
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return 0, 0, false, err
@@ -2866,20 +2898,26 @@ func consumeAIUsage(
 		return 0, 0, false, err
 	}
 
-	var used int
+	var used, monthlyUsed int
 
 	err = tx.QueryRow(
 		ctx,
 		`
-		SELECT COUNT(*)
-		FROM ai_usage
-		WHERE user_id = $1::uuid
-		  AND created_at >= NOW() - INTERVAL '1 hour';
+        SELECT
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 hour'),
+          COUNT(*) FILTER (WHERE created_at >= (date_trunc('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'))
+        FROM ai_usage
+        WHERE user_id = $1::uuid
+          AND created_at >= LEAST(NOW() - INTERVAL '1 hour', (date_trunc('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'));
 		`,
 		userID,
-	).Scan(&used)
+	).Scan(&used, &monthlyUsed)
 	if err != nil {
 		return 0, 0, false, err
+	}
+
+	if monthlyUsed >= monthlyLimit {
+		return 0, 0, false, errMonthlyAIQuota
 	}
 
 	if used >= aiHourlyLimit {
@@ -2929,6 +2967,10 @@ func enforceAIRateLimit(
 		action,
 	)
 
+	if errors.Is(err, errMonthlyAIQuota) {
+		http.Error(w, "Quota IA mensuel atteint. Les demandes de création et de modification sont comptées ensemble. Le quota revient au début du prochain mois UTC ; consulte les formules pour augmenter ta limite.", http.StatusTooManyRequests)
+		return 0, false
+	}
 	if err != nil {
 		log.Println("Erreur rate limit IA :", err)
 
@@ -4057,7 +4099,7 @@ func addDomainHandler(
 		if !isActiveBillingStatus(billingStatus.Status) {
 			http.Error(
 				w,
-				"Un abonnement Pro ou Agence actif est nécessaire pour utiliser un domaine personnalisé.",
+				"Un abonnement actif est nécessaire pour connecter un domaine personnel.",
 				http.StatusForbidden,
 			)
 			return
@@ -4065,7 +4107,7 @@ func addDomainHandler(
 
 		http.Error(
 			w,
-			"Les domaines personnalisés sont disponibles avec les formules Pro ou Agence.",
+			"La connexion d’un domaine personnel est incluse dans les trois formules payantes.",
 			http.StatusForbidden,
 		)
 		return
@@ -4173,7 +4215,7 @@ func verifyDomainHandler(
 		if !isActiveBillingStatus(billingStatus.Status) {
 			http.Error(
 				w,
-				"Un abonnement Pro ou Agence actif est nécessaire pour vérifier un domaine personnalisé.",
+				"Un abonnement actif est nécessaire pour vérifier un domaine personnel.",
 				http.StatusForbidden,
 			)
 			return
@@ -4181,7 +4223,7 @@ func verifyDomainHandler(
 
 		http.Error(
 			w,
-			"Les domaines personnalisés sont disponibles avec les formules Pro ou Agence.",
+			"La connexion d’un domaine personnel est incluse dans les trois formules payantes.",
 			http.StatusForbidden,
 		)
 		return
@@ -7421,12 +7463,12 @@ func billingEntitlements(status BillingStatus) PlanEntitlements {
 	case "essentiel":
 		return PlanEntitlements{
 			MaxPublishedSites:   1,
-			CustomDomainAllowed: false,
+			CustomDomainAllowed: true,
 		}
 
 	case "pro":
 		return PlanEntitlements{
-			MaxPublishedSites:   3,
+			MaxPublishedSites:   1,
 			CustomDomainAllowed: true,
 		}
 
@@ -7454,10 +7496,10 @@ func applyBillingEntitlements(status *BillingStatus) {
 func publishedSiteLimitMessage(plan string, maxSites int) string {
 	switch strings.ToLower(strings.TrimSpace(plan)) {
 	case "essentiel":
-		return "Limite de la formule Essentiel atteinte : 1 site publié maximum. Passe à Pro pour publier jusqu'à 3 sites."
+		return "Limite de la formule Essentiel atteinte : 1 site publié maximum. Dépublie ce site ou passe à Agence pour gérer plusieurs clients."
 
 	case "pro":
-		return "Limite de la formule Pro atteinte : 3 sites publiés maximum. Passe à Agence pour publier jusqu'à 10 sites."
+		return "Limite de la formule Pro atteinte : 1 site publié maximum. Passe à Agence pour gérer jusqu'à 10 sites clients."
 
 	case "agence":
 		return "Limite de la formule Agence atteinte : 10 sites publiés maximum."
@@ -8253,7 +8295,12 @@ func syncStripeSubscription(
 		}
 	}
 
-	_, err := db.Exec(
+	tx, err := db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	_, err = tx.Exec(
 		ctx,
 		`
 		INSERT INTO user_billing (
@@ -8299,7 +8346,16 @@ func syncStripeSubscription(
 		subscription.CancelAtPeriodEnd,
 	)
 
-	return err
+	if err != nil {
+		return err
+	}
+	if subscriptionEndsPublication(subscription.Status) {
+		_, err = tx.Exec(ctx, "UPDATE sites SET published = FALSE, updated_at = NOW() WHERE user_id = $1::uuid AND published = TRUE;", userID)
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
 }
 
 func normalizeDesignStyle(value string) string {

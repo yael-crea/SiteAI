@@ -1786,7 +1786,7 @@ export default function DashboardPage() {
                         </p>
 
                         <p className="mt-2 text-xs leading-5 text-slate-400">
-                          Disponible avec les formules Pro ou Agence.
+                          Connexion incluse dès Essentiel. Achat et renouvellement du domaine séparés.
                         </p>
 
                         <button

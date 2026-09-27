@@ -1,38 +1,7 @@
 import Link from "next/link";
+import { plans, CGV_VERSION, freePreviewText, domainText, aiUsageText, cancellationText, priceSuffix, priceTaxText } from "@/lib/commercialPlans";
 
-const plans = [
-  {
-    name: "Essentiel",
-    price: "19,90 € / mois",
-    details: [
-      "1 site publié maximum",
-      "Génération avec l’IA",
-      "Éditeur manuel",
-      "URL publique SiteAI",
-    ],
-  },
-  {
-    name: "Pro",
-    price: "39,90 € / mois",
-    details: [
-      "Jusqu’à 3 sites publiés",
-      "Fonctionnalités Essentiel",
-      "Galerie photos",
-      "Domaine personnalisé",
-      "Modification avec l’IA",
-    ],
-  },
-  {
-    name: "Agence",
-    price: "79,90 € / mois",
-    details: [
-      "Jusqu’à 10 sites publiés",
-      "Fonctionnalités Pro",
-      "Domaines personnalisés",
-      "Gestion multi-sites",
-    ],
-  },
-];
+
 
 export default function CGVPage() {
   return (
@@ -67,7 +36,7 @@ export default function CGVPage() {
           </p>
 
           <p className="mt-3 text-sm font-bold text-blue-300">
-            Version des CGV : 2026-09-25
+            Version des CGV : {CGV_VERSION}
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
@@ -134,6 +103,8 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
               de la souscription constituent la référence commerciale.
             </p>
 
+            <p className="mt-3 text-sm leading-7 text-slate-400">{freePreviewText}</p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">{aiUsageText}</p>
             <div className="mt-5 grid gap-4 md:grid-cols-3">
               {plans.map((plan) => (
                 <article
@@ -142,11 +113,11 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
                 >
                   <h3 className="font-black">{plan.name}</h3>
                   <div className="mt-2 text-lg font-black text-blue-400">
-                    {plan.price}
+                    {plan.price} {priceSuffix}
                   </div>
 
                   <ul className="mt-4 space-y-2 text-xs leading-5 text-slate-400">
-                    {plan.details.map((detail) => (
+                    {plan.features.map((detail) => (
                       <li key={detail}>• {detail}</li>
                     ))}
                   </ul>
@@ -197,15 +168,8 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             <h2 className="text-xl font-black">7. Prix et taxes</h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Les prix applicables sont ceux affichés au moment de la
-              souscription. Leur présentation HT ou TTC devra être définie
-              selon le futur statut fiscal de l&apos;entreprise SiteAI
-              [À COMPLÉTER].
-            </p>
-
-            <p className="mt-3 text-sm leading-7 text-slate-400">
-              Toute taxe applicable sera indiquée conformément aux règles
-              fiscales en vigueur au moment de la facturation.
+              {priceTaxText} Le montant total facturé et sa ventilation sont
+              indiqués avant la confirmation de la commande.
             </p>
           </section>
 
@@ -237,11 +201,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             </p>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Le client peut gérer ou résilier son abonnement depuis
-              l&apos;interface de gestion mise à disposition par SiteAI et
-              Stripe. Sauf indication contraire affichée au moment de la
-              résiliation, l&apos;accès aux fonctionnalités payantes reste
-              disponible jusqu&apos;à la fin de la période déjà réglée.
+              {cancellationText}
             </p>
           </section>
 
@@ -327,11 +287,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              L&apos;utilisation d&apos;un domaine personnalisé est réservée
-              aux offres qui incluent cette fonctionnalité. Le client reste
-              responsable de l&apos;achat, du renouvellement et des droits
-              attachés à son nom de domaine, sauf offre future indiquant
-              expressément le contraire.
+              {domainText}
             </p>
           </section>
 
