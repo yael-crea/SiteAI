@@ -52,6 +52,8 @@ E-mail relatif aux données personnelles : [À COMPLÉTER]
 • informations fournies lors de la création d’un site ;
 • contenus, textes, images, logos et domaines ajoutés par l’utilisateur ;
 • informations liées à l’abonnement et au statut de paiement ;
+• demandes de devis envoyées depuis les sites publiés : nom, coordonnées, type de besoin et message ;
+• identifiant aléatoire conservé dans le navigateur, pages vues et clics sur les moyens de contact ;
 • journaux techniques nécessaires à la sécurité, au diagnostic et au fonctionnement du service.
 
 Les données de carte bancaire ne sont pas destinées à être stockées directement par SiteAI lorsque le paiement est traité par Stripe.
@@ -65,6 +67,8 @@ Les données de carte bancaire ne sont pas destinées à être stockées directe
 • générer, sauvegarder, modifier et publier des sites ;
 • gérer les abonnements et les paiements ;
 • connecter des domaines personnalisés ;
+• transmettre et organiser les demandes de devis pour le propriétaire du site ;
+• fournir au propriétaire des statistiques agrégées sur les visites et les intentions de contact ;
 • assurer la sécurité et le bon fonctionnement du service ;
 • répondre aux demandes de support ;
 • respecter les obligations légales applicables.
@@ -118,7 +122,9 @@ Les utilisateurs peuvent également introduire une réclamation auprès de la CN
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
               Les traceurs strictement nécessaires au fonctionnement, à l’authentification ou à la sécurité peuvent être utilisés lorsque la réglementation le permet.
 
-Si SiteAI ajoute des outils d’analyse, de publicité ou d’autres traceurs nécessitant un consentement, un mécanisme de consentement et de retrait devra être mis en place avant leur activation.
+Sur les sites publiés, SiteAI utilise un identifiant aléatoire enregistré dans le stockage local du navigateur afin de compter les visiteurs uniques et d’éviter les doublons. SiteAI enregistre également les pages vues et les clics sur le téléphone ou l’e-mail. Ces mesures servent uniquement à fournir des statistiques au propriétaire du site ; elles ne sont pas utilisées pour la publicité ciblée.
+
+La base juridique, la durée de conservation et la nécessité éventuelle d’un consentement devront être confirmées avant le lancement selon la configuration définitive. Si SiteAI ajoute des outils publicitaires ou des traceurs tiers nécessitant un consentement, un mécanisme de consentement et de retrait devra être mis en place avant leur activation.
             </div>
           </section>
         </div>

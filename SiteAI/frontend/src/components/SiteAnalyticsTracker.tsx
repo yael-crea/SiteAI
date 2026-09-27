@@ -25,79 +25,45 @@ export default function SiteAnalyticsTracker({
   publicSlug,
 }: SiteAnalyticsTrackerProps) {
   useEffect(() => {
-    if (!publicSlug) {
-      return;
-    }
-
-    const visitorKey =
-      `siteai_visitor_${publicSlug}`;
-
-    const recentViewKey =
-      `siteai_recent_view_${publicSlug}`;
-
+    if (!publicSlug) return;
+    const visitorKey = `siteai_visitor_${publicSlug}`;
+    const recentViewKey = `siteai_recent_view_${publicSlug}`;
+    let visitorID = "";
     try {
-      const recentView =
-        Number(
-          sessionStorage.getItem(
-            recentViewKey,
-          ) || "0",
-        );
-
-      if (
-        recentView > 0 &&
-        Date.now() - recentView <
-          5000
-      ) {
-        return;
-      }
-
-      let visitorID =
-        localStorage.getItem(
-          visitorKey,
-        );
-
-      if (!visitorID) {
-        visitorID =
-          createVisitorID();
-
-        localStorage.setItem(
-          visitorKey,
-          visitorID,
-        );
-      }
-
-      sessionStorage.setItem(
-        recentViewKey,
-        String(Date.now()),
-      );
-
-      void fetch(
-        "/api-backend/analytics/pageview",
-        {
+      visitorID = localStorage.getItem(visitorKey) || createVisitorID();
+      localStorage.setItem(visitorKey, visitorID);
+      const recentView = Number(sessionStorage.getItem(recentViewKey) || "0");
+      if (!recentView || Date.now() - recentView >= 5000) {
+        sessionStorage.setItem(recentViewKey, String(Date.now()));
+        void fetch("/api-backend/analytics/pageview", {
           method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            publicSlug,
-            visitorId:
-              visitorID,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicSlug, visitorId: visitorID }),
           keepalive: true,
-        },
-      ).catch((error) => {
-        console.error(
-          "Analytics SiteAI :",
-          error,
-        );
-      });
-    } catch (error) {
-      console.error(
-        "Analytics SiteAI :",
-        error,
-      );
-    }
+        }).catch(() => undefined);
+      }
+    } catch { visitorID = createVisitorID(); }
+
+    const sendEvent = (eventType: "phone_click" | "email_click" | "form_submit") => {
+      void fetch("/api-backend/analytics/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicSlug, visitorId: visitorID, eventType }),
+        keepalive: true,
+      }).catch(() => undefined);
+    };
+    const handleClick = (event: MouseEvent) => {
+      const link = (event.target as HTMLElement | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (link?.href.startsWith("tel:")) sendEvent("phone_click");
+      if (link?.href.startsWith("mailto:")) sendEvent("email_click");
+    };
+    const handleConversion = () => sendEvent("form_submit");
+    document.addEventListener("click", handleClick, true);
+    window.addEventListener("siteai:conversion", handleConversion);
+    return () => {
+      document.removeEventListener("click", handleClick, true);
+      window.removeEventListener("siteai:conversion", handleConversion);
+    };
   }, [publicSlug]);
 
   return null;

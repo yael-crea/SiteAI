@@ -1,5 +1,6 @@
 "use client";
 import { type DesignStyle } from "@/lib/designStyles";
+import { getSiteHealth, type Testimonial } from "@/lib/siteGrowth";
 
 
 import { useEffect, useMemo, useState } from "react";
@@ -12,6 +13,18 @@ type GeneratedSite = {
   businessName: string;
   logoUrl?: string;
   heroImageUrl?: string;
+  phone?: string;
+  heroTitle?: string;
+  heroText?: string;
+  gallery?: string[];
+  sections?: { title?: string; hidden?: boolean }[];
+  metaTitle?: string;
+  metaDescription?: string;
+  testimonials?: Testimonial[];
+  serviceArea?: string;
+  openingHours?: string;
+  clientName?: string;
+  clientEmail?: string;
 };
 
 type SavedSite = {
@@ -83,6 +96,8 @@ type SiteAnalyticsSummary = {
   views30d: number;
   visitors30d: number;
   leads30d: number;
+  phoneClicks30d: number;
+  emailClicks30d: number;
   conversionRate: number;
 };
 
@@ -90,6 +105,8 @@ type AnalyticsSummary = {
   views30d: number;
   visitors30d: number;
   leads30d: number;
+  phoneClicks30d: number;
+  emailClicks30d: number;
   conversionRate: number;
   sites: SiteAnalyticsSummary[];
 };
@@ -1103,6 +1120,34 @@ export default function DashboardPage() {
           </div>
         )}
 
+        <section className="mt-10 rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <div><p className="text-xs font-black uppercase tracking-[0.25em] text-amber-400">Bilan automatique</p><h2 className="mt-2 text-2xl font-black">Améliore tes sites étape par étape</h2><p className="mt-2 text-sm text-slate-500">SiteAI vérifie les informations qui aident un visiteur à comprendre l’entreprise et à la contacter.</p></div>
+            <a href="https://search.google.com/search-console/welcome" target="_blank" rel="noreferrer" className="rounded-xl border border-blue-700 px-4 py-3 text-center text-sm font-bold text-blue-300 hover:bg-blue-950">Relier Google Search Console ↗</a>
+          </div>
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            {sites.map((savedSite) => {
+              const health = getSiteHealth({ ...savedSite.site, businessName: savedSite.businessName, phone: savedSite.phone });
+              const next = health.checks.find((check) => !check.ready);
+              return <article key={savedSite.id} className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+                <div className="flex items-start justify-between gap-4"><div><h3 className="font-black">{savedSite.businessName}</h3><p className="mt-1 text-xs text-slate-500">{savedSite.activity} · {savedSite.city}</p></div><span className={`rounded-full px-3 py-2 text-sm font-black ${health.score >= 75 ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-300"}`}>{health.score}/100</span></div>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400" style={{width: `${health.score}%`}} /></div>
+                <p className="mt-4 text-sm text-slate-300">{next ? next.advice : "Le site contient toutes les informations essentielles."}</p>
+                <button type="button" onClick={() => editSite(savedSite.id)} className="mt-4 rounded-lg border border-slate-700 px-4 py-2 text-xs font-bold hover:border-blue-500">{next ? "Corriger maintenant" : "Vérifier le site"}</button>
+              </article>;
+            })}
+          </div>
+        </section>
+
+        {billing?.plan?.toLowerCase() === "agence" && (
+          <section className="mt-10 rounded-3xl border border-violet-800/60 bg-violet-950/15 p-6">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-violet-300">Espace Agence</p>
+            <h2 className="mt-2 text-2xl font-black">Portefeuille clients</h2>
+            <p className="mt-2 text-sm text-slate-400">Retrouve le client associé à chaque site et sa performance récente.</p>
+            <div className="mt-6 overflow-x-auto"><table className="w-full min-w-[680px] text-left text-sm"><thead className="text-xs uppercase text-slate-500"><tr><th className="pb-3">Client</th><th className="pb-3">Site</th><th className="pb-3">État</th><th className="pb-3">Visiteurs</th><th className="pb-3">Prospects</th><th className="pb-3">Action</th></tr></thead><tbody className="divide-y divide-slate-800">{sites.map((savedSite) => { const stats = analytics?.sites.find((item) => item.siteId === savedSite.id); return <tr key={savedSite.id}><td className="py-4"><strong>{savedSite.site.clientName || "Client à renseigner"}</strong><span className="block text-xs text-slate-500">{savedSite.site.clientEmail || "Aucun email"}</span></td><td className="py-4">{savedSite.businessName}</td><td className="py-4">{savedSite.published ? "En ligne" : "Brouillon"}</td><td className="py-4">{stats?.visitors30d ?? 0}</td><td className="py-4 text-emerald-300">{stats?.leads30d ?? 0}</td><td className="py-4"><button type="button" onClick={() => editSite(savedSite.id)} className="rounded-lg border border-violet-700 px-3 py-2 text-xs font-bold text-violet-300">Ouvrir</button></td></tr>; })}</tbody></table></div>
+          </section>
+        )}
+
         <section className="mt-10">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
@@ -1447,7 +1492,7 @@ export default function DashboardPage() {
             </div>
           ) : analytics ? (
             <>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
                 <div className="rounded-2xl border border-cyan-900/70 bg-cyan-950/20 p-6">
                   <p className="text-sm text-cyan-300">
                     Visiteurs uniques
@@ -1490,6 +1535,18 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
+                <div className="rounded-2xl border border-sky-900/70 bg-sky-950/20 p-6">
+                  <p className="text-sm text-sky-300">Clics téléphone</p>
+                  <p className="mt-2 text-4xl font-black text-sky-400">{analytics.phoneClicks30d ?? 0}</p>
+                  <p className="mt-2 text-xs text-slate-500">Intentions d’appel</p>
+                </div>
+
+                <div className="rounded-2xl border border-fuchsia-900/70 bg-fuchsia-950/20 p-6">
+                  <p className="text-sm text-fuchsia-300">Clics e-mail</p>
+                  <p className="mt-2 text-4xl font-black text-fuchsia-400">{analytics.emailClicks30d ?? 0}</p>
+                  <p className="mt-2 text-xs text-slate-500">Intentions de contact</p>
+                </div>
+
                 <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-6">
                   <p className="text-sm text-violet-300">
                     Conversion
@@ -1517,7 +1574,7 @@ export default function DashboardPage() {
                     {analytics.sites.map((siteStats) => (
                       <div
                         key={siteStats.siteId}
-                        className="grid gap-4 px-6 py-5 md:grid-cols-[1.5fr_repeat(4,minmax(90px,1fr))] md:items-center"
+                        className="grid gap-4 px-6 py-5 md:grid-cols-[1.5fr_repeat(6,minmax(80px,1fr))] md:items-center"
                       >
                         <div>
                           <p className="font-bold">
@@ -1564,6 +1621,8 @@ export default function DashboardPage() {
                             {siteStats.conversionRate.toFixed(1)} %
                           </p>
                         </div>
+                        <div><p className="text-xs text-slate-500">Appels</p><p className="mt-1 font-black text-sky-400">{siteStats.phoneClicks30d ?? 0}</p></div>
+                        <div><p className="text-xs text-slate-500">E-mails</p><p className="mt-1 font-black text-fuchsia-400">{siteStats.emailClicks30d ?? 0}</p></div>
                       </div>
                     ))}
                   </div>

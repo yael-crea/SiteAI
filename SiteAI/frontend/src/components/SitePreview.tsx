@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
+import { getQuoteOptions, type Testimonial } from "@/lib/siteGrowth";
 
 
 
@@ -106,6 +107,16 @@ type GeneratedSite = {
   hiddenBlocks?: LayoutBlock[];
 
   designSettings?: DesignSettings;
+
+  testimonials?: Testimonial[];
+
+  serviceArea?: string;
+
+  openingHours?: string;
+
+  clientName?: string;
+
+  clientEmail?: string;
 
 };
 
@@ -635,6 +646,15 @@ function normalizeSiteForDisplay(site: GeneratedSite): GeneratedSite {
       question: normalize(item.question) ?? item.question,
       answer: normalize(item.answer) ?? item.answer,
     })),
+    testimonials: (site.testimonials ?? []).map((item) => ({
+      ...item,
+      name: normalize(item.name) ?? item.name,
+      role: normalize(item.role),
+      text: normalize(item.text) ?? item.text,
+      rating: Math.min(5, Math.max(3, Number(item.rating) || 5)),
+    })),
+    serviceArea: normalize(site.serviceArea),
+    openingHours: normalize(site.openingHours),
     designSettings:
       normalizeDesignSettings(
         site.designSettings,
@@ -2031,6 +2051,8 @@ function ModernTemplate({
 
 
 
+      <TestimonialsSection site={site} accentColor={accentColor} variant="modern" />
+
       <OrderedBlock site={site} block="contact">
 
 
@@ -2767,6 +2789,8 @@ function ElegantTemplate({
       )}
 
 
+
+      <TestimonialsSection site={site} accentColor={accentColor} variant="elegant" />
 
       <OrderedBlock site={site} block="contact">
 
@@ -3509,6 +3533,8 @@ function ArtisanTemplate({
 
 
 
+      <TestimonialsSection site={site} accentColor={accentColor} variant="artisan" />
+
       <OrderedBlock site={site} block="contact">
 
 
@@ -4151,19 +4177,47 @@ function FaqSection({
 }
 
 
+function TestimonialsSection({ site, accentColor, variant }: { site: GeneratedSite; accentColor: string; variant: "modern" | "elegant" | "artisan" }) {
+  const testimonials = (site.testimonials ?? []).filter((item) => item.name.trim() && item.text.trim());
+  if (!testimonials.length) return null;
+  const elegant = variant === "elegant";
+  const artisan = variant === "artisan";
+  return (
+    <section className={`px-6 py-20 sm:px-8 ${elegant ? "bg-[#f8f6f1] text-neutral-950" : artisan ? "bg-stone-100 text-stone-950" : "bg-white text-slate-950"}`}>
+      <div className="mx-auto max-w-6xl">
+        <p style={{color: accentColor}} className="text-sm font-black uppercase tracking-[0.24em]">Avis clients</p>
+        <h2 className={`mt-4 text-3xl sm:text-4xl ${elegant ? "font-light" : "font-black"}`}>Ce que nos clients disent de nous</h2>
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
+          {testimonials.map((item, index) => (
+            <figure key={`${item.name}-${index}`} className={`rounded-2xl border p-6 ${elegant ? "border-neutral-300 bg-white" : artisan ? "border-stone-300 bg-white" : "border-slate-200 bg-slate-50"}`}>
+              <div aria-label={`${item.rating ?? 5} étoiles`} className="text-amber-500">{"★".repeat(item.rating ?? 5)}<span className="text-slate-300">{"★".repeat(5 - (item.rating ?? 5))}</span></div>
+              <blockquote className="mt-4 leading-7">“{item.text}”</blockquote>
+              <figcaption className="mt-5 text-sm"><strong>{item.name}</strong>{item.role ? <span className="block text-slate-500">{item.role}</span> : null}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function LeadForm({
   site,
   accentColor,
   variant,
+  activity,
 }: {
   site: GeneratedSite;
   accentColor: string;
   variant: "modern" | "elegant" | "artisan";
+  activity: string;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  const quoteOptions = getQuoteOptions(activity);
+  const [requestType, setRequestType] = useState(quoteOptions[0] ?? "Demande de devis");
   const [consent, setConsent] = useState(false);
   const [website, setWebsite] = useState("");
   const [sending, setSending] = useState(false);
@@ -4280,7 +4334,7 @@ function LeadForm({
           name: name.trim(),
           email: email.trim(),
           phone: phone.trim(),
-          message: message.trim(),
+          message: `Type de demande : ${requestType}\n\n${message.trim()}`,
           consent,
           website,
         }),
@@ -4295,10 +4349,12 @@ function LeadForm({
       }
 
       setFormSuccess("Votre demande a bien été envoyée.");
+      window.dispatchEvent(new CustomEvent("siteai:conversion", { detail: { type: "form_submit" } }));
       setName("");
       setEmail("");
       setPhone("");
       setMessage("");
+      setRequestType(quoteOptions[0] ?? "Demande de devis");
       setConsent(false);
       setWebsite("");
     } catch (error) {
@@ -4313,7 +4369,7 @@ function LeadForm({
   }
 
   return (
-    <form onSubmit={submitLead}>
+    <form onSubmit={submitLead} data-siteai-lead-form>
       <p
         className={
           isElegant
@@ -4348,6 +4404,10 @@ function LeadForm({
           required
           className={fieldClass}
         />
+
+        <select name="requestType" value={requestType} onChange={(event) => setRequestType(event.target.value)} className={fieldClass} aria-label="Type de demande">
+          {quoteOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+        </select>
 
         <input
           type="email"
@@ -4548,6 +4608,7 @@ function ContactSection({
                 site={site}
                 accentColor={accentColor}
                 variant="elegant"
+                activity={activity}
               />
             </div>
           </div>
@@ -4602,6 +4663,7 @@ function ContactSection({
                   site={site}
                   accentColor={accentColor}
                   variant="artisan"
+                  activity={activity}
                 />
               </div>
             </div>
@@ -4660,6 +4722,7 @@ function ContactSection({
                 site={site}
                 accentColor={accentColor}
                 variant="modern"
+                activity={activity}
               />
             </div>
           </div>

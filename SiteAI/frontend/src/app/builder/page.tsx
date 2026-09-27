@@ -16,6 +16,7 @@ import PublicationSuccess from "@/components/PublicationSuccess";
 import { useBuilderDraft } from "@/lib/useBuilderDraft";
 import StylePicker from "@/components/StylePicker";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
+import { getSiteHealth, smartPalettes, type Testimonial } from "@/lib/siteGrowth";
 
 type IconMode =
   | "auto"
@@ -96,6 +97,11 @@ type GeneratedSite = {
   layoutOrder?: LayoutBlock[];
   hiddenBlocks?: LayoutBlock[];
   designSettings?: DesignSettings;
+  testimonials?: Testimonial[];
+  serviceArea?: string;
+  openingHours?: string;
+  clientName?: string;
+  clientEmail?: string;
 };
 
 
@@ -1152,6 +1158,11 @@ export default function Home() {
           normalizeDesignSettings(
             {...data.designSettings, ...getDesignStyle(designStyle).settings},
           ),
+        testimonials: data.testimonials ?? [],
+        serviceArea: data.serviceArea ?? city,
+        openingHours: data.openingHours ?? "",
+        clientName: data.clientName ?? "",
+        clientEmail: data.clientEmail ?? "",
       };
 
       draft.clearDraft();
@@ -1305,6 +1316,11 @@ export default function Home() {
             site.designSettings ??
               data.site.designSettings,
           ),
+        testimonials: site.testimonials ?? data.site.testimonials ?? [],
+        serviceArea: site.serviceArea ?? data.site.serviceArea ?? city,
+        openingHours: site.openingHours ?? data.site.openingHours ?? "",
+        clientName: site.clientName ?? data.site.clientName ?? "",
+        clientEmail: site.clientEmail ?? data.site.clientEmail ?? "",
       };
 
       setSite(modifiedSite);
@@ -1482,6 +1498,11 @@ export default function Home() {
           normalizeDesignSettings(
             saved.site.designSettings,
           ),
+        testimonials: saved.site.testimonials ?? [],
+        serviceArea: saved.site.serviceArea ?? saved.city,
+        openingHours: saved.site.openingHours ?? "",
+        clientName: saved.site.clientName ?? "",
+        clientEmail: saved.site.clientEmail ?? "",
       });
 
       setSaveMessage(
@@ -1730,6 +1751,11 @@ export default function Home() {
           normalizeDesignSettings(
             saved.site.designSettings,
           ),
+        testimonials: saved.site.testimonials ?? [],
+        serviceArea: saved.site.serviceArea ?? saved.city,
+        openingHours: saved.site.openingHours ?? "",
+        clientName: saved.site.clientName ?? "",
+        clientEmail: saved.site.clientEmail ?? "",
       });
 
       setBusinessName(
@@ -2737,6 +2763,76 @@ export default function Home() {
     setSaveMessage("");
   }
 
+  function updateTestimonial(
+    index: number,
+    field: keyof Testimonial,
+    value: string | number,
+  ) {
+    setSite((current) => current ? {
+      ...current,
+      testimonials: (current.testimonials ?? []).map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item,
+      ),
+    } : current);
+    setSaveMessage("");
+  }
+
+  function addTestimonial() {
+    setSite((current) => current ? {
+      ...current,
+      testimonials: [
+        ...(current.testimonials ?? []),
+        { name: "", role: "", text: "", rating: 5 },
+      ].slice(0, 6),
+    } : current);
+    setSaveMessage("");
+  }
+
+  function removeTestimonial(index: number) {
+    setSite((current) => current ? {
+      ...current,
+      testimonials: (current.testimonials ?? []).filter((_, itemIndex) => itemIndex !== index),
+    } : current);
+    setSaveMessage("");
+  }
+
+  async function suggestAccentFromLogo() {
+    if (!site?.logoUrl) {
+      setLogoError("Ajoute d’abord ton logo pour obtenir une suggestion de couleur.");
+      return;
+    }
+    try {
+      const image = new Image();
+      image.crossOrigin = "anonymous";
+      image.src = site.logoUrl;
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error("logo inaccessible"));
+      });
+      const canvas = document.createElement("canvas");
+      canvas.width = 48;
+      canvas.height = 48;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) throw new Error("canvas indisponible");
+      context.drawImage(image, 0, 0, 48, 48);
+      const pixels = context.getImageData(0, 0, 48, 48).data;
+      let red = 0, green = 0, blue = 0, count = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        const alpha = pixels[index + 3];
+        const brightness = pixels[index] + pixels[index + 1] + pixels[index + 2];
+        if (alpha < 180 || brightness > 700 || brightness < 70) continue;
+        red += pixels[index]; green += pixels[index + 1]; blue += pixels[index + 2]; count += 1;
+      }
+      if (!count) throw new Error("aucune couleur exploitable");
+      const color = `#${[red, green, blue].map((value) => Math.round(value / count).toString(16).padStart(2, "0")).join("")}`;
+      setAccentColor(color);
+      setLogoError("");
+      setSaveMessage("✅ Couleur principale proposée depuis le logo.");
+    } catch {
+      setLogoError("La couleur du logo n’a pas pu être lue. Choisis une palette proposée ci-dessous.");
+    }
+  }
+
   function updateSection(
     index: number,
     field: keyof SiteSection,
@@ -3066,6 +3162,7 @@ export default function Home() {
 
   const openedSite =
     currentSavedSite();
+  const siteHealth = site ? getSiteHealth(site) : null;
 
   if (authLoading) {
     return (
@@ -4075,6 +4172,51 @@ export default function Home() {
                       </div>
                     </div></details>
 
+                    <details className="rounded-xl border border-slate-700 p-4">
+                      <summary className="cursor-pointer text-sm font-semibold">Zone, horaires et avis clients</summary>
+                      <div className="mt-4 space-y-5">
+                        <div>
+                          <label className="mb-2 block text-sm text-slate-400">Zone d’intervention ou adresse</label>
+                          <input value={site.serviceArea ?? ""} onChange={(event) => updateSiteField("serviceArea", event.target.value)} placeholder={`Exemple : ${city} et 30 km autour`} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" />
+                        </div>
+                        <div>
+                          <label className="mb-2 block text-sm text-slate-400">Horaires</label>
+                          <input value={site.openingHours ?? ""} onChange={(event) => updateSiteField("openingHours", event.target.value)} placeholder="Exemple : lundi au vendredi, 8 h – 18 h" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" />
+                        </div>
+                        <div className="border-t border-slate-800 pt-5">
+                          <div className="flex items-center justify-between gap-3">
+                            <div><p className="font-bold">Avis clients</p><p className="mt-1 text-xs leading-5 text-slate-500">Ajoute uniquement des avis réels, avec l’accord du client.</p></div>
+                            <button type="button" onClick={addTestimonial} disabled={(site.testimonials?.length ?? 0) >= 6} className="rounded-lg border border-blue-700 px-3 py-2 text-xs font-bold text-blue-300 disabled:opacity-40">+ Ajouter</button>
+                          </div>
+                          <div className="mt-4 space-y-4">
+                            {(site.testimonials ?? []).map((item, index) => (
+                              <div key={index} className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                  <input value={item.name} onChange={(event) => updateTestimonial(index, "name", event.target.value)} placeholder="Nom du client" maxLength={100} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm" />
+                                  <input value={item.role ?? ""} onChange={(event) => updateTestimonial(index, "role", event.target.value)} placeholder="Projet ou ville (facultatif)" maxLength={100} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm" />
+                                </div>
+                                <textarea value={item.text} onChange={(event) => updateTestimonial(index, "text", event.target.value)} placeholder="Texte de l’avis" rows={3} maxLength={600} className="mt-3 w-full resize-y rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm" />
+                                <div className="mt-3 flex items-center justify-between gap-3">
+                                  <select value={item.rating ?? 5} onChange={(event) => updateTestimonial(index, "rating", Number(event.target.value))} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"><option value={5}>5 étoiles</option><option value={4}>4 étoiles</option><option value={3}>3 étoiles</option></select>
+                                  <button type="button" onClick={() => removeTestimonial(index)} className="text-xs font-bold text-red-400">Supprimer</button>
+                                </div>
+                              </div>
+                            ))}
+                            {(site.testimonials?.length ?? 0) === 0 && <p className="rounded-xl border border-dashed border-slate-700 p-4 text-center text-xs text-slate-500">Aucun avis ajouté.</p>}
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+
+                    <details className="rounded-xl border border-slate-700 p-4">
+                      <summary className="cursor-pointer text-sm font-semibold">Informations client — Agence</summary>
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <input value={site.clientName ?? ""} onChange={(event) => updateSiteField("clientName", event.target.value)} placeholder="Nom du client" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm" />
+                        <input type="email" value={site.clientEmail ?? ""} onChange={(event) => updateSiteField("clientEmail", event.target.value)} placeholder="Email du client" className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm" />
+                      </div>
+                      <p className="mt-3 text-xs leading-5 text-slate-500">Ces informations restent privées et servent à organiser les sites clients dans le tableau de bord.</p>
+                    </details>
+
                     <details className="rounded-xl border border-slate-700 p-4"><summary className="cursor-pointer text-sm font-semibold">Ordre et visibilité des sections</summary><div className="mt-4">
                       <div>
                         <p className="font-bold">
@@ -4751,6 +4893,15 @@ export default function Home() {
                           className="h-9 w-12 cursor-pointer rounded-lg border border-slate-700 bg-slate-950 p-1"
                         />
                       </div>
+                      <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div><p className="text-sm font-bold">Couleurs conseillées</p><p className="mt-1 text-xs text-slate-500">Choisis une couleur cohérente ou laisse SiteAI lire ton logo.</p></div>
+                          <button type="button" onClick={suggestAccentFromLogo} disabled={!site.logoUrl} className="rounded-lg border border-blue-700 px-3 py-2 text-xs font-bold text-blue-300 disabled:opacity-40">✨ Depuis mon logo</button>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                          {smartPalettes.map((palette) => <div key={palette.name} className="flex items-center justify-between gap-4"><span className="text-xs text-slate-400">{palette.name}</span><div className="flex gap-2">{palette.colors.map((color) => <button key={color} type="button" title={`${palette.name} : ${color}`} onClick={() => { setAccentColor(color); setSaveMessage(""); }} style={{backgroundColor: color}} className={`h-7 w-7 rounded-full border-2 ${accentColor === color ? "border-white" : "border-transparent"}`} />)}</div></div>)}
+                        </div>
+                      </div>
 
                       <details className="rounded-xl border border-slate-700 p-4"><summary className="cursor-pointer text-sm font-semibold">Plus d’options de design</summary><div className="mt-4">
                         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
@@ -5054,22 +5205,16 @@ export default function Home() {
                     : "Enregistre ton brouillon, puis publie-le quand tu es prêt."}
                 </p>
                 <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-950 p-4">
-                  <h3 className="font-semibold">Avant de partager ton site</h3>
-                  <p className="mt-1 text-xs leading-5 text-slate-400">Ces repères sont des conseils : ils ne bloquent pas la publication.</p>
+                  <div className="flex items-center justify-between gap-4"><div><h3 className="font-semibold">Bilan du site</h3><p className="mt-1 text-xs leading-5 text-slate-400">Ces conseils ne bloquent pas la publication.</p></div><span className={`rounded-full px-3 py-2 text-sm font-black ${(siteHealth?.score ?? 0) >= 75 ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-300"}`}>{siteHealth?.score ?? 0}/100</span></div>
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400" style={{width: `${siteHealth?.score ?? 0}%`}} /></div>
                   <ul className="mt-4 space-y-3 text-sm">
-                    {[
-                      {label: "Nom de l’entreprise", ready: Boolean(site.businessName.trim()), step: 1},
-                      {label: "Numéro de téléphone", ready: Boolean(site.phone.trim()), step: 1},
-                      {label: "Présentation de l’activité", ready: Boolean(site.heroTitle.trim() && site.heroText.trim()), step: 1},
-                      {label: "Au moins un service visible", ready: site.sections.some(section => !section.hidden && section.title.trim()), step: 1},
-                      {label: "Une photo pour présenter ton entreprise", ready: Boolean(site.heroImageUrl || site.gallery?.length), step: 1},
-                    ].map(item => (
+                    {(siteHealth?.checks ?? []).map(item => (
                       <li key={item.label} className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-                        <span><span aria-hidden="true" className={item.ready ? "text-emerald-400" : "text-amber-300"}>{item.ready ? "✓ " : "○ "}</span>{item.label}
+                        <span title={item.advice}><span aria-hidden="true" className={item.ready ? "text-emerald-400" : "text-amber-300"}>{item.ready ? "✓ " : "○ "}</span>{item.label}
                           <span className="sr-only">{item.ready ? " : renseigné" : " : à compléter"}</span>
                         </span>
                         {!item.ready && <button type="button" onClick={() => {
-                          navigateMobileStep(item.step); setDesktopPanel("contenu"); setEditorCollapsed(false);
+                          navigateMobileStep(1); setDesktopPanel("contenu"); setEditorCollapsed(false);
                         }} className="shrink-0 rounded-lg px-2 py-2 text-xs font-semibold text-blue-300 hover:bg-slate-800">Compléter</button>}
                       </li>
                     ))}
@@ -5212,6 +5357,10 @@ export default function Home() {
                     ["Raccourcir", "Raccourcis les textes du site en conservant les informations essentielles, les noms et les coordonnées. Ne change ni le style ni les images."],
                     ["Plus professionnel", "Rends les textes du site plus professionnels sans inventer de faits, de tarifs, de certifications ou d’avis. Conserve le style et les images."],
                     ["Simplifier", "Réécris les textes avec des mots simples et des phrases courtes, sans modifier les informations, le style ou les images."],
+                    ["Ajouter une promotion", "Ajoute une promotion clairement visible dans le texte d’accueil. Laisse des emplacements [OFFRE], [PRIX] et [DATE DE FIN] à compléter et n’invente aucun tarif."],
+                    ["Nouveau service", "Ajoute un nouveau service à la fin des prestations. Utilise le titre [NOM DU SERVICE] et une description courte à compléter, sans inventer de prix."],
+                    ["Améliorer Google", "Améliore le titre et la description SEO pour l’activité et la ville déjà renseignées, sans ajouter de zone, certification ou promesse qui n’existe pas."],
+                    ["Mettre en avant le devis", "Rends les appels à l’action plus directs afin d’encourager les demandes de devis, sans modifier les coordonnées ni inventer de délai de réponse."],
                   ].map(([label, instruction]) => <button key={label} type="button" disabled={busy} onClick={() => prepareQuickPrompt(instruction)} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold hover:border-blue-400 disabled:opacity-40">{label}</button>)}
                 </div>
                 <p className="mt-2 text-xs leading-5 text-slate-400">Choisis une suggestion, ajuste la demande si besoin, puis lance la modification.</p>

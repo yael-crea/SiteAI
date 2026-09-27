@@ -5,6 +5,7 @@ import { cache } from "react";
 
 import SitePreview from "@/components/SitePreview";
 import SiteAnalyticsTracker from "@/components/SiteAnalyticsTracker";
+import type { Testimonial } from "@/lib/siteGrowth";
 
 type SiteSection = {
   title: string;
@@ -23,6 +24,9 @@ type GeneratedSite = {
   heroImageUrl: string;
   gallery: string[];
   sections: SiteSection[];
+  testimonials?: Testimonial[];
+  serviceArea?: string;
+  openingHours?: string;
 };
 
 
@@ -389,6 +393,21 @@ export default async function PublicSitePage(
           },
         }
       : {}),
+    ...(site.serviceArea?.trim() ? { areaServed: { "@type": "Place", name: site.serviceArea.trim() } } : {}),
+    ...(site.openingHours?.trim() ? { openingHours: site.openingHours.trim() } : {}),
+    ...((site.testimonials?.length ?? 0) > 0 ? {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: ((site.testimonials ?? []).reduce((total, item) => total + (item.rating ?? 5), 0) / (site.testimonials?.length ?? 1)).toFixed(1),
+        reviewCount: site.testimonials?.length ?? 0,
+      },
+      review: (site.testimonials ?? []).map((item) => ({
+        "@type": "Review",
+        author: { "@type": "Person", name: item.name },
+        reviewBody: item.text,
+        reviewRating: { "@type": "Rating", ratingValue: item.rating ?? 5, bestRating: 5 },
+      })),
+    } : {}),
   };
 
   return (

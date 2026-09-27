@@ -178,6 +178,23 @@ type GeneratedSite struct {
 	HiddenBlocks []string `json:"hiddenBlocks"`
 
 	DesignSettings DesignSettings `json:"designSettings"`
+
+	Testimonials []Testimonial `json:"testimonials"`
+
+	ServiceArea string `json:"serviceArea"`
+
+	OpeningHours string `json:"openingHours"`
+
+	ClientName string `json:"clientName"`
+
+	ClientEmail string `json:"clientEmail"`
+}
+
+type Testimonial struct {
+	Name   string `json:"name"`
+	Role   string `json:"role"`
+	Text   string `json:"text"`
+	Rating int    `json:"rating"`
 }
 
 type AIContent struct {
@@ -496,6 +513,12 @@ type PageViewInput struct {
 	VisitorID  string `json:"visitorId"`
 }
 
+type AnalyticsEventInput struct {
+	PublicSlug string `json:"publicSlug"`
+	VisitorID  string `json:"visitorId"`
+	EventType  string `json:"eventType"`
+}
+
 type SiteAnalyticsSummary struct {
 	SiteID         int64   `json:"siteId"`
 	PublicSlug     string  `json:"publicSlug"`
@@ -503,6 +526,8 @@ type SiteAnalyticsSummary struct {
 	Views30d       int64   `json:"views30d"`
 	Visitors30d    int64   `json:"visitors30d"`
 	Leads30d       int64   `json:"leads30d"`
+	PhoneClicks30d int64   `json:"phoneClicks30d"`
+	EmailClicks30d int64   `json:"emailClicks30d"`
 	ConversionRate float64 `json:"conversionRate"`
 }
 
@@ -510,6 +535,8 @@ type AnalyticsSummary struct {
 	Views30d       int64                  `json:"views30d"`
 	Visitors30d    int64                  `json:"visitors30d"`
 	Leads30d       int64                  `json:"leads30d"`
+	PhoneClicks30d int64                  `json:"phoneClicks30d"`
+	EmailClicks30d int64                  `json:"emailClicks30d"`
 	ConversionRate float64                `json:"conversionRate"`
 	Sites          []SiteAnalyticsSummary `json:"sites"`
 }
@@ -612,6 +639,7 @@ func main() {
 	http.HandleFunc("/leads/", leadByIDHandler)
 
 	http.HandleFunc("/analytics/pageview", analyticsPageViewHandler)
+	http.HandleFunc("/analytics/event", analyticsEventHandler)
 	http.HandleFunc("/analytics/summary", analyticsSummaryHandler)
 
 	http.HandleFunc("/stripe/checkout", stripeCheckoutHandler)
@@ -1085,6 +1113,44 @@ func createTables(ctx context.Context) error {
         CREATE INDEX IF NOT EXISTS idx_site_pageviews_unique_visitor
 
         ON site_pageviews(site_id, visitor_id, created_at DESC);
+
+        `,
+
+		`
+
+        CREATE TABLE IF NOT EXISTS site_events (
+
+            id BIGSERIAL PRIMARY KEY,
+
+            site_id BIGINT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+
+            user_id UUID NOT NULL,
+
+            public_slug TEXT NOT NULL,
+
+            visitor_id TEXT NOT NULL DEFAULT '',
+
+            event_type TEXT NOT NULL,
+
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+        );
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_site_events_site_created_at
+
+        ON site_events(site_id, created_at DESC);
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_site_events_user_type_created_at
+
+        ON site_events(user_id, event_type, created_at DESC);
 
         `,
 
@@ -1750,6 +1816,59 @@ func analyticsPageViewHandler(
 	)
 }
 
+func isAllowedAnalyticsEvent(value string) bool {
+	switch value {
+	case "phone_click", "email_click", "form_submit":
+		return true
+	default:
+		return false
+	}
+}
+
+func analyticsEventHandler(w http.ResponseWriter, r *http.Request) {
+	enableCORS(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 8*1024)
+	var input AnalyticsEventInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		http.Error(w, "Données invalides", http.StatusBadRequest)
+		return
+	}
+	input.PublicSlug = strings.TrimSpace(input.PublicSlug)
+	input.VisitorID = strings.TrimSpace(input.VisitorID)
+	input.EventType = strings.TrimSpace(input.EventType)
+	if input.PublicSlug == "" || len(input.PublicSlug) > 200 || len(input.VisitorID) > 120 || !isAllowedAnalyticsEvent(input.EventType) {
+		http.Error(w, "Événement invalide", http.StatusBadRequest)
+		return
+	}
+	var siteID int64
+	var ownerUserID string
+	err := db.QueryRow(r.Context(), `SELECT id, user_id::text FROM sites WHERE public_slug = $1 AND published = TRUE LIMIT 1;`, input.PublicSlug).Scan(&siteID, &ownerUserID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		http.Error(w, "Site introuvable", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		log.Println("Erreur analytics événement :", err)
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+		return
+	}
+	_, err = db.Exec(r.Context(), `INSERT INTO site_events (site_id, user_id, public_slug, visitor_id, event_type, created_at) VALUES ($1, $2::uuid, $3, $4, $5, NOW());`, siteID, ownerUserID, input.PublicSlug, input.VisitorID, input.EventType)
+	if err != nil {
+		log.Println("Erreur enregistrement événement :", err)
+		http.Error(w, "Impossible d'enregistrer l'événement", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]bool{"success": true})
+}
+
 func analyticsSummaryHandler(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -1804,7 +1923,17 @@ func analyticsSummaryHandler(
 				WHERE
 					l.site_id = s.id
 					AND l.created_at >= NOW() - INTERVAL '30 days'
-			), 0) AS leads_30d
+			), 0) AS leads_30d,
+			COALESCE((
+				SELECT COUNT(*) FROM site_events e
+				WHERE e.site_id = s.id AND e.event_type = 'phone_click'
+				  AND e.created_at >= NOW() - INTERVAL '30 days'
+			), 0) AS phone_clicks_30d,
+			COALESCE((
+				SELECT COUNT(*) FROM site_events e
+				WHERE e.site_id = s.id AND e.event_type = 'email_click'
+				  AND e.created_at >= NOW() - INTERVAL '30 days'
+			), 0) AS email_clicks_30d
 		FROM sites s
 		WHERE s.user_id = $1::uuid
 		ORDER BY s.updated_at DESC;
@@ -1845,6 +1974,8 @@ func analyticsSummaryHandler(
 			&site.Views30d,
 			&site.Visitors30d,
 			&site.Leads30d,
+			&site.PhoneClicks30d,
+			&site.EmailClicks30d,
 		); err != nil {
 			log.Println(
 				"Erreur lecture analytics :",
@@ -1874,6 +2005,9 @@ func analyticsSummaryHandler(
 
 		summary.Leads30d +=
 			site.Leads30d
+
+		summary.PhoneClicks30d += site.PhoneClicks30d
+		summary.EmailClicks30d += site.EmailClicks30d
 
 		summary.Sites = append(
 			summary.Sites,
@@ -2818,7 +2952,6 @@ func healthHandler(
 		return
 
 	}
-
 	writeJSON(
 
 		w,
@@ -3917,6 +4050,10 @@ func publicSiteHandler(
 
 	}
 
+	// Les informations d'organisation d'une agence restent privées.
+	publicSite.Site.ClientName = ""
+	publicSite.Site.ClientEmail = ""
+
 	writeJSON(
 
 		w,
@@ -3998,6 +4135,8 @@ func publicDomainHandler(
 		http.Error(w, "Site invalide", http.StatusInternalServerError)
 		return
 	}
+	publicSite.Site.ClientName = ""
+	publicSite.Site.ClientEmail = ""
 
 	writeJSON(w, http.StatusOK, publicSite)
 }
@@ -4424,6 +4563,7 @@ func createSiteHandler(
 		"#2563eb",
 	)
 
+	normalizeGrowthFields(&input.Site)
 	siteJSON, err := json.Marshal(input.Site)
 
 	if err != nil {
@@ -4877,6 +5017,7 @@ func updateSiteHandler(
 		"#2563eb",
 	)
 
+	normalizeGrowthFields(&input.Site)
 	siteJSON, err := json.Marshal(input.Site)
 
 	if err != nil {
@@ -6186,6 +6327,11 @@ Retourne le site complet après modification.`,
 	result.Site.Gallery = input.Site.Gallery
 	result.Site.LayoutOrder = input.Site.LayoutOrder
 	result.Site.HiddenBlocks = input.Site.HiddenBlocks
+	result.Site.Testimonials = input.Site.Testimonials
+	result.Site.ServiceArea = input.Site.ServiceArea
+	result.Site.OpeningHours = input.Site.OpeningHours
+	result.Site.ClientName = input.Site.ClientName
+	result.Site.ClientEmail = input.Site.ClientEmail
 
 	if len(result.Site.LayoutOrder) == 0 {
 		result.Site.LayoutOrder = []string{
@@ -8356,6 +8502,42 @@ func syncStripeSubscription(
 		}
 	}
 	return tx.Commit(ctx)
+}
+
+func limitRunes(value string, maximum int) string {
+	value = strings.TrimSpace(value)
+	runes := []rune(value)
+	if len(runes) > maximum {
+		return string(runes[:maximum])
+	}
+	return value
+}
+
+func normalizeGrowthFields(site *GeneratedSite) {
+	if site == nil {
+		return
+	}
+	site.ServiceArea = limitRunes(site.ServiceArea, 240)
+	site.OpeningHours = limitRunes(site.OpeningHours, 240)
+	site.ClientName = limitRunes(site.ClientName, 160)
+	site.ClientEmail = strings.ToLower(limitRunes(site.ClientEmail, 254))
+	normalized := make([]Testimonial, 0, 6)
+	for _, item := range site.Testimonials {
+		if len(normalized) >= 6 {
+			break
+		}
+		item.Name = limitRunes(item.Name, 100)
+		item.Role = limitRunes(item.Role, 100)
+		item.Text = limitRunes(item.Text, 600)
+		if item.Name == "" || item.Text == "" {
+			continue
+		}
+		if item.Rating < 3 || item.Rating > 5 {
+			item.Rating = 5
+		}
+		normalized = append(normalized, item)
+	}
+	site.Testimonials = normalized
 }
 
 func normalizeDesignStyle(value string) string {
