@@ -8,7 +8,7 @@ export default function SiteGoalPicker({value, bookingUrl, disabled, onChange, o
   onChange: (value: SiteGoal) => void; onBookingUrlChange: (value: string) => void;
 }) {
   const id = useId();
-  return <fieldset disabled={disabled} className="mb-6 min-w-0 rounded-xl border border-blue-900 bg-blue-950/20 p-4">
+  return <fieldset data-builder-edit="goal" tabIndex={-1} disabled={disabled} className="mb-6 min-w-0 rounded-xl border border-blue-900 bg-blue-950/20 p-4">
     <legend className="px-1 text-sm font-bold">Que souhaites-tu recevoir ?</legend>
     <label htmlFor={id} className="sr-only">Objectif du site</label>
     <select id={id} value={value} onChange={event => onChange(event.target.value as SiteGoal)} className="w-full min-w-0 rounded-lg border border-slate-600 bg-slate-950 px-3 py-3 text-sm">

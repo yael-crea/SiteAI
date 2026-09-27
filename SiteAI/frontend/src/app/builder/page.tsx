@@ -902,11 +902,16 @@ export default function Home() {
   }
 
   function completeCheck(id: string) {
-    const targets: Record<string, string> = {identity: "businessName", phone: "phone", intro: "heroTitle", services: "services", photos: "heroImageUrl", seo: "seo", local: "local", reviews: "reviews"};
+    if (id === "contact") {
+      setSite(current => current ? {...current, hiddenBlocks: (current.hiddenBlocks ?? []).filter(block => block !== "contact")} : current);
+      setSaveMessage("Section contact réactivée dans le brouillon. Publie les modifications pour la rendre visible en ligne.");
+      return;
+    }
+    const targets: Record<string, string> = {booking: "goal", identity: "businessName", phone: "phone", intro: "heroTitle", services: "services", photos: "heroImageUrl", seo: "seo", local: "local", reviews: "reviews"};
     setPreviewFullscreenOpen(false);
     setMobileStep(1); setDesktopPanel("contenu"); setEditorCollapsed(false); setManualEditorOpen(true);
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      const field = document.querySelector<HTMLElement>(`[data-builder-edit="${targets[id] ?? "businessName"}"]`);
+      const field = Array.from(document.querySelectorAll<HTMLElement>(`[data-builder-edit="${targets[id] ?? "businessName"}"]`)).find(element => element.getClientRects().length > 0);
       let parent = field?.parentElement;
       while (parent) { if (parent instanceof HTMLDetailsElement) parent.open = true; parent = parent.parentElement; }
       field?.scrollIntoView({behavior: "smooth", block: "center"});
@@ -5230,15 +5235,17 @@ export default function Home() {
                     : "Ton aperçu reste privé. Publier mon site enregistre tes modifications et le met en ligne en une seule action."}
                 </p>
                 <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-950 p-4">
-                  <div className="flex items-center justify-between gap-4"><div><h3 className="font-semibold">Bilan du site</h3><p className="mt-1 text-xs leading-5 text-slate-400">Ces conseils ne bloquent pas la publication.</p></div><span className={`rounded-full px-3 py-2 text-sm font-black ${(siteHealth?.score ?? 0) >= 75 ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-300"}`}>{siteHealth?.score ?? 0}/100</span></div>
+                  <div className="flex items-center justify-between gap-4"><div><h3 className="font-semibold">Vérification avant publication</h3><p className="mt-1 text-xs leading-5 text-slate-400">Vérification locale du contenu, sans demande IA. Ces conseils ne bloquent pas la publication.</p></div><span className={`rounded-full px-3 py-2 text-sm font-black ${(siteHealth?.score ?? 0) >= 75 ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-300"}`}>{siteHealth?.score ?? 0}/100</span></div>
                   <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400" style={{width: `${siteHealth?.score ?? 0}%`}} /></div>
+                  <p role="status" className="mt-3 text-sm text-slate-300">{siteHealth?.pending ? `${siteHealth.pending} point${siteHealth.pending > 1 ? "s" : ""} à vérifier, dont ${siteHealth.priorities} prioritaire${siteHealth.priorities > 1 ? "s" : ""}.` : "Les points contrôlés sont renseignés. Vérifie aussi le rendu dans l’aperçu."}</p>
                   <ul className="mt-4 space-y-3 text-sm">
                     {(siteHealth?.checks ?? []).map(item => (
                       <li key={item.label} className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-                        <span title={item.advice}><span aria-hidden="true" className={item.ready ? "text-emerald-400" : "text-amber-300"}>{item.ready ? "✓ " : "○ "}</span>{item.label}
+                        <div className="min-w-0 flex-1"><span aria-hidden="true" className={item.ready ? "text-emerald-400" : "text-amber-300"}>{item.ready ? "✓ " : "○ "}</span>{item.label}
                           <span className="sr-only">{item.ready ? " : renseigné" : " : à compléter"}</span>
-                        </span>
-                        {!item.ready && <button type="button" onClick={() => completeCheck(item.id)} className="shrink-0 rounded-lg px-2 py-2 text-xs font-semibold text-blue-300 hover:bg-slate-800">Compléter</button>}
+                          {!item.ready && <p className="mt-1 text-xs leading-5 text-slate-400">{item.priority && <strong className="text-amber-300">À vérifier en priorité. </strong>}{item.advice}</p>}
+                        </div>
+                        {!item.ready && <button type="button" onClick={() => completeCheck(item.id)} className="shrink-0 rounded-lg px-2 py-2 text-xs font-semibold text-blue-300 hover:bg-slate-800">{item.id === "contact" ? "Réactiver" : "Corriger"}</button>}
                       </li>
                     ))}
                   </ul>

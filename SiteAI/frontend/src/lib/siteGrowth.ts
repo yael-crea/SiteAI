@@ -1,3 +1,5 @@
+import { safeBookingUrl } from "@/lib/siteGoal";
+
 export type Testimonial = {
   name: string;
   role?: string;
@@ -6,13 +8,16 @@ export type Testimonial = {
 };
 
 export type GrowthSite = {
+  siteGoal?: string;
+  bookingUrl?: string;
+  hiddenBlocks?: string[];
   businessName?: string;
   phone?: string;
   heroTitle?: string;
   heroText?: string;
   heroImageUrl?: string;
   gallery?: string[];
-  sections?: { title?: string; hidden?: boolean }[];
+  sections?: { title?: string; text?: string; hidden?: boolean }[];
   metaTitle?: string;
   metaDescription?: string;
   testimonials?: Testimonial[];
@@ -27,27 +32,35 @@ export type HealthCheck = {
   label: string;
   ready: boolean;
   advice: string;
+  priority?: boolean;
 };
 
 export function getSiteHealth(site: GrowthSite) {
-  const visibleServices = (site.sections ?? []).filter(
-    (section) => !section.hidden && Boolean(section.title?.trim()),
-  );
-  const testimonials = (site.testimonials ?? []).filter(
-    (item) => item.name.trim() && item.text.trim(),
-  );
+  const hidden = site.hiddenBlocks ?? [];
+  const visibleServices = (site.sections ?? []).filter(section => !section.hidden);
+  const phone = site.phone?.trim() ?? "";
+  const digits = phone.replace(/\D/g, "");
+  const phoneReady = /^[+\d\s().-]+$/.test(phone) && digits.length >= 7 && digits.length <= 15;
+  const completeText = (value?: string) => Boolean(value?.trim()) && !/lorem ipsum|à compléter|a completer|votre texte ici|texte à remplacer/i.test(value ?? "");
   const checks: HealthCheck[] = [
-    { id: "identity", label: "Nom de l’entreprise", ready: Boolean(site.businessName?.trim()), advice: "Ajoute le nom affiché de l’entreprise." },
-    { id: "phone", label: "Téléphone de contact", ready: Boolean(site.phone?.trim()), advice: "Ajoute un numéro pour recevoir des appels." },
-    { id: "intro", label: "Présentation claire", ready: Boolean(site.heroTitle?.trim() && site.heroText?.trim()), advice: "Explique clairement le service principal." },
-    { id: "services", label: "Prestations visibles", ready: visibleServices.length > 0, advice: "Ajoute au moins une prestation visible." },
-    { id: "photos", label: "Photos de l’entreprise", ready: Boolean(site.heroImageUrl || site.gallery?.length), advice: "Ajoute une photo principale ou une réalisation." },
-    { id: "seo", label: "Titre et description Google", ready: Boolean(site.metaTitle?.trim() && (site.metaDescription?.trim().length ?? 0) >= 80), advice: "Complète le titre et une description Google d’au moins 80 caractères." },
-    { id: "local", label: "Zone et horaires", ready: Boolean(site.serviceArea?.trim() && site.openingHours?.trim()), advice: "Précise la zone d’intervention et les horaires." },
-    { id: "reviews", label: "Avis client", ready: testimonials.length > 0, advice: "Ajoute un avis réel avec l’accord du client." },
+    {id: "identity", label: "Nom de l’entreprise", ready: completeText(site.businessName), priority: true, advice: "Renseigne le vrai nom de ton entreprise."},
+    {id: "phone", label: "Téléphone de contact", ready: phoneReady, priority: site.siteGoal === "calls", advice: phone ? "Vérifie le format : entre 7 et 15 chiffres, avec éventuellement +, espaces, points ou tirets. La disponibilité du numéro n’est pas vérifiée." : "Ajoute ton téléphone pour permettre aux visiteurs de t’appeler."},
+    {id: "intro", label: "Présentation du site", ready: completeText(site.heroTitle) && completeText(site.heroText), priority: true, advice: "Complète le titre et la présentation ; remplace les textes provisoires."},
+    ...(!hidden.includes("services") ? [{id: "services", label: "Prestations renseignées", ready: visibleServices.length > 0 && visibleServices.every(section => completeText(section.title) && completeText(section.text)), priority: true, advice: "Ajoute un titre et une description à chaque prestation visible."}] : []),
+    {id: "photos", label: "Photos de l’entreprise", ready: Boolean(site.heroImageUrl?.trim() || (!hidden.includes("gallery") && site.gallery?.some(url => url.trim()))), advice: "Ajoute une photo principale ou une réalisation pour illustrer ton activité."},
+    {id: "seo", label: "Titre et description Google", ready: completeText(site.metaTitle) && completeText(site.metaDescription) && (site.metaDescription?.trim().length ?? 0) >= 80, advice: "Complète le titre et une description Google d’au moins 80 caractères."},
+    {id: "local", label: "Zone et horaires", ready: Boolean(site.serviceArea?.trim() && site.openingHours?.trim()), advice: "Précise ta zone d’intervention et tes horaires."},
+    {id: "reviews", label: "Avis client", ready: (site.testimonials ?? []).some(item => item.name.trim() && item.text.trim()), advice: "Si tu en disposes, ajoute un avis réel avec l’accord du client. C’est facultatif."},
   ];
-  const completed = checks.filter((check) => check.ready).length;
-  return { score: Math.round((completed / checks.length) * 100), checks };
+  if (site.siteGoal === "booking" && site.bookingUrl?.trim()) {
+    checks.unshift({id: "booking", label: "Lien de réservation", ready: Boolean(safeBookingUrl(site.bookingUrl)), priority: true, advice: "Utilise une adresse complète https:// vers ton outil de réservation. Sans lien valide, le bouton mène au formulaire. L’accessibilité du lien n’est pas vérifiée."});
+  }
+  const needsContact = site.siteGoal === "quote" || (site.siteGoal === "booking" && !safeBookingUrl(site.bookingUrl)) || (site.siteGoal === "calls" && !phone);
+  if (needsContact) checks.unshift({id: "contact", label: "Formulaire de contact visible", ready: !hidden.includes("contact"), priority: true, advice: "Ton bouton principal mène au formulaire. Réactive la section contact pour que les visiteurs puissent envoyer leur demande."});
+  const completed = checks.filter(check => check.ready).length;
+  const pending = checks.filter(check => !check.ready);
+  checks.sort((a, b) => Number(a.ready) - Number(b.ready) || Number(Boolean(b.priority)) - Number(Boolean(a.priority)));
+  return {score: Math.round(completed / checks.length * 100), checks, completed, pending: pending.length, priorities: pending.filter(check => check.priority).length};
 }
 
 export const smartPalettes = [
