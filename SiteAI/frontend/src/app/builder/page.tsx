@@ -376,6 +376,26 @@ type ResponsivePreviewProps = {
   city: string;
 };
 
+// srcDoc inherits the builder URL as its base URL. Follow fragments by scrolling
+// the preview document explicitly, never by navigating its iframe.
+function followPreviewAnchor(event: MouseEvent, frameDocument: Document) {
+  if (event.defaultPrevented) return;
+  const element = event.target as Element | null;
+  if (!element || typeof element.closest !== "function") return;
+  const link = element.closest("a[href]");
+  const href = link?.getAttribute("href")?.trim();
+  if (!href?.startsWith("#")) return;
+  event.preventDefault();
+  if (event.type === "auxclick") return;
+  if (href === "#") {
+    frameDocument.defaultView?.scrollTo({top: 0, behavior: "smooth"});
+    return;
+  }
+  let id = href.slice(1);
+  try { id = decodeURIComponent(id); } catch { /* Keep malformed fragments inert. */ }
+  frameDocument.getElementById(id)?.scrollIntoView({behavior: "smooth", block: "start"});
+}
+
 function ResponsiveSitePreview({
   device,
   site,
@@ -461,6 +481,19 @@ function ResponsiveSitePreview({
       observer.disconnect();
     };
   }, [viewport.width]);
+
+  useEffect(() => {
+    const frameDocument = portalRoot?.ownerDocument;
+    if (!frameDocument) return;
+    const handleAnchor = (event: MouseEvent) => followPreviewAnchor(event, frameDocument);
+    // Bubble after the editor's capture handler: editable fields keep priority.
+    frameDocument.addEventListener("click", handleAnchor);
+    frameDocument.addEventListener("auxclick", handleAnchor);
+    return () => {
+      frameDocument.removeEventListener("click", handleAnchor);
+      frameDocument.removeEventListener("auxclick", handleAnchor);
+    };
+  }, [portalRoot]);
 
   function prepareIframe() {
     const frame =
