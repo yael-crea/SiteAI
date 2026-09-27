@@ -190,6 +190,7 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [deletingID, setDeletingID] = useState<number | null>(null);
+  const [duplicatingID, setDuplicatingID] = useState<number | null>(null);
 
   const [domainPanelSiteID, setDomainPanelSiteID] = useState<number | null>(null);
   const [domainInput, setDomainInput] = useState("");
@@ -389,6 +390,53 @@ export default function DashboardPage() {
   function viewPublicSite(slug: string) {
     if (!slug) return;
     window.open(`/site/${slug}`, "_blank", "noopener,noreferrer");
+  }
+
+  async function duplicateSite(
+    id: number,
+    businessName: string,
+  ) {
+    if (duplicatingID !== null) return;
+
+    setDuplicatingID(id);
+    setError("");
+
+    try {
+      const response = await authenticatedFetch(
+        `/sites/${id}/duplicate`,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!response.ok) {
+        const message = (await response.text()).trim();
+
+        throw new Error(
+          message || "Impossible de dupliquer ce site.",
+        );
+      }
+
+      const duplicated: SavedSite = await response.json();
+
+      setSites((currentSites) => [
+        duplicated,
+        ...currentSites.filter((site) => site.id !== duplicated.id),
+      ]);
+
+      setSearch("");
+      setFilter("all");
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Impossible de dupliquer "${businessName}".`,
+      );
+    } finally {
+      setDuplicatingID(null);
+    }
   }
 
   async function deleteSite(id: number, businessName: string) {
@@ -1921,6 +1969,19 @@ export default function DashboardPage() {
                         className="col-span-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500"
                       >
                         ✏️ Modifier
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={duplicatingID === savedSite.id}
+                        onClick={() =>
+                          duplicateSite(savedSite.id, savedSite.businessName)
+                        }
+                        className="col-span-2 rounded-xl border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 hover:border-blue-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {duplicatingID === savedSite.id
+                          ? "Duplication..."
+                          : "📋 Dupliquer"}
                       </button>
 
                       {savedSite.published && savedSite.publicSlug ? (
