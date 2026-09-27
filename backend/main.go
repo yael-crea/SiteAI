@@ -165,6 +165,8 @@ type DesignSettings struct {
 }
 
 type GeneratedSite struct {
+	SiteGoal string `json:"siteGoal,omitempty"`
+	BookingURL string `json:"bookingUrl,omitempty"`
 	BusinessName string `json:"businessName"`
 
 	Slug string `json:"slug"`
@@ -638,6 +640,7 @@ func main() {
 	defer db.Close()
 
 	http.HandleFunc("/health", healthHandler)
+	http.HandleFunc("/ai/usage", aiUsageHandler)
 
 	http.HandleFunc("/generate", generateHandler)
 
@@ -2914,11 +2917,37 @@ func healthHandler(
 
 }
 
+var errMonthlyAIQuota = errors.New("monthly AI quota reached")
+
+func aiMonthlyLimit(status BillingStatus) int {
+	if status.IsAdmin {
+		return -1
+	}
+	if !isActiveBillingStatus(status.Status) {
+		return 15
+	}
+	switch strings.ToLower(strings.TrimSpace(status.Plan)) {
+	case "essentiel":
+		return 50
+	case "pro":
+		return 200
+	case "agence":
+		return 1000
+	default:
+		return 15
+	}
+}
+
 func consumeAIUsage(
 	ctx context.Context,
 	userID string,
 	action string,
 ) (int64, int, bool, error) {
+	billing, _, _, err := getBillingStatus(ctx, userID)
+	if err != nil {
+		return 0, 0, false, err
+	}
+	monthlyLimit := aiMonthlyLimit(billing)
 	tx, err := db.Begin(ctx)
 	if err != nil {
 		return 0, 0, false, err
@@ -2935,20 +2964,26 @@ func consumeAIUsage(
 		return 0, 0, false, err
 	}
 
-	var used int
+	var used, monthlyUsed int
 
 	err = tx.QueryRow(
 		ctx,
 		`
-		SELECT COUNT(*)
-		FROM ai_usage
-		WHERE user_id = $1::uuid
-		  AND created_at >= NOW() - INTERVAL '1 hour';
+        SELECT
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 hour'),
+          COUNT(*) FILTER (WHERE created_at >= (date_trunc('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'))
+        FROM ai_usage
+        WHERE user_id = $1::uuid
+          AND created_at >= LEAST(NOW() - INTERVAL '1 hour', (date_trunc('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'));
 		`,
 		userID,
-	).Scan(&used)
+	).Scan(&used, &monthlyUsed)
 	if err != nil {
 		return 0, 0, false, err
+	}
+
+	if monthlyLimit >= 0 && monthlyUsed >= monthlyLimit {
+		return 0, 0, false, errMonthlyAIQuota
 	}
 
 	if used >= aiHourlyLimit {
@@ -2998,6 +3033,10 @@ func enforceAIRateLimit(
 		action,
 	)
 
+	if errors.Is(err, errMonthlyAIQuota) {
+		http.Error(w, "Quota IA mensuel atteint. Les demandes de création et de modification sont comptées ensemble. Le quota revient au début du prochain mois UTC ; consulte les formules pour augmenter ta limite.", http.StatusTooManyRequests)
+		return 0, false
+	}
 	if err != nil {
 		log.Println("Erreur rate limit IA :", err)
 
@@ -6506,6 +6545,8 @@ Retourne le site complet après modification.`,
 
 	// Les médias sont gérés par l'utilisateur dans Supabase Storage.
 	// L'IA ne doit jamais les supprimer ou les remplacer.
+	result.Site.SiteGoal = input.Site.SiteGoal
+	result.Site.BookingURL = input.Site.BookingURL
 	result.Site.LogoURL = input.Site.LogoURL
 	result.Site.HeroImageURL = input.Site.HeroImageURL
 	result.Site.Gallery = input.Site.Gallery

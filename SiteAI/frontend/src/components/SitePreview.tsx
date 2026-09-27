@@ -1,4 +1,5 @@
 "use client";
+import { goalAction } from "@/lib/siteGoal";
 
 import { createContext, useContext, useState } from "react";
 import { normalizeDesignExtras, type DesignExtras } from "@/lib/appearanceSettings";
@@ -63,6 +64,8 @@ type DesignSettings = DesignExtras & {
 };
 
 type GeneratedSite = {
+  siteGoal?: string;
+  bookingUrl?: string;
 
   businessName: string;
 
@@ -2244,13 +2247,13 @@ function ModernTemplate({
               Contact
             </a>
 
-            {site.phone && (
+            {(site.phone || goalAction(site)) && (
               <a {...edit({ kind: "field", field: "phone" })}
-                href={`tel:${phoneHref(site.phone)}`}
+                href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                 style={{ backgroundColor: accentColor }}
                 className="rounded-xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5"
               >
-                {textOr(site.primaryCta, "Demander un devis")}
+                {goalAction(site)?.label ?? textOr(site.primaryCta, "Demander un devis")}
               </a>
             )}
           </div>
@@ -2274,13 +2277,13 @@ function ModernTemplate({
                 Contact
               </a>
 
-              {site.phone && (
+              {(site.phone || goalAction(site)) && (
                 <a {...edit({ kind: "field", field: "phone" })}
-                  href={`tel:${phoneHref(site.phone)}`}
+                  href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                   style={{ backgroundColor: accentColor }}
                   className="mt-2 block rounded-xl px-4 py-3 text-center text-sm font-black text-white"
                 >
-                  {textOr(site.primaryCta, "Demander un devis")}
+                  {goalAction(site)?.label ?? textOr(site.primaryCta, "Demander un devis")}
                 </a>
               )}
             </div>
@@ -2338,13 +2341,13 @@ function ModernTemplate({
               </p>
 
               <div data-siteai-hero-actions className={`mt-9 flex flex-wrap gap-3 ${site.heroImageUrl ? "" : "justify-center"}`}>
-                {site.phone && (
+                {(site.phone || goalAction(site)) && (
                   <a {...edit({ kind: "field", field: "phone" })}
-                    href={`tel:${phoneHref(site.phone)}`}
+                    href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                     style={{ backgroundColor: accentColor }}
                     className="w-full rounded-xl px-6 py-4 text-center text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 sm:w-auto"
                   >
-                    {textOr(site.primaryCta, "Appeler maintenant")}
+                    {goalAction(site)?.label ?? textOr(site.primaryCta, "Appeler maintenant")}
                   </a>
                 )}
 
@@ -2628,11 +2631,11 @@ function ModernTemplate({
             </div>
 
             <a
-              href="#contact"
+              href={goalAction(site)?.href ?? "#contact"}
               className="w-full rounded-xl px-6 py-4 text-center text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 sm:w-auto"
               style={{ backgroundColor: accentColor }}
             >
-              {textOr(site.primaryCta, "Demander un devis")}
+              {goalAction(site)?.label ?? textOr(site.primaryCta, "Demander un devis")}
             </a>
           </div>
         </div>
@@ -3003,13 +3006,13 @@ function ElegantTemplate({
               Contact
             </a>
 
-            {site.phone && (
+            {(site.phone || goalAction(site)) && (
               <a {...edit({ kind: "field", field: "phone" })}
-                href={`tel:${phoneHref(site.phone)}`}
+                href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                 style={{ borderColor: accentColor, color: accentColor }}
                 className="border px-5 py-3 text-xs font-bold uppercase tracking-[0.16em] transition hover:-translate-y-0.5"
               >
-                {textOr(site.primaryCta, "Demander un devis")}
+                {goalAction(site)?.label ?? textOr(site.primaryCta, "Demander un devis")}
               </a>
             )}
           </div>
@@ -3032,13 +3035,13 @@ function ElegantTemplate({
                 Contact
               </a>
 
-              {site.phone && (
+              {(site.phone || goalAction(site)) && (
                 <a {...edit({ kind: "field", field: "phone" })}
-                  href={`tel:${phoneHref(site.phone)}`}
+                  href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                   style={{ borderColor: accentColor, color: accentColor }}
                   className="mt-2 block border px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.16em]"
                 >
-                  {textOr(site.primaryCta, "Demander un devis")}
+                  {goalAction(site)?.label ?? textOr(site.primaryCta, "Demander un devis")}
                 </a>
               )}
             </div>
@@ -3092,11 +3095,11 @@ function ElegantTemplate({
 
             <div data-siteai-hero-actions className="mt-10 flex flex-wrap gap-4">
               <a
-                href="#contact"
+                href={goalAction(site)?.href ?? "#contact"}
                 style={{ borderColor: accentColor, color: accentColor }}
                 className="w-full border px-6 py-4 text-center text-xs font-semibold uppercase tracking-[0.18em] transition hover:bg-white hover:text-black sm:w-auto sm:px-7 sm:tracking-[0.2em]"
               >
-                {textOr(site.primaryCta, "Nous contacter")}
+                {goalAction(site)?.label ?? textOr(site.primaryCta, "Nous contacter")}
               </a>
 
               {site.phone && (
@@ -3371,11 +3374,11 @@ function ElegantTemplate({
             </div>
 
             <a
-              href="#contact"
+              href={goalAction(site)?.href ?? "#contact"}
               className="w-full border px-7 py-4 text-center text-xs font-bold uppercase tracking-[0.18em] transition hover:-translate-y-0.5 sm:w-auto"
               style={{ borderColor: accentColor, color: accentColor }}
             >
-              {textOr(site.primaryCta, "Demander un devis")}
+              {goalAction(site)?.label ?? textOr(site.primaryCta, "Demander un devis")}
             </a>
           </div>
         </div>
@@ -3738,13 +3741,13 @@ function ArtisanTemplate({
               Contact
             </a>
 
-            {site.phone && (
+            {(site.phone || goalAction(site)) && (
               <a {...edit({ kind: "field", field: "phone" })}
-                href={`tel:${phoneHref(site.phone)}`}
+                href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                 style={{ backgroundColor: accentColor }}
                 className="rounded-xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5"
               >
-                {textOr(site.primaryCta, "Demander un devis")}
+                {goalAction(site)?.label ?? textOr(site.primaryCta, "Demander un devis")}
               </a>
             )}
           </div>
@@ -3768,13 +3771,13 @@ function ArtisanTemplate({
                 Contact
               </a>
 
-              {site.phone && (
+              {(site.phone || goalAction(site)) && (
                 <a {...edit({ kind: "field", field: "phone" })}
-                  href={`tel:${phoneHref(site.phone)}`}
+                  href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                   style={{ backgroundColor: accentColor }}
                   className="mt-2 block rounded-xl px-4 py-3 text-center text-sm font-black text-white"
                 >
-                  {textOr(site.primaryCta, "Demander un devis")}
+                  {goalAction(site)?.label ?? textOr(site.primaryCta, "Demander un devis")}
                 </a>
               )}
             </div>
@@ -3813,13 +3816,13 @@ function ArtisanTemplate({
               </p>
 
               <div data-siteai-hero-actions className="mt-9 flex flex-wrap gap-3">
-                {site.phone && (
+                {(site.phone || goalAction(site)) && (
                   <a {...edit({ kind: "field", field: "phone" })}
-                    href={`tel:${phoneHref(site.phone)}`}
+                    href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                     style={{ backgroundColor: accentColor }}
                     className="rounded-xl px-6 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5"
                   >
-                    ☎ {formatPhoneNumber(site.phone)}
+                    {goalAction(site)?.label ?? `☎ ${formatPhoneNumber(site.phone)}`}
                   </a>
                 )}
 
@@ -4110,11 +4113,11 @@ function ArtisanTemplate({
             </div>
 
             <a
-              href="#contact"
+              href={goalAction(site)?.href ?? "#contact"}
               className="w-full rounded-xl px-6 py-4 text-center text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 sm:w-auto"
               style={{ backgroundColor: accentColor }}
             >
-              {textOr(site.primaryCta, "Demander un devis")}
+              {goalAction(site)?.label ?? textOr(site.primaryCta, "Demander un devis")}
             </a>
           </div>
         </div>

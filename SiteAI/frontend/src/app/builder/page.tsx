@@ -17,6 +17,9 @@ import { actionError } from "@/lib/actionErrors";
 import PublicationSuccess from "@/components/PublicationSuccess";
 import BuilderVersions, { useBuilderVersions } from "@/components/BuilderVersions";
 import { useBuilderDraft } from "@/lib/useBuilderDraft";
+import AIUsage from "@/components/AIUsage";
+import SiteGoalPicker from "@/components/SiteGoalPicker";
+import { type SiteGoal } from "@/lib/siteGoal";
 import AppearanceOptions from "@/components/AppearanceOptions";
 import { normalizeDesignExtras, type DesignExtras } from "@/lib/appearanceSettings";
 import StylePicker from "@/components/StylePicker";
@@ -88,6 +91,8 @@ type DesignSettings = DesignExtras & {
 };
 
 type GeneratedSite = {
+  siteGoal?: SiteGoal;
+  bookingUrl?: string;
   businessName: string;
   slug: string;
   metaTitle: string;
@@ -675,6 +680,9 @@ function isBuilderSnapshot(value: unknown): value is BuilderSnapshot {
 export default function Home() {
   const router = useRouter();
   const mobileSteps = ["Infos", "Contenu", "Apparence", "Aperçu", "Publication"] as const;
+  const [advancedMode, setAdvancedMode] = useState(false);
+  const [newSiteGoal, setNewSiteGoal] = useState<SiteGoal>("quote");
+  const [newBookingUrl, setNewBookingUrl] = useState("");
   const [mobileStep, setMobileStep] = useState(0);
   const [desktopPanel, setDesktopPanel] = useState<"infos" | "contenu" | "apparence" | "ia" | "publication" | "sites" | "apercu" | null>(null);
   const [isMobileBuilder, setIsMobileBuilder] = useState(false);
@@ -727,7 +735,7 @@ export default function Home() {
     useState("");
 
   const [siteGoal, setSiteGoal] =
-    useState("generer des demandes de contact");
+    useState("obtenir des demandes de devis");
 
   const [targetAudience, setTargetAudience] =
     useState("");
@@ -1214,6 +1222,8 @@ export default function Home() {
 
       const generatedSite: GeneratedSite = {
         ...data,
+        siteGoal: newSiteGoal,
+        bookingUrl: newBookingUrl,
         logoUrl:
           data.logoUrl ?? "",
         heroImageUrl:
@@ -1349,6 +1359,8 @@ export default function Home() {
 
       const modifiedSite: GeneratedSite = {
         ...data.site,
+        siteGoal: site.siteGoal,
+        bookingUrl: site.bookingUrl,
         logoUrl:
           data.site.logoUrl ||
           site.logoUrl ||
@@ -3285,7 +3297,7 @@ export default function Home() {
   }
 
   return (
-    <main data-desktop-panel={activeDesktopPanel} data-mobile-step={mobileStep} data-siteai-builder className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
+    <main data-simple-mode={!advancedMode} data-desktop-panel={activeDesktopPanel} data-mobile-step={mobileStep} data-siteai-builder className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto max-w-[1800px] px-4 py-4 lg:px-6">
           <div className="flex items-center justify-between gap-3">
@@ -3407,6 +3419,7 @@ export default function Home() {
         </div>
       </header>
 
+      <AIUsage ready={Boolean(draftUserId)} busy={busy} />
       <nav aria-label="Outils du builder" className="hidden shrink-0 items-center gap-2 overflow-x-auto border-b border-slate-800 bg-slate-900/60 px-5 py-3 md:flex">
         {([
           ["infos", "1 · Infos"], ["contenu", "2 · Contenu"], ["apparence", "3 · Apparence"],
@@ -3427,6 +3440,7 @@ export default function Home() {
       </nav>
       <div className="shrink-0 border-b border-slate-800 bg-slate-950 px-4 py-2">
         <div className="flex flex-wrap items-center gap-2">
+          <button type="button" aria-pressed={advancedMode} onClick={() => setAdvancedMode(value => !value)} className="rounded-lg border border-blue-700 px-3 py-2 text-xs font-semibold">{advancedMode ? "Revenir au mode simple" : "Options avancées"}</button>
           <button type="button" disabled={!draft.canUndo || busy} onClick={draft.undo} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">↶ Annuler</button>
           <button type="button" disabled={!draft.canRedo || busy} onClick={draft.redo} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">↷ Rétablir</button>
           {site && <button type="button" aria-pressed={previewEditing} onClick={() => setPreviewEditing(value => !value)} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${previewEditing ? "border-blue-400 bg-blue-500/10 text-blue-200" : "border-slate-700"}`}>{previewEditing ? "Modifier en cliquant : actif" : "Modifier en cliquant"}</button>}
@@ -3469,6 +3483,7 @@ export default function Home() {
         </p>
       </div>
       <style>{`
+        [data-simple-mode="true"] [data-advanced-option] { display: none; }
         [data-builder-editor] { container: siteai-editor / inline-size; min-width: 0; }
         [data-builder-editor] input,
         [data-builder-editor] textarea,
@@ -3578,6 +3593,7 @@ export default function Home() {
               }
               className="rounded-3xl border border-slate-800 bg-slate-900 p-5 sm:p-7"
             >
+              <SiteGoalPicker value={newSiteGoal} bookingUrl={newBookingUrl} disabled={busy} onChange={value => { setNewSiteGoal(value); setSiteGoal(value === "calls" ? "recevoir des appels" : value === "booking" ? "obtenir des rendez-vous" : "obtenir des demandes de devis"); }} onBookingUrlChange={setNewBookingUrl} />
               <h2 className="text-2xl font-bold">
                 Ton entreprise
               </h2>
@@ -3727,7 +3743,7 @@ export default function Home() {
                     </div>
 
                     <div className="mt-4 space-y-4">
-                      <div>
+                      <div data-advanced-option>
                         <label htmlFor="site-goal" className="mb-2 block text-xs font-bold text-slate-400">
                           Objectif principal
                         </label>
@@ -3873,7 +3889,7 @@ export default function Home() {
                     Style
                   </p>
 
-                  <StylePicker value={designStyle} onChange={selectDesignStyle} disabled={loading || editLoading || saving || publishing} />
+                  <StylePicker compact={!advancedMode} value={designStyle} onChange={selectDesignStyle} disabled={loading || editLoading || saving || publishing} />
                 </div>
 
                 <div>
@@ -4231,6 +4247,9 @@ export default function Home() {
                       )}
                     </div>
 
+                    <SiteGoalPicker value={site.siteGoal ?? "legacy"} bookingUrl={site.bookingUrl ?? ""} disabled={busy}
+                      onChange={value => { setSite(current => current ? {...current, siteGoal: value, hiddenBlocks: (current.hiddenBlocks ?? []).filter(block => block !== "contact")} : current); setSaveMessage(""); }}
+                      onBookingUrlChange={value => updateSiteField("bookingUrl", value)} />
                     <div>
                       <label className="mb-2 block text-sm text-slate-400">
                         Nom affiché
@@ -4756,7 +4775,7 @@ export default function Home() {
                                 className="mt-3 w-full resize-none rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 outline-none focus:border-blue-500"
                               />
 
-                              <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+                              <div data-advanced-option className="mt-4 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                   <div>
                                     <p className="text-sm font-bold text-slate-200">
@@ -4936,7 +4955,7 @@ export default function Home() {
                                 )}
                               </div>
 
-                              <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+                              <div data-advanced-option className="mt-4 rounded-xl border border-slate-800 bg-slate-900/70 p-4">
                                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                   <div>
                                     <p className="text-sm font-bold text-slate-200">
@@ -5107,7 +5126,7 @@ export default function Home() {
                         Apparence
                       </p>
 
-                      <StylePicker value={designStyle} onChange={selectDesignStyle} disabled={loading || editLoading || saving || publishing} />
+                      <StylePicker compact={!advancedMode} value={designStyle} onChange={selectDesignStyle} disabled={loading || editLoading || saving || publishing} />
 
                       <div className="mt-4 flex flex-wrap gap-3">
                         {colors.map(
@@ -5171,9 +5190,9 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <AppearanceOptions value={normalizeDesignSettings(site.designSettings)}
+                      {advancedMode ? <AppearanceOptions value={normalizeDesignSettings(site.designSettings)}
                         onChange={value => updateSiteField("designSettings", value)}
-                        onReset={() => updateSiteField("designSettings", normalizeDesignSettings(getDesignStyle(designStyle).settings))} />
+                        onReset={() => updateSiteField("designSettings", normalizeDesignSettings(getDesignStyle(designStyle).settings))} /> : <p className="mt-4 text-sm text-slate-400">Le style règle automatiquement les polices, boutons et espacements. Pour les ajuster, ouvre Options avancées.</p>}
                     </div>
 
                     <button data-desktop-save data-mobile-hide
