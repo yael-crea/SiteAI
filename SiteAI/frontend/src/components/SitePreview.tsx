@@ -523,6 +523,615 @@ function DesignShell({
           padding-top: 7rem !important;
           padding-bottom: 7rem !important;
         }
+
+        /*
+         * MOBILE ONLY
+         * Everything below is scoped to phones, so desktop rendering stays unchanged.
+         */
+        @media (max-width: 47.999rem) {
+          .siteai-design-root {
+            width: 100%;
+            overflow-x: clip;
+            padding-bottom: calc(4.9rem + env(safe-area-inset-bottom));
+            -webkit-text-size-adjust: 100%;
+          }
+
+          .siteai-design-root * {
+            min-width: 0;
+          }
+
+          .siteai-design-root section[id],
+          .siteai-design-root [id="services"],
+          .siteai-design-root [id="realisations"],
+          .siteai-design-root [id="faq"],
+          .siteai-design-root [id="contact"] {
+            scroll-margin-top: 5rem;
+          }
+
+          /* Navigation: shorter, clearer and easier to use with one hand. */
+          .siteai-design-root nav > div {
+            min-height: 4rem;
+            padding: 0.65rem 1rem !important;
+            gap: 0.65rem !important;
+          }
+
+          .siteai-design-root nav img[alt^="Logo "] {
+            width: 2.5rem !important;
+            height: 2.5rem !important;
+          }
+
+          .siteai-design-root nav a > div:last-child p:first-child {
+            max-width: 52vw;
+            font-size: 0.9rem !important;
+            line-height: 1.15rem !important;
+          }
+
+          .siteai-design-root nav a > div:last-child p:last-child {
+            max-width: 52vw;
+            font-size: 0.66rem !important;
+            line-height: 1rem !important;
+          }
+
+          .siteai-design-root nav details summary {
+            min-height: 2.7rem;
+            padding: 0.55rem 0.75rem !important;
+            font-size: 0.72rem !important;
+          }
+
+          .siteai-design-root nav details > div {
+            width: min(17rem, calc(100vw - 1.25rem)) !important;
+            margin-top: 0.5rem !important;
+            max-height: calc(100dvh - 5rem);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+          }
+
+          /* Hero: less empty space, stronger hierarchy and full-width actions. */
+          .siteai-design-root [data-siteai-hero] {
+            min-height: 0 !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] [data-siteai-hero-content] {
+            width: 100%;
+            max-width: none !important;
+            text-align: left;
+          }
+
+          .siteai-design-root [data-siteai-hero] [data-siteai-hero-badges] {
+            gap: 0.45rem !important;
+            justify-content: flex-start !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] [data-siteai-hero-badges] > * {
+            max-width: 100%;
+            padding: 0.45rem 0.7rem !important;
+            font-size: 0.66rem !important;
+            line-height: 1rem !important;
+            letter-spacing: 0.08em !important;
+            overflow-wrap: anywhere;
+          }
+
+          .siteai-design-root [data-siteai-hero] h1 {
+            margin-top: 1.25rem !important;
+            max-width: 100% !important;
+            font-size: clamp(2rem, 10vw, 2.55rem) !important;
+            line-height: 1.06 !important;
+            letter-spacing: -0.035em !important;
+            overflow-wrap: anywhere;
+          }
+
+          .siteai-design-root [data-siteai-hero] [data-siteai-hero-content] > p {
+            margin-top: 1rem !important;
+            max-width: 100% !important;
+            font-size: 0.98rem !important;
+            line-height: 1.7 !important;
+          }
+
+          .siteai-design-root [data-siteai-hero-actions] {
+            margin-top: 1.55rem !important;
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            gap: 0.65rem !important;
+            width: 100%;
+          }
+
+          .siteai-design-root [data-siteai-hero-actions] a {
+            width: 100% !important;
+            min-height: 3.2rem;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            padding: 0.8rem 1rem !important;
+            font-size: 0.82rem !important;
+            line-height: 1.15rem !important;
+            letter-spacing: 0.04em !important;
+          }
+
+          /* Modern and artisan split heroes: text first, image second, both compact. */
+          .siteai-design-root [data-siteai-hero] > .mx-auto.grid {
+            min-height: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] > .mx-auto.grid > div:first-child {
+            padding: 2.5rem 1.1rem 2rem !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] > .mx-auto.grid > div:last-child {
+            min-height: 14.5rem !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] > .mx-auto.grid > div:last-child > div.absolute {
+            left: 1rem !important;
+            right: 1rem !important;
+            bottom: 1rem !important;
+            padding: 0.85rem !important;
+          }
+
+          /* Elegant hero has its image as a background: make the overlay stronger on phones. */
+          .siteai-design-root [data-theme="premium"] [data-siteai-hero],
+          .siteai-design-root [data-theme="minimaliste"] [data-siteai-hero] {
+            background-position: center !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] > .relative.z-10 {
+            padding: 3rem 1.1rem !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] .mt-14.grid {
+            margin-top: 2rem !important;
+            gap: 0.8rem !important;
+            padding-top: 1rem !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] .mt-14.grid p:first-child {
+            font-size: 0.6rem !important;
+            letter-spacing: 0.08em !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] .mt-14.grid p:last-child {
+            margin-top: 0.3rem !important;
+            font-size: 0.72rem !important;
+            line-height: 1.1rem !important;
+            overflow-wrap: anywhere;
+          }
+
+          /* Trust/benefit rows become compact cards instead of long stacked blocks. */
+          .siteai-design-root [data-siteai-hero] .mt-10.flex,
+          .siteai-design-root [data-siteai-hero] .mt-10.grid {
+            margin-top: 1.6rem !important;
+            gap: 0.55rem !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] .mt-10.flex > span,
+          .siteai-design-root [data-siteai-hero] .mt-10.grid > span {
+            width: 100%;
+            font-size: 0.76rem !important;
+            line-height: 1.15rem !important;
+          }
+
+          /* Global section rhythm: much less scrolling without feeling cramped. */
+          .siteai-design-root section:not([data-siteai-hero]) {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            padding-top: 3.25rem !important;
+            padding-bottom: 3.25rem !important;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) h2 {
+            font-size: clamp(1.8rem, 8vw, 2.15rem) !important;
+            line-height: 1.12 !important;
+            letter-spacing: -0.025em !important;
+            overflow-wrap: anywhere;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) h3 {
+            line-height: 1.25 !important;
+            overflow-wrap: anywhere;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) p {
+            overflow-wrap: anywhere;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) article {
+            padding: 1.15rem !important;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) article img {
+            max-height: 11rem;
+          }
+
+          /* Service cards: clearer, denser and easier to scan. */
+          .siteai-design-root #services > div > div:first-child {
+            text-align: left !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+          }
+
+          .siteai-design-root #services > div > div:first-child > p {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+          }
+
+          .siteai-design-root #services [class*="mt-12"],
+          .siteai-design-root #services [class*="mt-10"] {
+            margin-top: 1.75rem !important;
+          }
+
+          .siteai-design-root #services article {
+            border-radius: 1rem !important;
+          }
+
+          .siteai-design-root #services article > div[class*="mb-"] {
+            margin-bottom: 1rem !important;
+            border-radius: 0.8rem !important;
+          }
+
+          .siteai-design-root #services article h3 {
+            margin-top: 1rem !important;
+            font-size: 1.18rem !important;
+          }
+
+          .siteai-design-root #services article h3 + p {
+            margin-top: 0.65rem !important;
+            font-size: 0.92rem !important;
+            line-height: 1.55rem !important;
+          }
+
+          .siteai-design-root #services article a[href="#contact"] {
+            margin-top: 1rem !important;
+          }
+
+          /* FAQ: bigger touch targets, less visual noise. */
+          .siteai-design-root #faq details {
+            border-radius: 0.9rem;
+          }
+
+          .siteai-design-root #faq summary {
+            gap: 0.75rem !important;
+            padding: 1rem !important;
+          }
+
+          .siteai-design-root #faq summary > div {
+            gap: 0.7rem !important;
+          }
+
+          .siteai-design-root #faq summary span {
+            font-size: 0.92rem !important;
+            line-height: 1.35rem !important;
+          }
+
+          .siteai-design-root #faq details > p {
+            margin-left: 0 !important;
+            padding: 0.9rem 1rem 1.1rem !important;
+            font-size: 0.9rem !important;
+            line-height: 1.55rem !important;
+          }
+
+          /* Gallery: larger first image and compact following images. */
+          .siteai-design-root #realisations {
+            padding-top: 3.25rem !important;
+            padding-bottom: 3.25rem !important;
+          }
+
+          .siteai-design-root #realisations [class*="auto-rows"] {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            grid-auto-rows: 9rem !important;
+            gap: 0.65rem !important;
+          }
+
+          .siteai-design-root #realisations [class*="auto-rows"] > figure:first-child {
+            grid-column: 1 / -1 !important;
+            grid-row: span 2 !important;
+          }
+
+          .siteai-design-root #realisations figure {
+            border-radius: 1rem !important;
+          }
+
+          .siteai-design-root #realisations figcaption {
+            padding: 0.75rem !important;
+            gap: 0.5rem !important;
+          }
+
+          .siteai-design-root #realisations figcaption p:first-child {
+            font-size: 0.58rem !important;
+            letter-spacing: 0.08em !important;
+          }
+
+          .siteai-design-root #realisations figcaption p:last-child {
+            font-size: 0.78rem !important;
+          }
+
+          .siteai-design-root #realisations figcaption > span {
+            width: 2rem !important;
+            height: 2rem !important;
+            font-size: 0.85rem !important;
+          }
+
+          /* Contact: one clear card, comfortable form fields, no oversized padding. */
+          .siteai-design-root #contact {
+            padding-top: 3.25rem !important;
+            padding-bottom: 3.25rem !important;
+          }
+
+          .siteai-design-root #contact > div > div {
+            border-radius: 1.25rem !important;
+          }
+
+          .siteai-design-root #contact [class*="p-8"],
+          .siteai-design-root #contact [class*="p-7"],
+          .siteai-design-root #contact [class*="px-7"] {
+            padding: 1.15rem !important;
+          }
+
+          .siteai-design-root #contact h2 {
+            font-size: 1.9rem !important;
+            line-height: 1.12 !important;
+          }
+
+          .siteai-design-root #contact h2 + p {
+            margin-top: 0.9rem !important;
+            font-size: 0.92rem !important;
+            line-height: 1.55rem !important;
+          }
+
+          .siteai-design-root [data-siteai-lead-form] input,
+          .siteai-design-root [data-siteai-lead-form] select,
+          .siteai-design-root [data-siteai-lead-form] textarea {
+            width: 100%;
+            min-height: 3rem;
+            font-size: 1rem !important;
+          }
+
+          .siteai-design-root [data-siteai-lead-form] textarea {
+            min-height: 7rem;
+          }
+
+          .siteai-design-root [data-siteai-lead-form] button[type="submit"] {
+            min-height: 3.25rem;
+          }
+
+          /* Footers stay informative without adding another full screen of content. */
+          .siteai-design-root footer {
+            padding: 2.5rem 1rem 2rem !important;
+          }
+
+          .siteai-design-root footer > div > div:first-child {
+            gap: 1.75rem !important;
+            padding-bottom: 1.75rem !important;
+          }
+
+          .siteai-design-root footer p {
+            line-height: 1.5rem;
+          }
+
+          /* Fixed conversion bar: visible only on phones. */
+          .siteai-design-root [data-siteai-mobile-action-bar] {
+            display: block;
+          }
+        }
+
+
+        /* SITEAI MOBILE V2 — compact, lisible et résistant aux textes longs */
+        @media (max-width: 47.999rem) {
+          .siteai-design-root {
+            --mobile-gutter: 1rem;
+          }
+
+          .siteai-design-root,
+          .siteai-design-root main,
+          .siteai-design-root section,
+          .siteai-design-root nav,
+          .siteai-design-root footer {
+            max-width: 100vw;
+          }
+
+          .siteai-design-root h1,
+          .siteai-design-root h2,
+          .siteai-design-root h3,
+          .siteai-design-root p,
+          .siteai-design-root a,
+          .siteai-design-root span {
+            overflow-wrap: anywhere;
+            word-break: normal;
+          }
+
+          /* Navigation et menu déroulant */
+          .siteai-design-root nav {
+            position: sticky;
+            top: 0;
+            z-index: 60;
+          }
+
+          .siteai-design-root nav > div {
+            min-height: 3.75rem !important;
+            padding: 0.55rem var(--mobile-gutter) !important;
+          }
+
+          .siteai-design-root nav details {
+            position: relative !important;
+          }
+
+          .siteai-design-root nav details summary {
+            min-height: 2.55rem !important;
+            padding: 0.5rem 0.7rem !important;
+            border-radius: 0.8rem !important;
+          }
+
+          .siteai-design-root nav details > div {
+            position: absolute !important;
+            top: calc(100% + 0.45rem) !important;
+            right: 0 !important;
+            left: auto !important;
+            width: min(15.5rem, calc(100vw - 2rem)) !important;
+            max-height: min(20rem, calc(100dvh - 5rem)) !important;
+            padding: 0.55rem !important;
+            border-radius: 1rem !important;
+            overflow-y: auto !important;
+          }
+
+          .siteai-design-root nav details > div a {
+            min-height: 2.75rem !important;
+            padding: 0.7rem 0.85rem !important;
+            font-size: 0.9rem !important;
+            line-height: 1.2rem !important;
+          }
+
+          /* Hero */
+          .siteai-design-root [data-siteai-hero] {
+            min-height: auto !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] > .relative.z-10,
+          .siteai-design-root [data-siteai-hero] > div {
+            min-height: auto !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] h1 {
+            font-size: clamp(2rem, 9.2vw, 2.45rem) !important;
+            line-height: 1.04 !important;
+            letter-spacing: -0.04em !important;
+          }
+
+          .siteai-design-root [data-siteai-hero] p {
+            font-size: 0.96rem !important;
+            line-height: 1.65 !important;
+          }
+
+          /* Toutes les sections deviennent nettement moins hautes */
+          .siteai-design-root section:not([data-siteai-hero]) {
+            padding: 2.75rem var(--mobile-gutter) !important;
+          }
+
+          .siteai-design-root[data-siteai-spacing="airy"]
+            section:not([data-siteai-hero]),
+          .siteai-design-root[data-siteai-spacing="normal"]
+            section:not([data-siteai-hero]),
+          .siteai-design-root[data-siteai-spacing="compact"]
+            section:not([data-siteai-hero]) {
+            padding-top: 2.75rem !important;
+            padding-bottom: 2.75rem !important;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) h2 {
+            margin-top: 0.8rem !important;
+            max-width: 100% !important;
+            font-size: clamp(1.75rem, 7.8vw, 2.08rem) !important;
+            line-height: 1.08 !important;
+            letter-spacing: -0.03em !important;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) h3 {
+            font-size: clamp(1.05rem, 5.1vw, 1.3rem) !important;
+            line-height: 1.2 !important;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) p {
+            font-size: 0.94rem !important;
+            line-height: 1.6 !important;
+          }
+
+          /* Réduit les grands espacements Tailwind présents dans les templates */
+          .siteai-design-root section:not([data-siteai-hero]) .mt-16,
+          .siteai-design-root section:not([data-siteai-hero]) .mt-14,
+          .siteai-design-root section:not([data-siteai-hero]) .mt-12,
+          .siteai-design-root section:not([data-siteai-hero]) .mt-10 {
+            margin-top: 1.6rem !important;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) .gap-12,
+          .siteai-design-root section:not([data-siteai-hero]) .gap-10,
+          .siteai-design-root section:not([data-siteai-hero]) .gap-8 {
+            gap: 1.15rem !important;
+          }
+
+          /* Cartes services / étapes */
+          .siteai-design-root section:not([data-siteai-hero]) article {
+            min-height: 0 !important;
+            padding: 1rem !important;
+            border-radius: 1.1rem !important;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) article h3 {
+            margin-top: 0.85rem !important;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) article h3 + p {
+            margin-top: 0.55rem !important;
+          }
+
+          .siteai-design-root section:not([data-siteai-hero]) article
+            [class*="h-11"][class*="w-11"] {
+            width: 2.55rem !important;
+            height: 2.55rem !important;
+          }
+
+          /* Images : jamais gigantesques ou déformées */
+          .siteai-design-root section:not([data-siteai-hero]) img {
+            width: 100%;
+            max-width: 100%;
+            max-height: 15rem;
+            object-fit: cover;
+          }
+
+          .siteai-design-root #services article img {
+            max-height: 10.5rem !important;
+          }
+
+          /* FAQ */
+          .siteai-design-root #faq {
+            padding-top: 2.75rem !important;
+            padding-bottom: 2.75rem !important;
+          }
+
+          .siteai-design-root #faq details {
+            border-radius: 0.9rem !important;
+          }
+
+          .siteai-design-root #faq summary {
+            min-height: 4rem !important;
+            padding: 0.9rem !important;
+          }
+
+          .siteai-design-root #faq summary span {
+            font-size: 0.9rem !important;
+            line-height: 1.3rem !important;
+          }
+
+          .siteai-design-root #faq details > p {
+            padding: 0.15rem 0.9rem 1rem !important;
+            font-size: 0.88rem !important;
+            line-height: 1.5rem !important;
+          }
+
+          /* Boutons */
+          .siteai-design-root [data-siteai-hero-actions] a,
+          .siteai-design-root a[href="#contact"][class*="rounded"] {
+            min-height: 3rem !important;
+            padding: 0.75rem 1rem !important;
+          }
+
+          /* Contact */
+          .siteai-design-root #contact {
+            padding-top: 2.75rem !important;
+            padding-bottom: 2.75rem !important;
+          }
+
+          /* Barre mobile : ne masque plus le bas du contenu */
+          .siteai-design-root [data-siteai-mobile-action-bar] {
+            z-index: 70;
+          }
+        }
+
+        @media (min-width: 48rem) {
+          .siteai-design-root [data-siteai-mobile-action-bar] {
+            display: none !important;
+          }
+        }
       `}</style>
 
       <style>{designExtrasCSS}</style>
@@ -1075,8 +1684,20 @@ function getSectorVisualTheme(
   };
 }
 
+function cleanActivityLabel(activity: string) {
+  const clean = activity
+    .replace(/[;,]+/g, ", ")
+    .replace(/\s*,\s*/g, ", ")
+    .replace(/(?:,\s*){2,}/g, ", ")
+    .replace(/\s{2,}/g, " ")
+    .replace(/^[,\s]+|[,\s]+$/g, "")
+    .trim();
+
+  return clean || "activité professionnelle";
+}
+
 function siteSafeActivity(activity: string) {
-  const clean = activity.trim();
+  const clean = cleanActivityLabel(activity);
   return clean || "l’entreprise";
 }
 
@@ -1329,7 +1950,53 @@ function getProjectTitle(activity: string, index: number) {
   return titles[index % titles.length];
 }
 
+
 const PreviewOnlyContext = createContext(false);
+
+function MobileContactBar({
+  site,
+  accentColor,
+}: {
+  site: GeneratedSite;
+  accentColor: string;
+}) {
+  const previewOnly = useContext(PreviewOnlyContext);
+  const hasPhone = Boolean(site.phone?.trim());
+
+  return (
+    <div
+      data-siteai-mobile-action-bar
+      className="fixed inset-x-0 bottom-0 z-[70] border-t border-slate-200/90 bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.65rem)] pt-2.5 shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl md:hidden"
+    >
+      <div
+        className={`mx-auto grid max-w-md gap-2 ${
+          hasPhone ? "grid-cols-2" : "grid-cols-1"
+        }`}
+      >
+        {hasPhone && (
+          <a
+            href={
+              previewOnly
+                ? "#contact"
+                : `tel:${phoneHref(site.phone)}`
+            }
+            className="flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-center text-sm font-black text-slate-900"
+          >
+            ☎ Appeler
+          </a>
+        )}
+
+        <a
+          href="#contact"
+          className="flex min-h-12 items-center justify-center rounded-xl px-3 text-center text-sm font-black text-white shadow-sm"
+          style={{ backgroundColor: accentColor }}
+        >
+          Demander un devis
+        </a>
+      </div>
+    </div>
+  );
+}
 
 export default function SitePreview(props: SitePreviewProps) {
   return <PreviewOnlyContext.Provider value={props.previewOnly ?? false}><SitePreviewContent {...props} /></PreviewOnlyContext.Provider>;
@@ -1343,13 +2010,14 @@ function SitePreviewContent({
 
   accentColor,
 
-  activity,
+  activity: rawActivity,
 
   city,
 
   onEdit,
 
 }: SitePreviewProps) {
+  const activity = cleanActivityLabel(rawActivity);
   const style = getDesignStyle(designStyle);
   const normalizedSite = normalizeSiteForDisplay(site);
   const designSettings = normalizeDesignSettings(
@@ -1451,6 +2119,8 @@ function ModernTemplate({
   return (
 
     <div className="flex flex-col overflow-hidden bg-white text-slate-950">
+
+      <MobileContactBar site={site} accentColor={accentColor} />
 
       <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
@@ -2218,6 +2888,8 @@ function ElegantTemplate({
 
     <div className="flex flex-col overflow-hidden bg-[#f8f6f1] text-neutral-950">
 
+      <MobileContactBar site={site} accentColor={accentColor} />
+
       <nav className="sticky top-0 z-50 border-b border-neutral-300 bg-[#f8f6f1]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-5 py-5 sm:px-8">
           <a href={onEdit ? undefined : "#"} className="flex min-w-0 items-center gap-4">
@@ -2945,6 +3617,8 @@ function ArtisanTemplate({
   return (
 
     <div className="flex flex-col overflow-hidden bg-[#f3eee4] text-stone-900">
+
+      <MobileContactBar site={site} accentColor={accentColor} />
 
       <nav className="sticky top-0 z-50 border-b border-stone-300 bg-[#fffaf0]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
