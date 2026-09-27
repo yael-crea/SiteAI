@@ -879,7 +879,7 @@ function DesignShell({
             line-height: 1.55rem !important;
           }
 
-          .siteai-design-root [data-siteai-lead-form] input,
+          .siteai-design-root [data-siteai-lead-form] input:not([type="checkbox"]):not([type="radio"]),
           .siteai-design-root [data-siteai-lead-form] select,
           .siteai-design-root [data-siteai-lead-form] textarea {
             width: 100%;
@@ -1151,7 +1151,7 @@ function DesignShell({
             overflow-wrap: break-word !important;
           }
 
-          .siteai-design-root #contact [data-siteai-lead-form] input,
+          .siteai-design-root #contact [data-siteai-lead-form] input:not([type="checkbox"]):not([type="radio"]),
           .siteai-design-root #contact [data-siteai-lead-form] select,
           .siteai-design-root #contact [data-siteai-lead-form] textarea,
           .siteai-design-root #contact [data-siteai-lead-form] button {
@@ -1174,6 +1174,40 @@ function DesignShell({
           }
         }
 
+        /* Consent: fixed checkbox and flexible text on phone, tablet and desktop. */
+        .siteai-design-root #contact [data-siteai-lead-form] [data-siteai-consent] {
+          display: grid !important;
+          grid-template-columns: 20px minmax(0, 1fr) !important;
+          align-items: start;
+          gap: 0.75rem;
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+
+        .siteai-design-root #contact [data-siteai-lead-form] [data-siteai-consent] > input[type="checkbox"] {
+          width: 20px !important;
+          min-width: 20px !important;
+          max-width: 20px !important;
+          height: 20px !important;
+          min-height: 20px !important;
+          max-height: 20px !important;
+          margin: 2px 0 0 !important;
+          padding: 0 !important;
+          box-sizing: border-box;
+          align-self: start;
+        }
+
+        .siteai-design-root #contact [data-siteai-lead-form] [data-siteai-consent] > span {
+          display: block;
+          width: auto !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          white-space: normal !important;
+          word-break: normal !important;
+          overflow-wrap: break-word !important;
+        }
         @media (min-width: 48rem) {
           .siteai-design-root [data-siteai-mobile-action-bar] {
             display: none !important;
@@ -2704,9 +2738,7 @@ function ModernTemplate({
 
                 ) => (
 
-                  <figure {...edit({ kind: "gallery" })}
-
-                    key={`${imageUrl}-${index}`}
+                  <figure key={`${imageUrl}-${index}`} {...edit({ kind: "gallery" })}
 
                     className={`group relative overflow-hidden rounded-3xl bg-slate-200 shadow-sm ${
 
@@ -3449,9 +3481,7 @@ function ElegantTemplate({
 
                 ) => (
 
-                  <figure {...edit({ kind: "gallery" })}
-
-                    key={`${imageUrl}-${index}`}
+                  <figure key={`${imageUrl}-${index}`} {...edit({ kind: "gallery" })}
 
                     className={`${
 
@@ -4190,9 +4220,7 @@ function ArtisanTemplate({
 
                 ) => (
 
-                  <figure {...edit({ kind: "gallery" })}
-
-                    key={`${imageUrl}-${index}`}
+                  <figure key={`${imageUrl}-${index}`} {...edit({ kind: "gallery" })}
 
                     className={`group overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-md transition duration-300 hover:-translate-y-1 hover:shadow-xl ${
 
@@ -5212,12 +5240,12 @@ function LeadForm({
         </label>
       </div>
 
-      <label className={`mt-5 flex cursor-pointer items-start gap-3 text-xs leading-5 ${mutedClass}`}>
+      <label data-siteai-consent className={`mt-5 grid w-full min-w-0 grid-cols-[20px_minmax(0,1fr)] cursor-pointer items-start gap-3 text-xs leading-5 ${mutedClass}`}>
         <input
           type="checkbox"
           checked={consent}
           onChange={(event) => setConsent(event.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0"
+          className="mt-0.5 h-5 w-5 shrink-0"
           required
         />
         <span>
