@@ -115,6 +115,20 @@ type GeneratedSite = {
 
 
 
+export type PreviewEditTarget =
+  | {
+      kind: "field";
+      field:
+        | "businessName"
+        | "heroTitle"
+        | "heroText"
+        | "phone"
+        | "logoUrl"
+        | "heroImageUrl";
+    }
+  | { kind: "section"; index: number }
+  | { kind: "gallery" };
+
 type SitePreviewProps = {
 
   site: GeneratedSite;
@@ -127,8 +141,63 @@ type SitePreviewProps = {
 
   city: string;
 
+  onEdit?: (target: PreviewEditTarget) => void;
+
 };
 
+function previewEditProps(target: PreviewEditTarget, enabled: boolean) {
+  if (!enabled) return {};
+
+  const fieldLabels = {
+    businessName: "le nom de l’entreprise",
+    heroTitle: "le titre principal",
+    heroText: "la présentation",
+    phone: "le téléphone",
+    logoUrl: "le logo",
+    heroImageUrl: "la photo principale",
+  };
+  const label = target.kind === "field"
+    ? fieldLabels[target.field]
+    : target.kind === "section"
+      ? `la prestation ${target.index + 1}`
+      : "les photos de la galerie";
+
+  return {
+    "data-siteai-edit": JSON.stringify(target),
+    tabIndex: 0,
+    role: "button" as const,
+    "aria-label": `Modifier ${label}`,
+    title: `Modifier ${label}`,
+  };
+}
+
+function getPreviewEditTarget(
+  root: HTMLElement,
+  eventTarget: EventTarget | null,
+): PreviewEditTarget | null {
+  // The preview can be rendered in an iframe: do not use the parent window's
+  // Element constructor to identify nodes from another document.
+  const candidate = eventTarget as HTMLElement | null;
+  if (!candidate || typeof candidate.closest !== "function") return null;
+  const editable = candidate.closest<HTMLElement>("[data-siteai-edit]");
+  if (!editable || !root.contains(editable)) return null;
+
+  try {
+    const target = JSON.parse(editable.dataset.siteaiEdit ?? "null") as PreviewEditTarget;
+    if (target?.kind === "gallery") return { kind: "gallery" };
+    if (target?.kind === "section" && Number.isInteger(target.index) && target.index >= 0) {
+      return { kind: "section", index: target.index };
+    }
+    if (target?.kind === "field" && [
+      "businessName", "heroTitle", "heroText", "phone", "logoUrl", "heroImageUrl",
+    ].includes(target.field)) {
+      return { kind: "field", field: target.field };
+    }
+  } catch {
+    // A stale or invalid marker must never intercept an ordinary preview click.
+  }
+  return null;
+}
 
 
 
@@ -185,11 +254,13 @@ function DesignShell({
   children,
   theme,
   hasHeroImage,
+  onEdit,
 }: {
   settings: ReturnType<typeof normalizeDesignSettings>;
   theme: DesignStyle;
   hasHeroImage: boolean;
   children: React.ReactNode;
+  onEdit?: SitePreviewProps["onEdit"];
 }) {
   const fontFamily = {
     system:
@@ -237,6 +308,22 @@ function DesignShell({
   return (
     <div
       className="siteai-design-root"
+      data-editable-preview={onEdit ? "true" : undefined}
+      onClickCapture={onEdit ? (event) => {
+        const target = getPreviewEditTarget(event.currentTarget, event.target);
+        if (!target) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onEdit(target);
+      } : undefined}
+      onKeyDownCapture={onEdit ? (event) => {
+        if (event.repeat || (event.key !== "Enter" && event.key !== " ")) return;
+        const target = getPreviewEditTarget(event.currentTarget, event.target);
+        if (!target) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onEdit(target);
+      } : undefined}
       data-theme={theme}
       data-has-hero-image={hasHeroImage}
       data-card-style={settings.cardStyle}
@@ -259,6 +346,13 @@ function DesignShell({
       }
     >
       <style>{`
+        .siteai-design-root[data-editable-preview="true"] [data-siteai-edit] { cursor: pointer; }
+        .siteai-design-root[data-editable-preview="true"] [data-siteai-edit]:hover,
+        .siteai-design-root[data-editable-preview="true"] [data-siteai-edit]:focus-visible {
+          outline: 2px solid #2563eb !important;
+          outline-offset: -2px;
+          box-shadow: inset 0 0 0 4px rgb(255 255 255 / 0.75);
+        }
         .siteai-design-root[data-theme="minimaliste"][data-has-hero-image="false"] [data-siteai-hero] { background: #fff; color: #0f172a; }
         .siteai-design-root[data-theme="minimaliste"][data-has-hero-image="false"] [data-siteai-hero-content] p,
         .siteai-design-root[data-theme="minimaliste"][data-has-hero-image="false"] [data-siteai-hero-content] h1 { color: #0f172a; }
@@ -1209,6 +1303,8 @@ export default function SitePreview({
 
   city,
 
+  onEdit,
+
 }: SitePreviewProps) {
   const style = getDesignStyle(designStyle);
   const normalizedSite = normalizeSiteForDisplay(site);
@@ -1219,10 +1315,12 @@ export default function SitePreview({
   if (style.family === "elegant") {
 
     return (
-      <DesignShell settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
+      <DesignShell onEdit={onEdit} settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
         <ElegantTemplate
 
-        site={normalizedSite}
+        onEdit={onEdit}
+
+site={normalizedSite}
 
         accentColor={accentColor}
 
@@ -1241,10 +1339,12 @@ export default function SitePreview({
   if (style.family === "artisan") {
 
     return (
-      <DesignShell settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
+      <DesignShell onEdit={onEdit} settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
         <ArtisanTemplate
 
-        site={normalizedSite}
+        onEdit={onEdit}
+
+site={normalizedSite}
 
         accentColor={accentColor}
 
@@ -1261,10 +1361,12 @@ export default function SitePreview({
 
 
   return (
-      <DesignShell settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
+      <DesignShell onEdit={onEdit} settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
         <ModernTemplate
 
-      site={normalizedSite}
+      onEdit={onEdit}
+
+site={normalizedSite}
 
       accentColor={accentColor}
 
@@ -1290,6 +1392,8 @@ function ModernTemplate({
 
   city,
 
+  onEdit,
+
 }: Omit<
 
   SitePreviewProps,
@@ -1297,6 +1401,7 @@ function ModernTemplate({
   "designStyle"
 
 >) {
+  const edit = (target: PreviewEditTarget) => previewEditProps(target, Boolean(onEdit));
   const sector = getSectorVisualTheme(activity, city);
 
   return (
@@ -1305,15 +1410,15 @@ function ModernTemplate({
 
       <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          <a href="#" className="flex min-w-0 items-center gap-3">
+          <a href={onEdit ? undefined : "#"} className="flex min-w-0 items-center gap-3">
             {site.logoUrl ? (
-              <img
+              <img {...edit({ kind: "field", field: "logoUrl" })}
                 src={site.logoUrl}
                 alt={`Logo ${site.businessName}`}
                 className="h-11 w-11 shrink-0 rounded-xl object-contain"
               />
             ) : (
-              <div
+              <div {...edit({ kind: "field", field: "logoUrl" })}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-black text-white"
                 style={{ backgroundColor: accentColor }}
               >
@@ -1322,7 +1427,7 @@ function ModernTemplate({
             )}
 
             <div className="min-w-0">
-              <p className="truncate text-base font-black sm:text-lg">
+              <p {...edit({ kind: "field", field: "businessName" })} className="truncate text-base font-black sm:text-lg">
                 {site.businessName}
               </p>
               <p className="truncate text-xs text-slate-500">
@@ -1345,7 +1450,7 @@ function ModernTemplate({
             </a>
 
             {site.phone && (
-              <a
+              <a {...edit({ kind: "field", field: "phone" })}
                 href={`tel:${phoneHref(site.phone)}`}
                 style={{ backgroundColor: accentColor }}
                 className="rounded-xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5"
@@ -1375,7 +1480,7 @@ function ModernTemplate({
               </a>
 
               {site.phone && (
-                <a
+                <a {...edit({ kind: "field", field: "phone" })}
                   href={`tel:${phoneHref(site.phone)}`}
                   style={{ backgroundColor: accentColor }}
                   className="mt-2 block rounded-xl px-4 py-3 text-center text-sm font-black text-white"
@@ -1423,11 +1528,11 @@ function ModernTemplate({
                 )}
               </div>
 
-              <h1 className="mt-6 text-[2.35rem] font-black leading-[1.04] tracking-tight sm:mt-7 sm:text-5xl lg:text-6xl">
+              <h1 {...edit({ kind: "field", field: "heroTitle" })} className="mt-6 text-[2.35rem] font-black leading-[1.04] tracking-tight sm:mt-7 sm:text-5xl lg:text-6xl">
                 {site.heroTitle}
               </h1>
 
-              <p
+              <p {...edit({ kind: "field", field: "heroText" })}
                 className={`mt-6 text-base leading-8 text-slate-300 sm:text-lg ${
                   site.heroImageUrl
                     ? "max-w-xl"
@@ -1439,7 +1544,7 @@ function ModernTemplate({
 
               <div data-siteai-hero-actions className={`mt-9 flex flex-wrap gap-3 ${site.heroImageUrl ? "" : "justify-center"}`}>
                 {site.phone && (
-                  <a
+                  <a {...edit({ kind: "field", field: "phone" })}
                     href={`tel:${phoneHref(site.phone)}`}
                     style={{ backgroundColor: accentColor }}
                     className="w-full rounded-xl px-6 py-4 text-center text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 sm:w-auto"
@@ -1469,7 +1574,7 @@ function ModernTemplate({
           </div>
 
           {site.heroImageUrl && (
-            <div className="relative min-h-[280px] overflow-hidden sm:min-h-[360px] lg:min-h-[620px]">
+            <div {...edit({ kind: "field", field: "heroImageUrl" })} className="relative min-h-[280px] overflow-hidden sm:min-h-[360px] lg:min-h-[620px]">
               <img
                 src={site.heroImageUrl}
                 alt={site.businessName}
@@ -1612,7 +1717,7 @@ function ModernTemplate({
                     index,
                   ) && (
                     <div className="mb-6 overflow-hidden rounded-2xl border border-slate-100 bg-slate-100">
-                      <img
+                      <img {...edit({ kind: "section", index: site.sections.indexOf(section) })}
                         src={getSectionImage(
                           site,
                           section,
@@ -1671,7 +1776,7 @@ function ModernTemplate({
 
 
 
-                  <h3 className="mt-7 text-xl font-black leading-snug sm:text-2xl">
+                  <h3 {...edit({ kind: "section", index: site.sections.indexOf(section) })} className="mt-7 text-xl font-black leading-snug sm:text-2xl">
 
                     {section.title}
 
@@ -1679,7 +1784,7 @@ function ModernTemplate({
 
 
 
-                  <p className="mt-4 leading-7 text-slate-600">
+                  <p {...edit({ kind: "section", index: site.sections.indexOf(section) })} className="mt-4 leading-7 text-slate-600">
 
                     {section.text}
 
@@ -1838,7 +1943,7 @@ function ModernTemplate({
 
                 ) => (
 
-                  <figure
+                  <figure {...edit({ kind: "gallery" })}
 
                     key={`${imageUrl}-${index}`}
 
@@ -1958,13 +2063,13 @@ function ModernTemplate({
             <div>
               <div className="flex items-center gap-3">
                 {site.logoUrl ? (
-                  <img
+                  <img {...edit({ kind: "field", field: "logoUrl" })}
                     src={site.logoUrl}
                     alt={`Logo ${site.businessName}`}
                     className="h-11 w-11 rounded-xl bg-white object-contain p-1"
                   />
                 ) : (
-                  <div
+                  <div {...edit({ kind: "field", field: "logoUrl" })}
                     className="flex h-11 w-11 items-center justify-center rounded-xl font-black text-white"
                     style={{ backgroundColor: accentColor }}
                   >
@@ -1973,7 +2078,7 @@ function ModernTemplate({
                 )}
 
                 <div>
-                  <p className="text-lg font-black">{site.businessName}</p>
+                  <p {...edit({ kind: "field", field: "businessName" })} className="text-lg font-black">{site.businessName}</p>
                   <p className="text-sm text-slate-400">
                     {activity} · {city}
                   </p>
@@ -2015,7 +2120,7 @@ function ModernTemplate({
               <p className="mt-4 text-sm text-slate-400">{city}</p>
 
               {site.phone && (
-                <a
+                <a {...edit({ kind: "field", field: "phone" })}
                   href={`tel:${phoneHref(site.phone)}`}
                   className="mt-3 block text-sm font-black"
                   style={{ color: accentColor }}
@@ -2051,6 +2156,8 @@ function ElegantTemplate({
 
   city,
 
+  onEdit,
+
 }: Omit<
 
   SitePreviewProps,
@@ -2058,6 +2165,7 @@ function ElegantTemplate({
   "designStyle"
 
 >) {
+  const edit = (target: PreviewEditTarget) => previewEditProps(target, Boolean(onEdit));
   const sector = getSectorVisualTheme(activity, city);
 
   return (
@@ -2066,9 +2174,9 @@ function ElegantTemplate({
 
       <nav className="sticky top-0 z-50 border-b border-neutral-300 bg-[#f8f6f1]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-5 py-5 sm:px-8">
-          <a href="#" className="flex min-w-0 items-center gap-4">
+          <a href={onEdit ? undefined : "#"} className="flex min-w-0 items-center gap-4">
             {site.logoUrl && (
-              <img
+              <img {...edit({ kind: "field", field: "logoUrl" })}
                 src={site.logoUrl}
                 alt={`Logo ${site.businessName}`}
                 className="h-11 w-11 shrink-0 object-contain"
@@ -2076,7 +2184,7 @@ function ElegantTemplate({
             )}
 
             <div className="min-w-0">
-              <p className="truncate text-base font-light uppercase tracking-[0.14em] sm:text-lg">
+              <p {...edit({ kind: "field", field: "businessName" })} className="truncate text-base font-light uppercase tracking-[0.14em] sm:text-lg">
                 {site.businessName}
               </p>
               <p className="mt-1 truncate text-[10px] uppercase tracking-[0.22em] text-neutral-500">
@@ -2099,7 +2207,7 @@ function ElegantTemplate({
             </a>
 
             {site.phone && (
-              <a
+              <a {...edit({ kind: "field", field: "phone" })}
                 href={`tel:${phoneHref(site.phone)}`}
                 style={{ borderColor: accentColor, color: accentColor }}
                 className="border px-5 py-3 text-xs font-bold uppercase tracking-[0.16em] transition hover:-translate-y-0.5"
@@ -2128,7 +2236,7 @@ function ElegantTemplate({
               </a>
 
               {site.phone && (
-                <a
+                <a {...edit({ kind: "field", field: "phone" })}
                   href={`tel:${phoneHref(site.phone)}`}
                   style={{ borderColor: accentColor, color: accentColor }}
                   className="mt-2 block border px-4 py-3 text-center text-xs font-bold uppercase tracking-[0.16em]"
@@ -2177,11 +2285,11 @@ function ElegantTemplate({
               </p>
             </div>
 
-            <h1 className="mt-7 text-[2.65rem] font-light leading-[1.02] tracking-tight sm:mt-9 sm:text-6xl lg:text-7xl">
+            <h1 {...edit({ kind: "field", field: "heroTitle" })} className="mt-7 text-[2.65rem] font-light leading-[1.02] tracking-tight sm:mt-9 sm:text-6xl lg:text-7xl">
               {site.heroTitle}
             </h1>
 
-            <p className="mt-8 max-w-2xl text-base font-light leading-8 text-neutral-300 sm:text-lg">
+            <p {...edit({ kind: "field", field: "heroText" })} className="mt-8 max-w-2xl text-base font-light leading-8 text-neutral-300 sm:text-lg">
               {site.heroText}
             </p>
 
@@ -2195,7 +2303,7 @@ function ElegantTemplate({
               </a>
 
               {site.phone && (
-                <a
+                <a {...edit({ kind: "field", field: "phone" })}
                   href={`tel:${phoneHref(site.phone)}`}
                   className="w-full border border-white/25 px-6 py-4 text-center text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white sm:w-auto sm:px-7 sm:tracking-[0.2em]"
                 >
@@ -2223,13 +2331,22 @@ function ElegantTemplate({
                 <p className="text-xs uppercase tracking-[0.22em] text-neutral-500">
                   Contact
                 </p>
-                <p className="mt-2 text-sm text-neutral-200">
+                <p {...edit({ kind: "field", field: "phone" })} className="mt-2 text-sm text-neutral-200">
                   {site.phone ? formatPhoneNumber(site.phone) : "Sur demande"}
                 </p>
               </div>
             </div>
           </div>
         </div>
+        {onEdit && (
+          <button
+            type="button"
+            {...edit({ kind: "field", field: "heroImageUrl" })}
+            className="absolute bottom-4 right-4 z-20 rounded-full border border-white/40 bg-black/70 px-4 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur"
+          >
+            {site.heroImageUrl ? "Modifier la photo" : "Ajouter une photo"}
+          </button>
+        )}
       </section>
 
       <section className="border-y border-neutral-300 bg-[#f8f6f1] px-6 py-8 sm:px-8">
@@ -2348,7 +2465,7 @@ function ElegantTemplate({
                       index,
                     ) && (
                       <div className="overflow-hidden rounded-sm bg-neutral-100 md:col-span-full">
-                        <img
+                        <img {...edit({ kind: "section", index: site.sections.indexOf(section) })}
                           src={getSectionImage(
                             site,
                             section,
@@ -2393,7 +2510,7 @@ function ElegantTemplate({
 
                     <div>
 
-                      <h3 className="text-2xl font-light leading-snug sm:text-3xl">
+                      <h3 {...edit({ kind: "section", index: site.sections.indexOf(section) })} className="text-2xl font-light leading-snug sm:text-3xl">
 
                         {
 
@@ -2405,7 +2522,7 @@ function ElegantTemplate({
 
 
 
-                      <p className="mt-4 max-w-2xl leading-8 text-neutral-600">
+                      <p {...edit({ kind: "section", index: site.sections.indexOf(section) })} className="mt-4 max-w-2xl leading-8 text-neutral-600">
 
                         {
 
@@ -2567,7 +2684,7 @@ function ElegantTemplate({
 
                 ) => (
 
-                  <figure
+                  <figure {...edit({ kind: "gallery" })}
 
                     key={`${imageUrl}-${index}`}
 
@@ -2683,7 +2800,7 @@ function ElegantTemplate({
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-12 border-b border-neutral-300 pb-12 md:grid-cols-[1.3fr_0.7fr_0.7fr]">
             <div>
-              <p className="text-xl font-light uppercase tracking-[0.16em]">
+              <p {...edit({ kind: "field", field: "businessName" })} className="text-xl font-light uppercase tracking-[0.16em]">
                 {site.businessName}
               </p>
 
@@ -2729,7 +2846,7 @@ function ElegantTemplate({
               <p className="mt-5 text-sm text-neutral-500">{city}</p>
 
               {site.phone && (
-                <a
+                <a {...edit({ kind: "field", field: "phone" })}
                   href={`tel:${phoneHref(site.phone)}`}
                   className="mt-3 inline-block border-b pb-1 text-sm"
                   style={{ borderColor: accentColor, color: accentColor }}
@@ -2765,6 +2882,8 @@ function ArtisanTemplate({
 
   city,
 
+  onEdit,
+
 }: Omit<
 
   SitePreviewProps,
@@ -2772,6 +2891,7 @@ function ArtisanTemplate({
   "designStyle"
 
 >) {
+  const edit = (target: PreviewEditTarget) => previewEditProps(target, Boolean(onEdit));
   const sector = getSectorVisualTheme(activity, city);
 
   return (
@@ -2780,15 +2900,15 @@ function ArtisanTemplate({
 
       <nav className="sticky top-0 z-50 border-b border-stone-300 bg-[#fffaf0]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          <a href="#" className="flex min-w-0 items-center gap-4">
+          <a href={onEdit ? undefined : "#"} className="flex min-w-0 items-center gap-4">
             {site.logoUrl ? (
-              <img
+              <img {...edit({ kind: "field", field: "logoUrl" })}
                 src={site.logoUrl}
                 alt={`Logo ${site.businessName}`}
                 className="h-12 w-12 shrink-0 rounded-full border border-stone-300 bg-white object-contain p-1"
               />
             ) : (
-              <div
+              <div {...edit({ kind: "field", field: "logoUrl" })}
                 style={{ backgroundColor: accentColor }}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-black text-white"
               >
@@ -2797,7 +2917,7 @@ function ArtisanTemplate({
             )}
 
             <div className="min-w-0">
-              <p className="truncate text-lg font-black">
+              <p {...edit({ kind: "field", field: "businessName" })} className="truncate text-lg font-black">
                 {site.businessName}
               </p>
               <p className="truncate text-xs font-bold uppercase tracking-widest text-stone-500">
@@ -2820,7 +2940,7 @@ function ArtisanTemplate({
             </a>
 
             {site.phone && (
-              <a
+              <a {...edit({ kind: "field", field: "phone" })}
                 href={`tel:${phoneHref(site.phone)}`}
                 style={{ backgroundColor: accentColor }}
                 className="rounded-xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5"
@@ -2850,7 +2970,7 @@ function ArtisanTemplate({
               </a>
 
               {site.phone && (
-                <a
+                <a {...edit({ kind: "field", field: "phone" })}
                   href={`tel:${phoneHref(site.phone)}`}
                   style={{ backgroundColor: accentColor }}
                   className="mt-2 block rounded-xl px-4 py-3 text-center text-sm font-black text-white"
@@ -2885,17 +3005,17 @@ function ArtisanTemplate({
                 )}
               </div>
 
-              <h1 className="mt-6 text-[2.35rem] font-black leading-[1.04] tracking-tight sm:mt-7 sm:text-5xl lg:text-6xl">
+              <h1 {...edit({ kind: "field", field: "heroTitle" })} className="mt-6 text-[2.35rem] font-black leading-[1.04] tracking-tight sm:mt-7 sm:text-5xl lg:text-6xl">
                 {site.heroTitle}
               </h1>
 
-              <p className="mt-6 max-w-xl text-base leading-8 text-stone-300 sm:text-lg">
+              <p {...edit({ kind: "field", field: "heroText" })} className="mt-6 max-w-xl text-base leading-8 text-stone-300 sm:text-lg">
                 {site.heroText}
               </p>
 
               <div data-siteai-hero-actions className="mt-9 flex flex-wrap gap-3">
                 {site.phone && (
-                  <a
+                  <a {...edit({ kind: "field", field: "phone" })}
                     href={`tel:${phoneHref(site.phone)}`}
                     style={{ backgroundColor: accentColor }}
                     className="rounded-xl px-6 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5"
@@ -2920,7 +3040,7 @@ function ArtisanTemplate({
             </div>
           </div>
 
-          <div className="relative min-h-[280px] overflow-hidden sm:min-h-[380px] lg:min-h-[620px]">
+          <div {...edit({ kind: "field", field: "heroImageUrl" })} className="relative min-h-[280px] overflow-hidden sm:min-h-[380px] lg:min-h-[620px]">
             {site.heroImageUrl ? (
               <>
                 <img
@@ -3064,7 +3184,7 @@ function ArtisanTemplate({
                     index,
                   ) && (
                     <div className="mb-6 overflow-hidden rounded-xl bg-stone-100">
-                      <img
+                      <img {...edit({ kind: "section", index: site.sections.indexOf(section) })}
                         src={getSectionImage(
                           site,
                           section,
@@ -3119,7 +3239,7 @@ function ArtisanTemplate({
 
 
 
-                      <h3 className="mt-2 text-xl font-black leading-snug sm:text-2xl">
+                      <h3 {...edit({ kind: "section", index: site.sections.indexOf(section) })} className="mt-2 text-xl font-black leading-snug sm:text-2xl">
 
                         {
 
@@ -3135,7 +3255,7 @@ function ArtisanTemplate({
 
 
 
-                  <p className="mt-5 leading-7 text-stone-600">
+                  <p {...edit({ kind: "section", index: site.sections.indexOf(section) })} className="mt-5 leading-7 text-stone-600">
 
                     {section.text}
 
@@ -3301,7 +3421,7 @@ function ArtisanTemplate({
 
                 ) => (
 
-                  <figure
+                  <figure {...edit({ kind: "gallery" })}
 
                     key={`${imageUrl}-${index}`}
 
@@ -3421,13 +3541,13 @@ function ArtisanTemplate({
             <div>
               <div className="flex items-center gap-3">
                 {site.logoUrl ? (
-                  <img
+                  <img {...edit({ kind: "field", field: "logoUrl" })}
                     src={site.logoUrl}
                     alt={`Logo ${site.businessName}`}
                     className="h-12 w-12 rounded-full border border-stone-700 bg-white object-contain p-1"
                   />
                 ) : (
-                  <div
+                  <div {...edit({ kind: "field", field: "logoUrl" })}
                     className="flex h-11 w-11 items-center justify-center rounded-full font-black text-white"
                     style={{ backgroundColor: accentColor }}
                   >
@@ -3436,7 +3556,7 @@ function ArtisanTemplate({
                 )}
 
                 <div>
-                  <p className="text-xl font-black">{site.businessName}</p>
+                  <p {...edit({ kind: "field", field: "businessName" })} className="text-xl font-black">{site.businessName}</p>
                   <p className="text-sm text-stone-400">
                     {activity} · {city}
                   </p>
@@ -3479,7 +3599,7 @@ function ArtisanTemplate({
               <p className="mt-4 text-sm text-stone-400">{city}</p>
 
               {site.phone && (
-                <a
+                <a {...edit({ kind: "field", field: "phone" })}
                   href={`tel:${phoneHref(site.phone)}`}
                   className="mt-3 block font-black"
                   style={{ color: accentColor }}

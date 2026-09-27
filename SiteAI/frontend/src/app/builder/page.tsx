@@ -11,7 +11,9 @@ import {
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import SitePreview from "@/components/SitePreview";
+import SitePreview, { type PreviewEditTarget } from "@/components/SitePreview";
+import PublicationSuccess from "@/components/PublicationSuccess";
+import { useBuilderDraft } from "@/lib/useBuilderDraft";
 import StylePicker from "@/components/StylePicker";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 
@@ -365,6 +367,7 @@ const previewViewports: Record<
 };
 
 type ResponsivePreviewProps = {
+  onEdit?: (target: PreviewEditTarget) => void;
   device: PreviewDevice;
   site: GeneratedSite;
   designStyle: DesignStyle;
@@ -380,6 +383,7 @@ function ResponsiveSitePreview({
   accentColor,
   activity,
   city,
+  onEdit,
 }: ResponsivePreviewProps) {
   const containerRef =
     useRef<HTMLDivElement | null>(null);
@@ -561,7 +565,7 @@ function ResponsiveSitePreview({
 
         {portalRoot &&
           createPortal(
-            <SitePreview
+            <SitePreview onEdit={onEdit}
               site={site}
               designStyle={
                 designStyle
@@ -602,6 +606,25 @@ function appendService(current: string, suggestion: string) {
   return current.trim() ? current.trimEnd() + "\n" + suggestion : suggestion;
 }
 
+type BuilderSnapshot = {
+  site: GeneratedSite | null;
+  businessName: string; activity: string; city: string; phone: string; services: string;
+  designStyle: DesignStyle; accentColor: string;
+};
+
+function isBuilderSnapshot(value: unknown): value is BuilderSnapshot {
+  if (!value || typeof value !== "object") return false;
+  const draft = value as Record<string, unknown>;
+  if (!["businessName", "activity", "city", "phone", "services", "designStyle", "accentColor"].every(key => typeof draft[key] === "string")) return false;
+  if (getDesignStyle(draft.designStyle).id !== draft.designStyle) return false;
+  if (draft.site === null) return true;
+  if (!draft.site || typeof draft.site !== "object") return false;
+  const content = draft.site as Record<string, unknown>;
+  return ["businessName", "slug", "metaTitle", "metaDescription", "heroTitle", "heroText", "phone", "logoUrl", "heroImageUrl"].every(key => typeof content[key] === "string")
+    && Array.isArray(content.gallery) && content.gallery.every(item => typeof item === "string")
+    && Array.isArray(content.sections) && content.sections.every(item => item && typeof item.title === "string" && typeof item.text === "string");
+}
+
 export default function Home() {
   const router = useRouter();
   const mobileSteps = ["Infos", "Contenu", "Apparence", "Aperçu", "Publication"] as const;
@@ -627,6 +650,11 @@ export default function Home() {
   }
 
 
+  const [draftUserId, setDraftUserId] = useState("");
+  const [draftReady, setDraftReady] = useState(false);
+  const [openingSite, setOpeningSite] = useState(false);
+  const [publishedResult, setPublishedResult] = useState<{publicSlug: string; businessName: string} | null>(null);
+  const [previewEditing, setPreviewEditing] = useState(false);
   const [authLoading, setAuthLoading] =
     useState(true);
 
@@ -748,6 +776,45 @@ export default function Home() {
   const [galleryError, setGalleryError] =
     useState("");
 
+
+  const busy = loading || editLoading || saving || publishing || openingSite || logoUploading || heroImageUploading || galleryUploading || serviceImageUploadingIndex !== null;
+  const draftSnapshot: BuilderSnapshot = {site, businessName, activity, city, phone, services, designStyle, accentColor};
+  const draft = useBuilderDraft<BuilderSnapshot>({
+    storageKey: draftUserId ? `siteai:draft:v1:${draftUserId}:${savedSiteID ?? "new"}` : null,
+    value: draftSnapshot,
+    enabled: draftReady && !openingSite,
+    validate: isBuilderSnapshot,
+    onRestore: restoreSnapshot,
+  });
+
+  function restoreSnapshot(snapshot: BuilderSnapshot) {
+    setSite(snapshot.site); setBusinessName(snapshot.businessName); setActivity(snapshot.activity);
+    setCity(snapshot.city); setPhone(snapshot.phone); setServices(snapshot.services);
+    setDesignStyle(snapshot.designStyle); setAccentColor(snapshot.accentColor);
+    setSaveMessage(""); setSaveError("");
+    if (!snapshot.site) { setMobileStep(0); setDesktopPanel("infos"); }
+  }
+
+  function editFromPreview(target: PreviewEditTarget) {
+    if (busy) return;
+    setPreviewFullscreenOpen(false);
+    setDesktopPanel("contenu"); setMobileStep(1); setEditorCollapsed(false); setManualEditorOpen(true);
+    const key = target.kind === "field" ? target.field : target.kind === "section" ? `section-${target.index}` : "gallery";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const field = document.querySelector<HTMLElement>(`[data-builder-edit="${key}"]`);
+      field?.focus({preventScroll: true});
+      field?.scrollIntoView({behavior: "smooth", block: "center"});
+    }));
+  }
+
+  function prepareQuickPrompt(instruction: string) {
+    setEditPrompt(instruction); setDesktopPanel("ia"); setMobileStep(1);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const field = document.getElementById("builder-ai-instruction");
+      field?.focus({preventScroll: true}); field?.scrollIntoView({behavior: "smooth", block: "center"});
+    }));
+  }
+
   useEffect(() => {
     if (!previewFullscreenOpen) {
       return;
@@ -809,6 +876,7 @@ export default function Home() {
           return;
         }
 
+        setDraftUserId(data.session.user.id);
         setUserEmail(
           data.session.user.email ?? "",
         );
@@ -839,6 +907,7 @@ export default function Home() {
             );
           }
         }
+        if (active) setDraftReady(true);
       } catch (err) {
         console.error(err);
 
@@ -985,7 +1054,6 @@ export default function Home() {
     setError("");
     setSaveMessage("");
     setSaveError("");
-    setSavedSiteID(null);
     setChatMessages([]);
     setManualEditorOpen(false);
 
@@ -1053,6 +1121,9 @@ export default function Home() {
           ),
       };
 
+      draft.clearDraft();
+      setSavedSiteID(null);
+      setPublishedResult(null);
       setSite(generatedSite);
       setDesktopPanel("apercu");
       if (window.matchMedia("(width < 48rem)").matches) navigateMobileStep(1);
@@ -1343,6 +1414,7 @@ export default function Home() {
       const saved: SavedSite =
         await response.json();
 
+      if (savedSiteID === null) draft.clearDraft();
       setSavedSiteID(
         saved.id,
       );
@@ -1387,6 +1459,7 @@ export default function Home() {
             : "✅ Modifications enregistrées.",
       );
 
+      if (saved.published && saved.publicSlug) setPublishedResult({publicSlug: saved.publicSlug, businessName: saved.businessName});
       await loadSavedSites();
       return saved;
     } catch (err) {
@@ -1506,9 +1579,8 @@ export default function Home() {
 
       await loadSavedSites();
 
-      router.push(
-        `/site/${saved.publicSlug}`,
-      );
+      setPublishedResult({publicSlug: saved.publicSlug, businessName: saved.businessName});
+      setDesktopPanel("publication"); setMobileStep(4);
     } catch (err) {
       console.error(
         "Erreur réseau pendant la publication :",
@@ -1524,6 +1596,7 @@ export default function Home() {
   }
 
   async function unpublishCurrentSite() {
+    setPublishedResult(null);
     if (
       savedSiteID === null
     ) {
@@ -1568,6 +1641,8 @@ export default function Home() {
   async function openSavedSite(
     id: number,
   ) {
+    if (busy) return;
+    setOpeningSite(true); setPublishedResult(null);
     setSaveError("");
     setSaveMessage("");
 
@@ -1674,6 +1749,8 @@ export default function Home() {
       setSaveError(
         "Impossible d'ouvrir ce site.",
       );
+    } finally {
+      setOpeningSite(false);
     }
   }
 
@@ -1729,6 +1806,12 @@ export default function Home() {
   }
 
   function createNewSite() {
+    if (busy) return;
+    if (savedSiteID === null) {
+      draft.clearDraft();
+      draft.resetHistory({site: null, businessName: "", activity: "", city: "Montpellier", phone: "", services: "", designStyle: "moderne", accentColor: "#2563eb"});
+    }
+    setPublishedResult(null);
     sessionStorage.removeItem(
       "siteai_site_to_open",
     );
@@ -2086,8 +2169,6 @@ export default function Home() {
       return;
     }
 
-    const previousUrl =
-      site.sections[index]?.imageUrl ?? "";
 
     setServiceImageUploadingIndex(index);
     setServiceImageErrorIndex(null);
@@ -2186,24 +2267,7 @@ export default function Home() {
         },
       );
 
-      if (
-        previousUrl &&
-        previousUrl !==
-          publicData.publicUrl
-      ) {
-        const previousPath =
-          getStoragePathFromPublicUrl(
-            previousUrl,
-          );
-
-        if (previousPath) {
-          await supabase.storage
-            .from("site-images")
-            .remove([
-              previousPath,
-            ]);
-        }
-      }
+      // Keep previous media available for undo and the published site.
 
       setSaveMessage(
         "✅ Photo du service ajoutée. Pense à enregistrer les modifications.",
@@ -2235,8 +2299,6 @@ export default function Home() {
       return;
     }
 
-    const imageUrl =
-      site.sections[index]?.imageUrl ?? "";
 
     setSite(
       (current) => {
@@ -2272,27 +2334,7 @@ export default function Home() {
       "Photo du service retirée. Pense à enregistrer les modifications.",
     );
 
-    const storagePath =
-      getStoragePathFromPublicUrl(
-        imageUrl,
-      );
-
-    if (storagePath) {
-      const {
-        error: removeError,
-      } =
-        await supabase.storage
-          .from("site-images")
-          .remove([
-            storagePath,
-          ]);
-
-      if (removeError) {
-        console.error(
-          removeError,
-        );
-      }
-    }
+    // Removing from the draft does not delete media used by the public site.
   }
 
   function getStoragePathFromPublicUrl(
@@ -2513,26 +2555,7 @@ export default function Home() {
     setSaveError("");
 
     try {
-      const storagePath =
-        getStoragePathFromPublicUrl(
-          imageUrl,
-        );
-
-      if (storagePath) {
-        const {
-          error: removeError,
-        } =
-          await supabase.storage
-            .from("site-images")
-            .remove([
-              storagePath,
-            ]);
-
-        if (removeError) {
-          throw removeError;
-        }
-      }
-
+      // Keep the file available to the public site and undo history.
       updateSiteField(
         "gallery",
         gallery.filter(
@@ -3164,6 +3187,20 @@ export default function Home() {
           </button>
         ))}
       </nav>
+      <div className="shrink-0 border-b border-slate-800 bg-slate-950 px-4 py-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" disabled={!draft.canUndo || busy} onClick={draft.undo} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">↶ Annuler</button>
+          <button type="button" disabled={!draft.canRedo || busy} onClick={draft.redo} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">↷ Rétablir</button>
+          {site && <button type="button" aria-pressed={previewEditing} onClick={() => setPreviewEditing(value => !value)} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${previewEditing ? "border-blue-400 bg-blue-500/10 text-blue-200" : "border-slate-700"}`}>{previewEditing ? "Modifier en cliquant : actif" : "Modifier en cliquant"}</button>}
+          <p role="status" className="text-xs text-slate-400">{draft.status === "saved" ? "Brouillon enregistré sur cet appareil" : draft.status === "saving" ? "Enregistrement du brouillon…" : draft.status === "error" ? "Brouillon non enregistré : stockage indisponible" : "Brouillon local · publication manuelle"}</p>
+        </div>
+        {draft.status === "error" && <button type="button" onClick={draft.retrySave} className="mt-2 text-xs text-blue-300 underline">Réessayer la sauvegarde locale</button>}
+        {draft.restoredDraft && <div className="mt-2 flex flex-wrap items-center gap-3 rounded-xl border border-blue-800 bg-blue-950/30 p-3 text-sm">
+          <p>Un brouillon a été retrouvé sur cet appareil.</p>
+          <button type="button" disabled={busy} onClick={draft.restoreDraft} className="rounded-lg bg-blue-600 px-3 py-2 font-semibold">Reprendre</button>
+          <button type="button" disabled={busy} onClick={draft.discardDraft} className="rounded-lg border border-slate-700 px-3 py-2">Garder cette version</button>
+        </div>}
+      </div>
       <div className="px-4 pt-5 md:hidden">
         <nav aria-label="Étapes de création du site" className="grid grid-cols-5 gap-1">
           {mobileSteps.map((label, index) => (
@@ -3195,7 +3232,7 @@ export default function Home() {
           [data-builder-section] { width: 100%; max-width: none; flex: 1; min-height: 0; padding: 1rem; }
           [data-builder-section] > [data-mobile-hide] { display: none; }
           [data-builder-grid] { height: 100%; min-height: 0; grid-template-columns: 320px minmax(0, 1fr); gap: 1rem; }
-          [data-builder-editor] { display: block; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: .25rem; }
+          [data-builder-editor] { display: block; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: .25rem; }
           [data-builder-editor] > * { display: none; margin: 0; }
           [data-desktop-panel="infos"] form[data-mobile-panel="infos"],
           [data-desktop-panel="sites"] [data-desktop-sites],
@@ -3261,7 +3298,7 @@ export default function Home() {
               : "xl:grid-cols-[360px_minmax(0,1fr)]"
           }`}
         >
-          <div data-builder-editor
+          <fieldset disabled={busy} data-builder-editor
             className={
               editorCollapsed
                 ? "hidden"
@@ -3552,7 +3589,7 @@ export default function Home() {
                           </p>
 
                           <div className="mt-4 flex flex-wrap gap-3">
-                            <label className="cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500">
+                            <label data-builder-edit="logoUrl" tabIndex={-1} className="cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500">
                               {logoUploading
                                 ? "Envoi..."
                                 : site.logoUrl
@@ -3607,7 +3644,7 @@ export default function Home() {
                       )}
 
                       <div className="mt-4 flex flex-wrap gap-3">
-                        <label className="cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500">
+                        <label data-builder-edit="heroImageUrl" tabIndex={-1} className="cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500">
                           {heroImageUploading
                             ? "Envoi..."
                             : site.heroImageUrl
@@ -3739,7 +3776,7 @@ export default function Home() {
                       )}
 
                       <div className="mt-5">
-                        <label
+                        <label data-builder-edit="gallery" tabIndex={-1}
                           className={`inline-block rounded-xl px-4 py-3 text-sm font-bold ${
                             galleryUploading ||
                             (site.gallery ?? []).length >=
@@ -3779,7 +3816,7 @@ export default function Home() {
                         Nom affiché
                       </label>
 
-                      <input
+                      <input data-builder-edit="businessName"
                         value={
                           site.businessName
                         }
@@ -3849,7 +3886,7 @@ export default function Home() {
                         Téléphone
                       </label>
 
-                      <input
+                      <input data-builder-edit="phone"
                         value={
                           site.phone
                         }
@@ -3871,7 +3908,7 @@ export default function Home() {
                         Grand titre
                       </label>
 
-                      <textarea
+                      <textarea data-builder-edit="heroTitle"
                         value={
                           site.heroTitle
                         }
@@ -3894,7 +3931,7 @@ export default function Home() {
                         Texte d&apos;accueil
                       </label>
 
-                      <textarea
+                      <textarea data-builder-edit="heroText"
                         value={
                           site.heroText
                         }
@@ -3912,7 +3949,7 @@ export default function Home() {
                       />
                     </div>
 
-                    <div className="border-t border-slate-800 pt-6">
+                    <details className="rounded-xl border border-slate-700 p-4"><summary className="cursor-pointer text-sm font-semibold">Référencement Google</summary><div className="mt-4">
                       <p className="font-bold">
                         SEO Google
                       </p>
@@ -3981,9 +4018,9 @@ export default function Home() {
                           caractères
                         </p>
                       </div>
-                    </div>
+                    </div></details>
 
-                    <div className="border-t border-slate-800 pt-6">
+                    <details className="rounded-xl border border-slate-700 p-4"><summary className="cursor-pointer text-sm font-semibold">Ordre et visibilité des sections</summary><div className="mt-4">
                       <div>
                         <p className="font-bold">
                           Ordre des blocs du site
@@ -4095,7 +4132,7 @@ export default function Home() {
                           },
                         )}
                       </div>
-                    </div>
+                    </div></details>
 
                     <div className="border-t border-slate-800 pt-6">
                       <div className="flex items-center justify-between gap-4">
@@ -4215,7 +4252,7 @@ export default function Home() {
                                 </div>
                               </div>
 
-                              <input
+                              <input data-builder-edit={`section-${index}`}
                                 value={
                                   section.title
                                 }
@@ -4660,7 +4697,7 @@ export default function Home() {
                         />
                       </div>
 
-                      <div className="mt-6 border-t border-slate-800 pt-6">
+                      <details className="rounded-xl border border-slate-700 p-4"><summary className="cursor-pointer text-sm font-semibold">Plus d’options de design</summary><div className="mt-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="font-bold">
@@ -4924,7 +4961,7 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </div></details>
                     </div>
 
                     <button data-desktop-save data-mobile-hide
@@ -4942,7 +4979,7 @@ export default function Home() {
                           : savedSiteID ===
                               null
                             ? "💾 Sauvegarder le site"
-                            : "💾 Enregistrer les modifications"}
+                            : openedSite?.published ? "💾 Mettre à jour le site public" : "💾 Enregistrer les modifications"}
                     </button>
                   </div>
                 )}
@@ -4954,6 +4991,7 @@ export default function Home() {
                 <h2 className="text-xl font-bold">
                   Sauvegarde et publication
                 </h2>
+                {(publishedResult || openedSite?.published) && <PublicationSuccess key={publishedResult?.publicSlug ?? openedSite?.publicSlug} publicSlug={publishedResult?.publicSlug ?? openedSite?.publicSlug ?? ""} businessName={publishedResult?.businessName ?? openedSite?.businessName ?? businessName} />}
 
                 <p className="mt-2 text-sm leading-6 text-slate-400">
                   {openedSite?.published
@@ -5022,14 +5060,7 @@ export default function Home() {
 
                 {openedSite?.published && (
                   <>
-                    <a
-                      href={`/site/${openedSite.publicSlug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-3 block w-full rounded-xl bg-blue-600 px-6 py-4 text-center font-bold hover:bg-blue-500"
-                    >
-                      🌍 Voir le site public
-                    </a>
+                    
 
                     <button
                       type="button"
@@ -5044,18 +5075,7 @@ export default function Home() {
                       Retirer de la publication
                     </button>
 
-                    <div className="mt-4 rounded-xl bg-slate-950 p-4">
-                      <p className="text-xs uppercase text-slate-500">
-                        Adresse publique
-                      </p>
-
-                      <p className="mt-2 break-all text-sm text-blue-400">
-                        /site/
-                        {
-                          openedSite.publicSlug
-                        }
-                      </p>
-                    </div>
+                    
                   </>
                 )}
 
@@ -5132,13 +5152,21 @@ export default function Home() {
                   )}
                 </div>
 
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {[
+                    ["Raccourcir", "Raccourcis les textes du site en conservant les informations essentielles, les noms et les coordonnées. Ne change ni le style ni les images."],
+                    ["Plus professionnel", "Rends les textes du site plus professionnels sans inventer de faits, de tarifs, de certifications ou d’avis. Conserve le style et les images."],
+                    ["Simplifier", "Réécris les textes avec des mots simples et des phrases courtes, sans modifier les informations, le style ou les images."],
+                  ].map(([label, instruction]) => <button key={label} type="button" disabled={busy} onClick={() => prepareQuickPrompt(instruction)} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold hover:border-blue-400 disabled:opacity-40">{label}</button>)}
+                </div>
+                <p className="mt-2 text-xs leading-5 text-slate-400">Choisis une suggestion, ajuste la demande si besoin, puis lance la modification.</p>
                 <form
                   onSubmit={
                     handleModification
                   }
                   className="mt-5"
                 >
-                  <textarea
+                  <textarea id="builder-ai-instruction"
                     value={
                       editPrompt
                     }
@@ -5297,7 +5325,7 @@ export default function Home() {
                 </div>
               )}
             </div>
-          </div>
+          </fieldset>
 
           <div data-desktop-preview data-mobile-hide className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 xl:sticky xl:top-6 xl:self-start">
             {!site ? (
@@ -5417,7 +5445,7 @@ export default function Home() {
                 </div>
 
                 <div className="bg-slate-950/40 p-4 sm:p-6">
-                  <ResponsiveSitePreview
+                  <ResponsiveSitePreview onEdit={previewEditing && !busy ? editFromPreview : undefined}
                     device={previewDevice}
                     site={site}
                     designStyle={designStyle}
@@ -5446,7 +5474,7 @@ export default function Home() {
             className="mb-3 w-full rounded-xl border border-blue-500/50 px-4 py-3 font-bold text-blue-300">
             ⛶ Agrandir l&apos;aperçu
           </button>
-          <ResponsiveSitePreview device="mobile" site={site} designStyle={designStyle}
+          <ResponsiveSitePreview onEdit={previewEditing && !busy ? editFromPreview : undefined} device="mobile" site={site} designStyle={designStyle}
             accentColor={accentColor} activity={activity} city={city} />
         </div>
       )}
@@ -5549,7 +5577,7 @@ export default function Home() {
 
             <div className="min-h-0 flex-1 overflow-auto p-3 sm:p-6">
               <div className="mx-auto max-w-[1400px] rounded-2xl border border-slate-800 bg-slate-900 p-3 shadow-2xl sm:p-5">
-                <ResponsiveSitePreview
+                <ResponsiveSitePreview onEdit={previewEditing && !busy ? editFromPreview : undefined}
                   device={previewDevice}
                   site={site}
                   designStyle={designStyle}
