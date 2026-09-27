@@ -100,6 +100,16 @@ type SiteSection struct {
 	Title string `json:"title"`
 
 	Text string `json:"text"`
+
+	IconMode string `json:"iconMode"`
+
+	Icon string `json:"icon"`
+
+	ImageMode string `json:"imageMode"`
+
+	ImageURL string `json:"imageUrl"`
+
+	Hidden bool `json:"hidden"`
 }
 
 type SiteBenefit struct {
@@ -112,6 +122,46 @@ type FAQItem struct {
 	Question string `json:"question"`
 
 	Answer string `json:"answer"`
+}
+
+type DesignSettings struct {
+	Font string `json:"font"`
+
+	ButtonStyle string `json:"buttonStyle"`
+
+	CardStyle string `json:"cardStyle"`
+
+	LogoSize string `json:"logoSize"`
+
+	HeroLayout string `json:"heroLayout"`
+
+	ContentWidth string `json:"contentWidth"`
+
+	Spacing string `json:"spacing"`
+
+	Background string `json:"background"`
+
+	TitleScale string `json:"titleScale"`
+
+	TextScale string `json:"textScale"`
+
+	TitleWeight string `json:"titleWeight"`
+
+	TitleCase string `json:"titleCase"`
+
+	LineHeight string `json:"lineHeight"`
+
+	CardRadius string `json:"cardRadius"`
+
+	ShadowStrength string `json:"shadowStrength"`
+
+	ImageRadius string `json:"imageRadius"`
+
+	ImageRatio string `json:"imageRatio"`
+
+	ImageFit string `json:"imageFit"`
+
+	ButtonSize string `json:"buttonSize"`
 }
 
 type GeneratedSite struct {
@@ -154,6 +204,22 @@ type GeneratedSite struct {
 	ContactTitle string `json:"contactTitle"`
 
 	ContactText string `json:"contactText"`
+
+	LayoutOrder []string `json:"layoutOrder"`
+
+	HiddenBlocks []string `json:"hiddenBlocks"`
+
+	DesignSettings DesignSettings `json:"designSettings"`
+
+	Testimonials []map[string]any `json:"testimonials"`
+
+	ServiceArea string `json:"serviceArea"`
+
+	OpeningHours string `json:"openingHours"`
+
+	ClientName string `json:"clientName"`
+
+	ClientEmail string `json:"clientEmail"`
 }
 
 type AIContent struct {
@@ -209,6 +275,8 @@ type ModifySiteOutput struct {
 }
 
 type SaveSiteInput struct {
+	ExpectedRevision *int64 `json:"expectedRevision,omitempty"`
+
 	Site GeneratedSite `json:"site"`
 
 	Activity string `json:"activity"`
@@ -221,6 +289,10 @@ type SaveSiteInput struct {
 }
 
 type SavedSite struct {
+	DraftRevision int64 `json:"draftRevision"`
+
+	PublishedRevision int64 `json:"publishedRevision"`
+
 	ID int64 `json:"id"`
 
 	BusinessName string `json:"businessName"`
@@ -1087,6 +1159,10 @@ func createTables(ctx context.Context) error {
 
 		}
 
+	}
+
+	if _, err := db.Exec(ctx, versionMigrationSQL); err != nil {
+		return err
 	}
 
 	fmt.Println("Table sites prête")
@@ -3253,11 +3329,13 @@ func sitesHandler(
 
 	case http.MethodPost:
 
-		createSiteHandler(
+		saveDraftHandler(
 
 			w,
 
 			r,
+
+			0,
 
 			user.ID,
 
@@ -3439,7 +3517,7 @@ func siteByIDHandler(
 
 			}
 
-			publishSiteHandler(
+			publishDraftHandler(
 
 				w,
 
@@ -3479,6 +3557,18 @@ func siteByIDHandler(
 
 				user.ID,
 			)
+
+			return
+
+		case "versions":
+
+			siteVersionsHandler(w, r, id, user.ID)
+
+			return
+
+		case "restore-version":
+
+			restoreSiteVersionHandler(w, r, id, user.ID)
 
 			return
 
@@ -3561,7 +3651,7 @@ func siteByIDHandler(
 
 	case http.MethodPut:
 
-		updateSiteHandler(
+		saveDraftHandler(
 
 			w,
 
@@ -3570,6 +3660,8 @@ func siteByIDHandler(
 			id,
 
 			user.ID,
+
+			user.Email,
 		)
 
 	case http.MethodDelete:
@@ -4596,7 +4688,11 @@ func listSitesHandler(
 
         created_at,
 
-        updated_at
+        updated_at,
+
+        draft_revision,
+
+        published_revision
 
     FROM sites
 
@@ -4667,6 +4763,10 @@ func listSitesHandler(
 			&saved.CreatedAt,
 
 			&saved.UpdatedAt,
+
+			&saved.DraftRevision,
+
+			&saved.PublishedRevision,
 		)
 
 		if err != nil {
@@ -4705,6 +4805,8 @@ func listSitesHandler(
 			return
 
 		}
+
+		normalizeGrowthFields(&saved.Site)
 
 		sites = append(
 
@@ -5786,7 +5888,11 @@ func getSavedSiteByID(
 
         created_at,
 
-        updated_at
+        updated_at,
+
+        draft_revision,
+
+        published_revision
 
     FROM sites
 
@@ -5838,6 +5944,10 @@ func getSavedSiteByID(
 		&saved.CreatedAt,
 
 		&saved.UpdatedAt,
+
+		&saved.DraftRevision,
+
+		&saved.PublishedRevision,
 	)
 
 	if err != nil {
@@ -5858,6 +5968,8 @@ func getSavedSiteByID(
 		return SavedSite{}, err
 
 	}
+
+	normalizeGrowthFields(&saved.Site)
 
 	return saved, nil
 
@@ -8521,6 +8633,89 @@ func syncStripeSubscription(
 	)
 
 	return err
+}
+
+func normalizeGrowthFields(site *GeneratedSite) {
+	if site == nil {
+		return
+	}
+
+	if site.Gallery == nil {
+		site.Gallery = []string{}
+	}
+
+	if site.Sections == nil {
+		site.Sections = []SiteSection{}
+	}
+
+	for index := range site.Sections {
+		section := &site.Sections[index]
+
+		switch section.IconMode {
+		case "auto", "custom", "none":
+		default:
+			section.IconMode = "auto"
+		}
+
+		switch section.ImageMode {
+		case "auto", "custom", "none":
+		default:
+			section.ImageMode = "auto"
+		}
+	}
+
+	validBlocks := map[string]bool{
+		"about":    true,
+		"services": true,
+		"process":  true,
+		"faq":      true,
+		"gallery":  true,
+		"contact":  true,
+	}
+
+	defaultOrder := []string{
+		"about",
+		"services",
+		"process",
+		"faq",
+		"gallery",
+		"contact",
+	}
+
+	order := make([]string, 0, len(defaultOrder))
+	seen := make(map[string]bool)
+
+	for _, block := range site.LayoutOrder {
+		if validBlocks[block] && !seen[block] {
+			order = append(order, block)
+			seen[block] = true
+		}
+	}
+
+	for _, block := range defaultOrder {
+		if !seen[block] {
+			order = append(order, block)
+			seen[block] = true
+		}
+	}
+
+	site.LayoutOrder = order
+
+	hidden := make([]string, 0, len(site.HiddenBlocks))
+	seenHidden := make(map[string]bool)
+
+	for _, block := range site.HiddenBlocks {
+		if validBlocks[block] && !seenHidden[block] {
+			hidden = append(hidden, block)
+			seenHidden[block] = true
+		}
+	}
+
+	site.HiddenBlocks = hidden
+
+	if site.Testimonials == nil {
+		site.Testimonials = []map[string]any{}
+	}
 }
 
 func normalizeDesignStyle(value string) string {
