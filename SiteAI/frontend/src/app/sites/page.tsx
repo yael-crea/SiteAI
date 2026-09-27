@@ -564,8 +564,18 @@ export default function SitesPage() {
     billing?.status === "active" ||
     billing?.status === "trialing";
 
+  const normalizedPlan =
+    (billing?.plan ?? "")
+      .trim()
+      .toLowerCase();
+
+  const planAllowsCustomDomain =
+    normalizedPlan === "pro" ||
+    normalizedPlan === "agence";
+
   const customDomainAllowed =
     subscriptionActive &&
+    planAllowsCustomDomain &&
     billing?.customDomainAllowed === true;
 
   if (authLoading) {
