@@ -1115,6 +1115,53 @@ function DesignShell({
             padding: 0.75rem 1rem !important;
           }
 
+          /* CONTACT MOBILE : une seule colonne, aucune colonne écrasée */
+          .siteai-design-root #contact .grid,
+          .siteai-design-root #contact > div > .grid,
+          .siteai-design-root #contact > div > div.grid {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            gap: 1.25rem !important;
+          }
+
+          .siteai-design-root #contact .grid > *,
+          .siteai-design-root #contact > div > *,
+          .siteai-design-root #contact form,
+          .siteai-design-root #contact [data-siteai-lead-form] {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
+          .siteai-design-root #contact h1,
+          .siteai-design-root #contact h2,
+          .siteai-design-root #contact h3,
+          .siteai-design-root #contact p,
+          .siteai-design-root #contact span,
+          .siteai-design-root #contact label,
+          .siteai-design-root #contact a {
+            width: auto !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            white-space: normal !important;
+            word-break: normal !important;
+            overflow-wrap: break-word !important;
+          }
+
+          .siteai-design-root #contact [data-siteai-lead-form] input,
+          .siteai-design-root #contact [data-siteai-lead-form] select,
+          .siteai-design-root #contact [data-siteai-lead-form] textarea,
+          .siteai-design-root #contact [data-siteai-lead-form] button {
+            display: block;
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
           /* Contact */
           .siteai-design-root #contact {
             padding-top: 2.75rem !important;
