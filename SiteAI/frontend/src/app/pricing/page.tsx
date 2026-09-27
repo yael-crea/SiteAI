@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase";
 
 
 type BillingStatus = {
+  isOwner?: boolean;
   plan: string;
   status: string;
   hasSubscription: boolean;
@@ -627,11 +628,11 @@ export default function PricingPage() {
             <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                  Ton abonnement
+                  {billing?.isOwner ? "Ton accès propriétaire" : "Ton abonnement"}
                 </p>
 
                 <p className="mt-2 text-xl font-black capitalize">
-                  {currentPlan ===
+                  {billing?.isOwner ? "Propriétaire · sans abonnement" : currentPlan ===
                   "free"
                     ? "Aucun abonnement"
                     : currentPlan}
@@ -648,7 +649,7 @@ export default function PricingPage() {
                   </p>
                 )}
 
-                {billing?.currentPeriodEnd && (
+                {!billing?.isOwner && billing?.currentPeriodEnd && (
                   <p className="mt-1 text-sm text-slate-500">
                     {billing.cancelAtPeriodEnd
                       ? "Fin prévue le "
@@ -680,7 +681,7 @@ export default function PricingPage() {
           )}
         </div>
 
-        {!activeSubscription && (
+        {!billing?.isOwner && !activeSubscription && (
           <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <label className="flex cursor-pointer items-start gap-3">
               <input
@@ -710,6 +711,15 @@ export default function PricingPage() {
               Tu dois accepter les CGV avant d&apos;être redirigé vers Stripe.
               Version enregistrée : 27/09/2026.
             </p>
+          </div>
+        )}
+
+        {billing?.isOwner && (
+          <div className="mx-auto mt-8 max-w-4xl rounded-2xl border border-emerald-700 bg-emerald-950/20 p-6">
+            <p className="font-bold text-emerald-300">Toutes les fonctionnalités, sans abonnement SiteAI</p>
+            <p className="mt-3 text-sm text-slate-300">Publication sans limite de formule, domaines personnalisés, espace Agence, statistiques et IA sans quota mensuel. La limite de 20 demandes IA par heure reste active. Les frais externes éventuels (IA, hébergement, domaine) restent à ta charge.</p>
+            {billing.hasSubscription && <p className="mt-3 text-sm text-amber-300">Un abonnement Stripe existe encore : cet accès ne le résilie pas automatiquement. Tu peux le gérer avec le bouton ci-dessus.</p>}
+            <a href="/admin" className="mt-4 inline-block font-bold text-emerald-300 underline">Ouvrir l’administration</a>
           </div>
         )}
 
@@ -783,7 +793,9 @@ export default function PricingPage() {
                     )}
                   </ul>
 
-                  {isCurrent ? (
+                  {billing?.isOwner ? (
+                    <button type="button" disabled className="mt-9 w-full rounded-xl bg-emerald-600/20 px-5 py-4 font-black text-emerald-400">Inclus dans ton accès propriétaire</button>
+                  ) : isCurrent ? (
                     <button
                       type="button"
                       disabled

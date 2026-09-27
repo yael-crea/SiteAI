@@ -414,6 +414,7 @@ type StripeEvent struct {
 }
 
 type BillingStatus struct {
+	IsOwner             bool       `json:"isOwner"`
 	Plan                string     `json:"plan"`
 	Status              string     `json:"status"`
 	HasSubscription     bool       `json:"hasSubscription"`
@@ -1324,6 +1325,10 @@ func requireAdmin(
 	user, authenticated := requireUser(w, r)
 	if !authenticated {
 		return SupabaseUser{}, false
+	}
+
+	if isOwnerUser(user.ID) {
+		return user, true
 	}
 
 	var isAdmin bool
@@ -2981,6 +2986,9 @@ func healthHandler(
 var errMonthlyAIQuota = errors.New("monthly AI quota reached")
 
 func aiMonthlyLimit(status BillingStatus) int {
+	if status.IsOwner {
+		return -1
+	}
 	if !isActiveBillingStatus(status.Status) {
 		return 3
 	}
@@ -3049,7 +3057,7 @@ func consumeAIUsage(
 		return 0, 0, false, err
 	}
 
-	if monthlyUsed >= monthlyLimit {
+	if monthlyLimit >= 0 && monthlyUsed >= monthlyLimit {
 		return 0, 0, false, errMonthlyAIQuota
 	}
 
@@ -5332,7 +5340,7 @@ func publishSiteHandler(
 			return
 		}
 
-		if publishedCount >= entitlements.MaxPublishedSites {
+		if entitlements.MaxPublishedSites > 0 && publishedCount >= entitlements.MaxPublishedSites {
 			http.Error(
 				w,
 				publishedSiteLimitMessage(billingStatus.Plan, entitlements.MaxPublishedSites),
@@ -7522,6 +7530,23 @@ func doStripeForm(
 	return nil
 }
 
+// The owner identity is configured only on the backend. Never trust a client role.
+func isOwnerUser(userID string) bool {
+	configured := strings.TrimSpace(os.Getenv("SITEAI_OWNER_USER_ID"))
+	return configured != "" && strings.EqualFold(configured, strings.TrimSpace(userID))
+}
+
+func applyOwnerAccess(status *BillingStatus, userID string) {
+	if !isOwnerUser(userID) {
+		return
+	}
+	status.IsOwner = true
+	status.Plan = "owner"
+	status.Status = "active"
+	// Preserve real Stripe metadata so an existing subscription remains manageable.
+	applyBillingEntitlements(status)
+}
+
 func getBillingStatus(
 	ctx context.Context,
 	userID string,
@@ -7568,6 +7593,7 @@ func getBillingStatus(
 		}
 
 		applyBillingEntitlements(&status)
+		applyOwnerAccess(&status, userID)
 
 		return status, "", "", nil
 	}
@@ -7590,6 +7616,7 @@ func getBillingStatus(
 	}
 
 	applyBillingEntitlements(&billingStatus)
+	applyOwnerAccess(&billingStatus, userID)
 
 	return billingStatus, customerID, subscriptionID, nil
 }
@@ -7601,6 +7628,9 @@ func isActiveBillingStatus(status string) bool {
 }
 
 func billingEntitlements(status BillingStatus) PlanEntitlements {
+	if status.IsOwner {
+		return PlanEntitlements{MaxPublishedSites: -1, CustomDomainAllowed: true}
+	}
 	if !isActiveBillingStatus(status.Status) {
 		return PlanEntitlements{}
 	}
@@ -7961,6 +7991,11 @@ func stripeCheckoutHandler(
 	status, _, _, err := getBillingStatus(r.Context(), user.ID)
 	if err != nil {
 		http.Error(w, "Impossible de lire l'abonnement", http.StatusInternalServerError)
+		return
+	}
+
+	if status.IsOwner {
+		http.Error(w, "Ton accès propriétaire inclut toutes les fonctionnalités sans abonnement.", http.StatusConflict)
 		return
 	}
 
@@ -8495,7 +8530,7 @@ func syncStripeSubscription(
 	if err != nil {
 		return err
 	}
-	if subscriptionEndsPublication(subscription.Status) {
+	if subscriptionEndsPublication(subscription.Status) && !isOwnerUser(userID) {
 		_, err = tx.Exec(ctx, "UPDATE sites SET published = FALSE, updated_at = NOW() WHERE user_id = $1::uuid AND published = TRUE;", userID)
 		if err != nil {
 			return err

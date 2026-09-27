@@ -69,6 +69,7 @@ type DomainStatus = {
 };
 
 type BillingStatus = {
+  isOwner?: boolean;
   plan: string;
   status: string;
   hasSubscription: boolean;
@@ -845,8 +846,8 @@ export default function DashboardPage() {
     });
   }, [sites, search, filter]);
 
-  const planName = readablePlan(billing?.plan ?? "free");
-  const billingStatus = readableBillingStatus(billing?.status ?? "");
+  const planName = billing?.isOwner ? "Propriétaire" : readablePlan(billing?.plan ?? "free");
+  const billingStatus = billing?.isOwner ? "Accès complet · sans abonnement" : readableBillingStatus(billing?.status ?? "");
   const subscriptionActive =
     billing?.status === "active" || billing?.status === "trialing";
 
@@ -1097,7 +1098,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                {billing?.currentPeriodEnd && (
+                {!billing?.isOwner && billing?.currentPeriodEnd && (
                   <p className="mt-2 text-sm text-slate-500">
                     {billing.cancelAtPeriodEnd
                       ? "Fin de l’abonnement prévue le "
@@ -1112,11 +1113,19 @@ export default function DashboardPage() {
                 onClick={() => router.push("/pricing")}
                 className="rounded-xl border border-violet-700 px-5 py-3 text-sm font-bold text-violet-300 hover:bg-violet-950"
               >
-                {subscriptionActive
+                {billing?.isOwner ? "Mon accès propriétaire" : subscriptionActive
                   ? "Gérer mon abonnement"
                   : "Voir les formules"}
               </button>
             </div>
+          </div>
+        )}
+
+        {billing?.isOwner && (
+          <div className="mt-6 rounded-2xl border border-emerald-700 bg-emerald-950/20 p-5">
+            <p className="font-bold text-emerald-300">Compte propriétaire</p>
+            <p className="mt-2 text-sm text-slate-300">Toutes les fonctionnalités de SiteAI sont disponibles. Publication sans limite de formule, domaines personnalisés, espace Agence et IA sans quota mensuel. La limite de 20 demandes IA par heure reste active.</p>
+            <a href="/admin" className="mt-4 inline-block rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold">Ouvrir l’administration</a>
           </div>
         )}
 
@@ -1139,7 +1148,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {billing?.plan?.toLowerCase() === "agence" && (
+        {(billing?.isOwner || billing?.plan?.toLowerCase() === "agence") && (
           <section className="mt-10 rounded-3xl border border-violet-800/60 bg-violet-950/15 p-6">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-violet-300">Espace Agence</p>
             <h2 className="mt-2 text-2xl font-black">Portefeuille clients</h2>
