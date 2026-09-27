@@ -3482,6 +3482,36 @@ func siteByIDHandler(
 
 			return
 
+		case "duplicate":
+
+			if r.Method != http.MethodPost {
+
+				http.Error(
+
+					w,
+
+					"Méthode non autorisée",
+
+					http.StatusMethodNotAllowed,
+				)
+
+				return
+
+			}
+
+			duplicateSiteHandler(
+
+				w,
+
+				r,
+
+				id,
+
+				user.ID,
+			)
+
+			return
+
 		default:
 
 			http.Error(
@@ -5033,6 +5063,223 @@ func deleteSiteHandler(
 		},
 	)
 
+}
+
+func duplicateSiteHandler(
+
+	w http.ResponseWriter,
+
+	r *http.Request,
+
+	id int64,
+
+	userID string,
+
+) {
+
+	ctx := r.Context()
+
+	var originalName string
+
+	err := db.QueryRow(
+		ctx,
+		`
+        SELECT business_name
+        FROM sites
+        WHERE
+            id = $1
+            AND user_id = $2::uuid;
+        `,
+		id,
+		userID,
+	).Scan(&originalName)
+
+	if err != nil {
+
+		if errors.Is(err, pgx.ErrNoRows) {
+
+			http.Error(
+				w,
+				"Site introuvable",
+				http.StatusNotFound,
+			)
+
+			return
+		}
+
+		log.Println("Erreur lecture du site à dupliquer :", err)
+
+		http.Error(
+			w,
+			"Impossible de dupliquer le site",
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	baseName := strings.TrimSpace(originalName)
+
+	if baseName == "" {
+		baseName = "Site"
+	}
+
+	baseName += " - Copie"
+	duplicateName := baseName
+
+	for attempt := 1; attempt <= 99; attempt++ {
+
+		var exists bool
+
+		err = db.QueryRow(
+			ctx,
+			`
+            SELECT EXISTS(
+                SELECT 1
+                FROM sites
+                WHERE
+                    user_id = $1::uuid
+                    AND LOWER(business_name) = LOWER($2)
+            );
+            `,
+			userID,
+			duplicateName,
+		).Scan(&exists)
+
+		if err != nil {
+
+			log.Println("Erreur vérification nom de copie :", err)
+
+			http.Error(
+				w,
+				"Impossible de dupliquer le site",
+				http.StatusInternalServerError,
+			)
+
+			return
+		}
+
+		if !exists {
+			break
+		}
+
+		if attempt == 99 {
+
+			http.Error(
+				w,
+				"Trop de copies de ce site existent déjà",
+				http.StatusConflict,
+			)
+
+			return
+		}
+
+		duplicateName = fmt.Sprintf(
+			"%s %d",
+			baseName,
+			attempt+1,
+		)
+	}
+
+	duplicateSlug := slugify(duplicateName)
+
+	var duplicateID int64
+
+	err = db.QueryRow(
+		ctx,
+		`
+        INSERT INTO sites (
+            user_id,
+            business_name,
+            activity,
+            city,
+            phone,
+            notification_email,
+            design_style,
+            accent_color,
+            site_data,
+            published,
+            public_slug,
+            published_at,
+            custom_domain,
+            custom_domain_verified,
+            custom_domain_updated_at
+        )
+        SELECT
+            user_id,
+            $3,
+            activity,
+            city,
+            phone,
+            notification_email,
+            design_style,
+            accent_color,
+            jsonb_set(
+                jsonb_set(
+                    site_data,
+                    '{businessName}',
+                    to_jsonb($3::text),
+                    true
+                ),
+                '{slug}',
+                to_jsonb($4::text),
+                true
+            ),
+            FALSE,
+            NULL,
+            NULL,
+            NULL,
+            FALSE,
+            NULL
+        FROM sites
+        WHERE
+            id = $1
+            AND user_id = $2::uuid
+        RETURNING id;
+        `,
+		id,
+		userID,
+		duplicateName,
+		duplicateSlug,
+	).Scan(&duplicateID)
+
+	if err != nil {
+
+		log.Println("Erreur duplication site :", err)
+
+		http.Error(
+			w,
+			"Impossible de dupliquer le site",
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	duplicated, err := getSavedSiteByID(
+		ctx,
+		duplicateID,
+		userID,
+	)
+
+	if err != nil {
+
+		log.Println("Site dupliqué mais impossible à relire :", err)
+
+		http.Error(
+			w,
+			"Site dupliqué mais impossible à relire",
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	writeJSON(
+		w,
+		http.StatusCreated,
+		duplicated,
+	)
 }
 
 func publishSiteHandler(
