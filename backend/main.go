@@ -3015,7 +3015,7 @@ func aiMonthlyLimit(status BillingStatus) int {
 		return -1
 	}
 	if !isActiveBillingStatus(status.Status) {
-		return 3
+		return 15
 	}
 	switch strings.ToLower(strings.TrimSpace(status.Plan)) {
 	case "essentiel":
@@ -3025,7 +3025,7 @@ func aiMonthlyLimit(status BillingStatus) int {
 	case "agence":
 		return 1000
 	default:
-		return 3
+		return 15
 	}
 }
 

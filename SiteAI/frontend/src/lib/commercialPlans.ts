@@ -62,7 +62,7 @@ export const plans: {
 ];
 
 export const freePreviewText =
-  "Crée ton compte et prépare ton site gratuitement, sans carte bancaire : aperçu, édition manuelle et sauvegarde inclus, avec 3 demandes IA par mois. Choisis un abonnement uniquement pour publier.";
+  "Crée ton compte et prépare ton site gratuitement, sans carte bancaire : aperçu, édition manuelle et sauvegarde inclus, avec 15 demandes IA par mois. Choisis un abonnement uniquement pour publier.";
 
 export const aiUsageText =
   "Les demandes IA incluent la création et la modification. Le quota est partagé entre tous les sites du compte et renouvelé le 1er de chaque mois à 00 h UTC, sans report. Une demande lancée est comptée, même si la génération échoue. Maximum : 20 demandes par heure. Une fois le quota atteint, l’édition manuelle reste disponible.";
