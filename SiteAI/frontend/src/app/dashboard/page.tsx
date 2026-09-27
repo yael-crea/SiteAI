@@ -199,6 +199,7 @@ export default function DashboardPage() {
   const [deletingID, setDeletingID] = useState<number | null>(null);
   const [duplicatingID, setDuplicatingID] = useState<number | null>(null);
   const [shareFeedback, setShareFeedback] = useState<ShareFeedback | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [domainPanelSiteID, setDomainPanelSiteID] = useState<number | null>(null);
   const [domainInput, setDomainInput] = useState("");
@@ -232,6 +233,7 @@ export default function DashboardPage() {
           loadBilling(),
           loadLeads(),
           loadAnalytics(),
+          checkAdminAccess(),
         ]);
       } catch (err) {
         console.error(err);
@@ -286,6 +288,27 @@ export default function DashboardPage() {
     }
 
     return response;
+  }
+
+  async function checkAdminAccess() {
+    try {
+      const response = await authenticatedFetch("/admin/stats");
+
+      if (response.status === 403) {
+        setIsAdmin(false);
+        return;
+      }
+
+      if (!response.ok) {
+        setIsAdmin(false);
+        return;
+      }
+
+      setIsAdmin(true);
+    } catch (err) {
+      console.error("Vérification admin impossible :", err);
+      setIsAdmin(false);
+    }
   }
 
   async function loadSites() {
@@ -1035,6 +1058,16 @@ export default function DashboardPage() {
                 <p className="text-sm font-medium">{userEmail}</p>
               </div>
 
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/admin")}
+                  className="rounded-xl border border-amber-700 px-4 py-2 text-sm font-bold text-amber-300 transition hover:bg-amber-950"
+                >
+                  ⚙️ Admin
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => router.push("/prospects")}
@@ -1083,6 +1116,19 @@ export default function DashboardPage() {
                     {userEmail}
                   </p>
                 </div>
+              )}
+
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    router.push("/admin");
+                  }}
+                  className="mb-2 w-full rounded-xl border border-amber-700 px-4 py-3 text-left text-sm font-bold text-amber-300 transition hover:bg-amber-950"
+                >
+                  ⚙️ Administration
+                </button>
               )}
 
               <button
