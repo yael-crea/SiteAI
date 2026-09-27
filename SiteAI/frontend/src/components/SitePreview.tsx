@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { getQuoteOptions, type Testimonial } from "@/lib/siteGrowth";
 
@@ -152,6 +152,7 @@ type SitePreviewProps = {
 
   city: string;
 
+  previewOnly?: boolean;
   onEdit?: (target: PreviewEditTarget) => void;
 
 };
@@ -1311,7 +1312,13 @@ function getProjectTitle(activity: string, index: number) {
   return titles[index % titles.length];
 }
 
-export default function SitePreview({
+const PreviewOnlyContext = createContext(false);
+
+export default function SitePreview(props: SitePreviewProps) {
+  return <PreviewOnlyContext.Provider value={props.previewOnly ?? false}><SitePreviewContent {...props} /></PreviewOnlyContext.Provider>;
+}
+
+function SitePreviewContent({
 
   site,
 
@@ -4212,6 +4219,7 @@ function LeadForm({
   variant: "modern" | "elegant" | "artisan";
   activity: string;
 }) {
+  const previewOnly = useContext(PreviewOnlyContext);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -4292,6 +4300,10 @@ function LeadForm({
 
     setFormError("");
     setFormSuccess("");
+    if (previewOnly) {
+      setFormError("Mode aperçu : aucun message envoyé. Teste le formulaire depuis le site publié.");
+      return;
+    }
 
     if (!name.trim()) {
       setFormError("Indiquez votre nom.");
@@ -4370,6 +4382,7 @@ function LeadForm({
 
   return (
     <form onSubmit={submitLead} data-siteai-lead-form>
+      {previewOnly && <p className="mb-4 rounded-lg border border-current p-3 text-sm">Mode aperçu : aucun message ne sera envoyé.</p>}
       <p
         className={
           isElegant

@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import SitePreview, { type PreviewEditTarget } from "@/components/SitePreview";
 import PublicationSuccess from "@/components/PublicationSuccess";
+import BuilderVersions, { useBuilderVersions } from "@/components/BuilderVersions";
 import { useBuilderDraft } from "@/lib/useBuilderDraft";
 import StylePicker from "@/components/StylePicker";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
@@ -604,7 +605,7 @@ function ResponsiveSitePreview({
 
         {portalRoot &&
           createPortal(
-            <SitePreview onEdit={onEdit}
+            <SitePreview previewOnly onEdit={onEdit}
               site={site}
               designStyle={
                 designStyle
@@ -825,6 +826,37 @@ export default function Home() {
     validate: isBuilderSnapshot,
     onRestore: restoreSnapshot,
   });
+
+  const versions = useBuilderVersions<BuilderSnapshot>(
+    draftUserId && draftReady && !openingSite ? `siteai:versions:v1:${draftUserId}:${savedSiteID ?? "new"}` : null,
+    isBuilderSnapshot,
+  );
+
+  function savedSnapshot(saved: SavedSite): BuilderSnapshot {
+    return {site: saved.site, businessName: saved.businessName, activity: saved.activity,
+      city: saved.city, phone: saved.phone, services: saved.site.sections.map(section => section.title).join(", "),
+      designStyle: saved.designStyle, accentColor: saved.accentColor};
+  }
+
+  function restoreVersion(snapshot: BuilderSnapshot) {
+    if (busy || !versions.checkpoint(draftSnapshot, "Avant restauration")) return false;
+    restoreSnapshot(snapshot);
+    setSaveMessage("Version restaurée dans l’éditeur uniquement. Enregistre quand tu es prêt.");
+    return true;
+  }
+
+  function completeCheck(id: string) {
+    const targets: Record<string, string> = {identity: "businessName", phone: "phone", intro: "heroTitle", services: "services", photos: "heroImageUrl", seo: "seo", local: "local", reviews: "reviews"};
+    setPreviewFullscreenOpen(false);
+    setMobileStep(1); setDesktopPanel("contenu"); setEditorCollapsed(false); setManualEditorOpen(true);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const field = document.querySelector<HTMLElement>(`[data-builder-edit="${targets[id] ?? "businessName"}"]`);
+      let parent = field?.parentElement;
+      while (parent) { if (parent instanceof HTMLDetailsElement) parent.open = true; parent = parent.parentElement; }
+      field?.scrollIntoView({behavior: "smooth", block: "center"});
+      field?.focus({preventScroll: true});
+    }));
+  }
 
   function restoreSnapshot(snapshot: BuilderSnapshot) {
     setSite(snapshot.site); setBusinessName(snapshot.businessName); setActivity(snapshot.activity);
@@ -1211,6 +1243,7 @@ export default function Home() {
       return;
     }
 
+    versions.checkpoint(draftSnapshot, "Avant modification IA");
     setEditLoading(true);
     setEditError("");
     setSaveMessage("");
@@ -1369,6 +1402,8 @@ export default function Home() {
       return null;
     }
 
+    const previousSaved = currentSavedSite();
+    if (previousSaved) versions.checkpoint(savedSnapshot(previousSaved), "Avant enregistrement");
     setSaving(true);
     setSaveError("");
     setSaveMessage("");
@@ -1463,6 +1498,7 @@ export default function Home() {
       const saved: SavedSite =
         await response.json();
 
+      versions.checkpoint(savedSnapshot(saved), saved.published ? "Version mise en ligne" : "Version enregistrée", `siteai:versions:v1:${draftUserId}:${saved.id}`);
       if (savedSiteID === null) draft.clearDraft();
       setSavedSiteID(
         saved.id,
@@ -1528,16 +1564,6 @@ export default function Home() {
 
   async function publishCurrentSite() {
     if (saving || publishing) return;
-    if (
-      savedSiteID === null
-    ) {
-      setSaveError(
-        "Sauvegarde le site avant de le publier.",
-      );
-
-      return;
-    }
-
     setPublishing(true);
     setSaveError("");
     setSaveMessage("");
@@ -3305,9 +3331,8 @@ export default function Home() {
 
       <nav aria-label="Outils du builder" className="hidden shrink-0 items-center gap-2 overflow-x-auto border-b border-slate-800 bg-slate-900/60 px-5 py-3 md:flex">
         {([
-          ["apercu", "Aperçu"], ["infos", "Infos"], ["contenu", "Contenu"],
-          ["apparence", "Apparence"], ["ia", "Assistant IA"], ["sites", "Mes sites"],
-          ["publication", "Sauvegarder / Publier"],
+          ["infos", "1 · Infos"], ["contenu", "2 · Contenu"], ["apparence", "3 · Apparence"],
+          ["apercu", "4 · Aperçu"], ["publication", "5 · Publication"],
         ] as const).map(([value, label]) => (
           <button key={value} type="button" disabled={!site && !["infos", "sites"].includes(value)}
             aria-pressed={activeDesktopPanel === value}
@@ -3316,14 +3341,22 @@ export default function Home() {
             {label}
           </button>
         ))}
+        <select aria-label="Autres outils" value={["ia", "sites"].includes(activeDesktopPanel) ? activeDesktopPanel : ""}
+          onChange={event => {if (event.target.value === "ia" || event.target.value === "sites") {setDesktopPanel(event.target.value); setEditorCollapsed(false);}}}
+          className="ml-auto min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm">
+          <option value="">Autres outils</option><option value="ia" disabled={!site}>Assistant IA</option><option value="sites">Mes sites</option>
+        </select>
       </nav>
       <div className="shrink-0 border-b border-slate-800 bg-slate-950 px-4 py-2">
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" disabled={!draft.canUndo || busy} onClick={draft.undo} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">↶ Annuler</button>
           <button type="button" disabled={!draft.canRedo || busy} onClick={draft.redo} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">↷ Rétablir</button>
           {site && <button type="button" aria-pressed={previewEditing} onClick={() => setPreviewEditing(value => !value)} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${previewEditing ? "border-blue-400 bg-blue-500/10 text-blue-200" : "border-slate-700"}`}>{previewEditing ? "Modifier en cliquant : actif" : "Modifier en cliquant"}</button>}
+          {site && <BuilderVersions entries={versions.entries} error={versions.error} disabled={busy || !draftReady}
+            onSave={() => versions.checkpoint(draftSnapshot, "Version conservée")} onRestore={restoreVersion} />}
           <p role="status" className="text-xs text-slate-400">{draft.status === "saved" ? "Brouillon enregistré sur cet appareil" : draft.status === "saving" ? "Enregistrement du brouillon…" : draft.status === "error" ? "Brouillon non enregistré : stockage indisponible" : "Brouillon local · publication manuelle"}</p>
         </div>
+        {versions.error && <p role="alert" className="mt-2 text-xs text-amber-300">{versions.error}</p>}
         {draft.status === "error" && <button type="button" onClick={draft.retrySave} className="mt-2 text-xs text-blue-300 underline">Réessayer la sauvegarde locale</button>}
         {draft.restoredDraft && <div className="mt-2 flex flex-wrap items-center gap-3 rounded-xl border border-blue-800 bg-blue-950/30 p-3 text-sm">
           <p>Un brouillon a été retrouvé sur cet appareil.</p>
@@ -3383,9 +3416,10 @@ export default function Home() {
           [data-siteai-builder] > header > div { max-width: none; padding-top: .65rem; padding-bottom: .65rem; }
           [data-builder-section] { width: 100%; max-width: none; flex: 1; min-height: 0; padding: 1rem; }
           [data-builder-section] > [data-mobile-hide] { display: none; }
-          [data-builder-grid] { height: 100%; min-height: 0; grid-template-columns: 320px minmax(0, 1fr); gap: 1rem; }
+          [data-builder-grid] { height: 100%; min-height: 0; grid-template-columns: clamp(300px, 26vw, 390px) minmax(0, 1fr); gap: 1rem; }
           [data-builder-editor] { display: block; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: .25rem; }
           [data-builder-editor] > * { display: none; margin: 0; }
+          [data-builder-editor] { overflow-x: hidden; }
           [data-desktop-panel="infos"] form[data-mobile-panel="infos"],
           [data-desktop-panel="sites"] [data-desktop-sites],
           [data-desktop-panel="ia"] [data-desktop-ai],
@@ -4101,7 +4135,7 @@ export default function Home() {
                       />
                     </div>
 
-                    <details className="rounded-xl border border-slate-700 p-4"><summary className="cursor-pointer text-sm font-semibold">Référencement Google</summary><div className="mt-4">
+                    <details className="rounded-xl border border-slate-700 p-4"><summary data-builder-edit="seo" className="cursor-pointer text-sm font-semibold">Référencement Google</summary><div className="mt-4">
                       <p className="font-bold">
                         SEO Google
                       </p>
@@ -4177,7 +4211,7 @@ export default function Home() {
                       <div className="mt-4 space-y-5">
                         <div>
                           <label className="mb-2 block text-sm text-slate-400">Zone d’intervention ou adresse</label>
-                          <input value={site.serviceArea ?? ""} onChange={(event) => updateSiteField("serviceArea", event.target.value)} placeholder={`Exemple : ${city} et 30 km autour`} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" />
+                          <input data-builder-edit="local" value={site.serviceArea ?? ""} onChange={(event) => updateSiteField("serviceArea", event.target.value)} placeholder={`Exemple : ${city} et 30 km autour`} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500" />
                         </div>
                         <div>
                           <label className="mb-2 block text-sm text-slate-400">Horaires</label>
@@ -4186,7 +4220,7 @@ export default function Home() {
                         <div className="border-t border-slate-800 pt-5">
                           <div className="flex items-center justify-between gap-3">
                             <div><p className="font-bold">Avis clients</p><p className="mt-1 text-xs leading-5 text-slate-500">Ajoute uniquement des avis réels, avec l’accord du client.</p></div>
-                            <button type="button" onClick={addTestimonial} disabled={(site.testimonials?.length ?? 0) >= 6} className="rounded-lg border border-blue-700 px-3 py-2 text-xs font-bold text-blue-300 disabled:opacity-40">+ Ajouter</button>
+                            <button data-builder-edit="reviews" type="button" onClick={addTestimonial} disabled={(site.testimonials?.length ?? 0) >= 6} className="rounded-lg border border-blue-700 px-3 py-2 text-xs font-bold text-blue-300 disabled:opacity-40">+ Ajouter</button>
                           </div>
                           <div className="mt-4 space-y-4">
                             {(site.testimonials ?? []).map((item, index) => (
@@ -4331,7 +4365,7 @@ export default function Home() {
                       </div>
                     </div></details>
 
-                    <div className="border-t border-slate-800 pt-6">
+                    <div data-builder-edit="services" tabIndex={-1} className="border-t border-slate-800 pt-6">
                       <div className="flex min-w-0 flex-wrap items-center justify-between gap-4">
                         <div>
                           <p className="font-bold">
@@ -5201,8 +5235,8 @@ export default function Home() {
 
                 <p className="mt-2 text-sm leading-6 text-slate-400">
                   {openedSite?.published
-                    ? "Ton site est en ligne. Enregistrer met aussi à jour sa version publique."
-                    : "Enregistre ton brouillon, puis publie-le quand tu es prêt."}
+                    ? "Site en ligne : le bouton Mettre à jour le site public applique tes modifications immédiatement. Le brouillon automatique reste uniquement sur cet appareil."
+                    : "Ton aperçu reste privé. Publier mon site enregistre tes modifications et le met en ligne en une seule action."}
                 </p>
                 <div className="mt-5 rounded-2xl border border-slate-700 bg-slate-950 p-4">
                   <div className="flex items-center justify-between gap-4"><div><h3 className="font-semibold">Bilan du site</h3><p className="mt-1 text-xs leading-5 text-slate-400">Ces conseils ne bloquent pas la publication.</p></div><span className={`rounded-full px-3 py-2 text-sm font-black ${(siteHealth?.score ?? 0) >= 75 ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-300"}`}>{siteHealth?.score ?? 0}/100</span></div>
@@ -5213,9 +5247,7 @@ export default function Home() {
                         <span title={item.advice}><span aria-hidden="true" className={item.ready ? "text-emerald-400" : "text-amber-300"}>{item.ready ? "✓ " : "○ "}</span>{item.label}
                           <span className="sr-only">{item.ready ? " : renseigné" : " : à compléter"}</span>
                         </span>
-                        {!item.ready && <button type="button" onClick={() => {
-                          navigateMobileStep(1); setDesktopPanel("contenu"); setEditorCollapsed(false);
-                        }} className="shrink-0 rounded-lg px-2 py-2 text-xs font-semibold text-blue-300 hover:bg-slate-800">Compléter</button>}
+                        {!item.ready && <button type="button" onClick={() => completeCheck(item.id)} className="shrink-0 rounded-lg px-2 py-2 text-xs font-semibold text-blue-300 hover:bg-slate-800">Compléter</button>}
                       </li>
                     ))}
                   </ul>
@@ -5229,19 +5261,14 @@ export default function Home() {
                     saveCurrentSite
                   }
                   disabled={saving || publishing}
-                  className="mt-5 w-full rounded-xl bg-green-600 px-6 py-4 font-bold hover:bg-green-500 disabled:opacity-50"
+                  className={`mt-5 w-full rounded-xl px-6 py-4 font-bold disabled:opacity-50 ${openedSite?.published ? "bg-blue-600 hover:bg-blue-500" : "border border-slate-700 hover:bg-slate-800"}`}
                 >
                   {saving
                     ? "Sauvegarde..."
-                    : savedSiteID ===
-                        null
-                      ? "💾 Sauvegarder"
-                      : "💾 Enregistrer les modifications"}
+                    : openedSite?.published ? "Mettre à jour le site public" : "Enregistrer sans publier"}
                 </button>
 
-                {savedSiteID !==
-                  null &&
-                  !openedSite?.published && (
+                {!openedSite?.published && (
                     <button
                       type="button"
                       onClick={
@@ -5254,9 +5281,19 @@ export default function Home() {
                     >
                       {publishing
                         ? "Enregistrement et publication..."
-                        : "🚀 Enregistrer et publier"}
+                        : "Publier mon site"}
                     </button>
                   )}
+
+                {openedSite?.published && (
+                  <div className="mt-5 rounded-xl border border-slate-700 p-4 text-sm">
+                    <h3 className="font-bold">Dernière vérification après publication</h3>
+                    <p className="mt-2 leading-6 text-slate-400">Envoie une demande depuis le formulaire public, puis vérifie sa présence dans Prospects et la réception de l’email. L’aperçu n’envoie aucun message.</p>
+                    {openedSite.publicSlug && <a target="_blank" rel="noopener noreferrer" href={`/site/${encodeURIComponent(openedSite.publicSlug)}#contact`} className="mt-3 block font-semibold text-blue-300 underline">Ouvrir le formulaire public ↗</a>}
+                    <a href="/dashboard" className="mt-3 block text-blue-300 underline">Ouvrir mon tableau de bord et mes prospects</a>
+                    <p className="mt-3 text-xs text-slate-400">Domaine personnel facultatif : connecte-le depuis la fiche du site dans ton tableau de bord.</p>
+                  </div>
+                )}
 
                 {openedSite?.published && (
                   <>

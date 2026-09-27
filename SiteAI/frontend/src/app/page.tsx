@@ -152,10 +152,10 @@ export default function HomePage() {
               </Link>
 
               <a
-                href="#tarifs"
+                href="/exemples"
                 className="rounded-xl border border-slate-700 px-7 py-4 text-center font-black text-slate-200 transition hover:border-blue-500"
               >
-                Voir les tarifs
+                Voir des exemples
               </a>
             </div>
 
@@ -242,6 +242,13 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section id="exemples" className="mx-auto max-w-7xl px-6 py-16">
+        <p className="text-sm font-bold uppercase tracking-widest text-blue-400">Pour les petites entreprises</p>
+        <h2 className="mt-3 text-3xl font-black">Un site concret pour ton métier</h2>
+        <p className="mt-3 text-slate-400">Explore nos démonstrations fictives, puis personnalise ton propre site.</p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">{["Plombier", "Restaurant", "Paysagiste"].map(metier => <Link key={metier} href="/exemples" className="rounded-2xl border border-slate-700 bg-slate-900 p-6 transition hover:border-blue-500"><p className="text-xs text-slate-400">Démonstration</p><h3 className="mt-2 text-xl font-bold">{metier}</h3><p className="mt-4 text-sm text-blue-300">Explorer les modèles →</p></Link>)}</div>
       </section>
 
       <section
