@@ -604,6 +604,20 @@ export default function MobileBuilderPage() {
   const [message, setMessage] =
     useState("");
 
+  const [autosaveStatus, setAutosaveStatus] =
+    useState<
+      "idle" | "pending" | "saving" | "saved" | "error"
+    >("idle");
+
+  const autosaveTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const lastSavedSnapshotRef =
+    useRef("");
+
+  const autosaveReadyRef =
+    useRef(false);
+
   const [aiInstruction, setAiInstruction] =
     useState("");
   const [aiEditing, setAiEditing] =
@@ -673,6 +687,14 @@ export default function MobileBuilderPage() {
       active = false;
     };
   }, [router]);
+
+  useEffect(() => {
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!previewFullscreenOpen) {
@@ -788,6 +810,20 @@ export default function MobileBuilderPage() {
     );
     setDesignStyle(saved.designStyle);
     setAccentColor(saved.accentColor);
+
+    lastSavedSnapshotRef.current =
+      JSON.stringify({
+        businessName: saved.businessName,
+        activity: saved.activity,
+        city: saved.city,
+        phone: saved.phone,
+        designStyle: saved.designStyle,
+        accentColor: saved.accentColor,
+        site: normalized,
+      });
+
+    autosaveReadyRef.current = true;
+    setAutosaveStatus("saved");
   }
 
   function resetForNewSite() {
@@ -808,6 +844,15 @@ export default function MobileBuilderPage() {
     setAiInstruction("");
     setError("");
     setMessage("");
+
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+
+    lastSavedSnapshotRef.current = "";
+    autosaveReadyRef.current = false;
+    setAutosaveStatus("idle");
   }
 
   async function generateSite(
@@ -886,9 +931,14 @@ export default function MobileBuilderPage() {
       const generated: GeneratedSite =
         await response.json();
 
-      setSite(
-        normalizeSite(generated),
-      );
+      const normalizedGenerated =
+        normalizeSite(generated);
+
+      setSite(normalizedGenerated);
+      autosaveReadyRef.current = true;
+      lastSavedSnapshotRef.current = "";
+      setAutosaveStatus("pending");
+
       setStep(2);
       setMessage(
         "Site généré. Tu peux maintenant ajuster le contenu.",
@@ -1046,14 +1096,35 @@ export default function MobileBuilderPage() {
     }
   }
 
-  async function saveCurrentSite() {
+  function buildAutosaveSnapshot(
+    currentSite: GeneratedSite,
+  ) {
+    return JSON.stringify({
+      businessName,
+      activity,
+      city,
+      phone,
+      designStyle,
+      accentColor,
+      site: currentSite,
+    });
+  }
+
+  async function saveCurrentSite(
+    options: {
+      silent?: boolean;
+    } = {},
+  ) {
     if (!site) {
       return;
     }
 
     setSaving(true);
     setError("");
-    setMessage("");
+
+    if (!options.silent) {
+      setMessage("");
+    }
 
     const synchronizedSite =
       normalizeSite({
@@ -1126,18 +1197,33 @@ export default function MobileBuilderPage() {
       setPhone(saved.phone);
       setDesignStyle(saved.designStyle);
       setAccentColor(saved.accentColor);
-      setMessage(
-        "Site sauvegardé avec succès.",
-      );
+
+      lastSavedSnapshotRef.current =
+        buildAutosaveSnapshot(
+          normalizeSite(saved.site),
+        );
+
+      setAutosaveStatus("saved");
+
+      if (!options.silent) {
+        setMessage(
+          "Site sauvegardé avec succès.",
+        );
+      }
 
       return saved;
     } catch (err) {
       console.error(err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Impossible de sauvegarder le site.",
-      );
+      if (options.silent) {
+        setAutosaveStatus("error");
+      } else {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Impossible de sauvegarder le site.",
+        );
+      }
+
       return null;
     } finally {
       setSaving(false);
@@ -1284,6 +1370,77 @@ export default function MobileBuilderPage() {
     });
   }
 
+  useEffect(() => {
+    if (
+      authLoading ||
+      !site ||
+      !autosaveReadyRef.current ||
+      saving ||
+      publishing ||
+      loading ||
+      aiEditing
+    ) {
+      return;
+    }
+
+    const snapshot =
+      buildAutosaveSnapshot(site);
+
+    if (
+      snapshot ===
+      lastSavedSnapshotRef.current
+    ) {
+      if (autosaveStatus !== "saved") {
+        setAutosaveStatus("saved");
+      }
+      return;
+    }
+
+    setAutosaveStatus("pending");
+
+    if (autosaveTimerRef.current) {
+      clearTimeout(
+        autosaveTimerRef.current,
+      );
+    }
+
+    autosaveTimerRef.current =
+      setTimeout(async () => {
+        setAutosaveStatus("saving");
+
+        const saved =
+          await saveCurrentSite({
+            silent: true,
+          });
+
+        if (saved) {
+          setAutosaveStatus("saved");
+        }
+      }, 1500);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(
+          autosaveTimerRef.current,
+        );
+        autosaveTimerRef.current = null;
+      }
+    };
+  }, [
+    authLoading,
+    site,
+    businessName,
+    activity,
+    city,
+    phone,
+    designStyle,
+    accentColor,
+    saving,
+    publishing,
+    loading,
+    aiEditing,
+  ]);
+
   if (authLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
@@ -1338,13 +1495,35 @@ export default function MobileBuilderPage() {
         </div>
 
         <div className="border-t border-slate-900 px-4 py-3">
-          <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="font-bold text-blue-400">
-              Étape {step} sur 5
-            </span>
-            <span className="text-slate-400">
-              {stepLabels[step]}
-            </span>
+          <div className="mb-2 flex items-center justify-between gap-3 text-xs">
+            <div>
+              <span className="font-bold text-blue-400">
+                Étape {step} sur 5
+              </span>
+              <span className="ml-2 text-slate-400">
+                {stepLabels[step]}
+              </span>
+            </div>
+
+            {site && (
+              <div
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black ${
+                  autosaveStatus === "saved"
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : autosaveStatus === "error"
+                      ? "bg-red-500/10 text-red-400"
+                      : "bg-slate-800 text-slate-400"
+                }`}
+              >
+                {autosaveStatus === "saving"
+                  ? "Sauvegarde..."
+                  : autosaveStatus === "pending"
+                    ? "À enregistrer"
+                    : autosaveStatus === "error"
+                      ? "Erreur sauvegarde"
+                      : "✓ Enregistré"}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-5 gap-1">
@@ -1964,7 +2143,9 @@ export default function MobileBuilderPage() {
               <button
                 type="button"
                 disabled={saving}
-                onClick={saveCurrentSite}
+                onClick={() =>
+                  void saveCurrentSite()
+                }
                 className="mt-6 w-full rounded-2xl bg-emerald-600 px-5 py-4 font-black hover:bg-emerald-500 disabled:opacity-50"
               >
                 {saving
