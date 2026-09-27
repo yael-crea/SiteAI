@@ -12,6 +12,8 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import SitePreview from "@/components/SitePreview";
+import StylePicker from "@/components/StylePicker";
+import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 
 type IconMode =
   | "auto"
@@ -94,10 +96,7 @@ type GeneratedSite = {
   designSettings?: DesignSettings;
 };
 
-type DesignStyle =
-  | "moderne"
-  | "elegant"
-  | "artisan";
+
 
 type PreviewDevice =
   | "desktop"
@@ -1050,7 +1049,7 @@ export default function Home() {
           ),
         designSettings:
           normalizeDesignSettings(
-            data.designSettings,
+            {...data.designSettings, ...getDesignStyle(designStyle).settings},
           ),
       };
 
@@ -2948,6 +2947,14 @@ export default function Home() {
     setSaveMessage("");
   }
 
+  function selectDesignStyle(value: DesignStyle) {
+    const style = getDesignStyle(value);
+    setDesignStyle(style.id);
+    setAccentColor(style.accent);
+    setSite(current => current ? {...current, designSettings: {...style.settings}} : current);
+    setSaveMessage("");
+  }
+
   function getPreviewBackground() {
     if (
       designStyle ===
@@ -3409,49 +3416,7 @@ export default function Home() {
                     Style
                   </p>
 
-                  <div className="grid grid-cols-3 gap-2">
-                    {(
-                      [
-                        [
-                          "moderne",
-                          "Moderne",
-                        ],
-                        [
-                          "elegant",
-                          "Élégant",
-                        ],
-                        [
-                          "artisan",
-                          "Artisan",
-                        ],
-                      ] as const
-                    ).map(
-                      ([
-                        value,
-                        label,
-                      ]) => (
-                        <button
-                          key={
-                            value
-                          }
-                          type="button"
-                          onClick={() =>
-                            setDesignStyle(
-                              value,
-                            )
-                          }
-                          className={`rounded-xl border px-3 py-3 text-sm ${
-                            designStyle ===
-                            value
-                              ? "border-blue-500 bg-blue-500/10"
-                              : "border-slate-700"
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ),
-                    )}
-                  </div>
+                  <StylePicker value={designStyle} onChange={selectDesignStyle} disabled={loading || editLoading || saving || publishing} />
                 </div>
 
                 <div>
@@ -4640,52 +4605,7 @@ export default function Home() {
                         Apparence
                       </p>
 
-                      <div className="grid grid-cols-3 gap-2">
-                        {(
-                          [
-                            [
-                              "moderne",
-                              "Moderne",
-                            ],
-                            [
-                              "elegant",
-                              "Élégant",
-                            ],
-                            [
-                              "artisan",
-                              "Artisan",
-                            ],
-                          ] as const
-                        ).map(
-                          ([
-                            value,
-                            label,
-                          ]) => (
-                            <button
-                              key={
-                                value
-                              }
-                              type="button"
-                              onClick={() => {
-                                setDesignStyle(
-                                  value,
-                                );
-                                setSaveMessage(
-                                  "",
-                                );
-                              }}
-                              className={`rounded-xl border px-3 py-3 text-sm ${
-                                designStyle ===
-                                value
-                                  ? "border-blue-500 bg-blue-500/10"
-                                  : "border-slate-700"
-                              }`}
-                            >
-                              {label}
-                            </button>
-                          ),
-                        )}
-                      </div>
+                      <StylePicker value={designStyle} onChange={selectDesignStyle} disabled={loading || editLoading || saving || publishing} />
 
                       <div className="mt-4 flex flex-wrap gap-3">
                         {colors.map(

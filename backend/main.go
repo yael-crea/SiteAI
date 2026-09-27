@@ -90,6 +90,46 @@ type SiteSection struct {
 	Title string `json:"title"`
 
 	Text string `json:"text"`
+
+	IconMode string `json:"iconMode"`
+
+	Icon string `json:"icon"`
+
+	ImageMode string `json:"imageMode"`
+
+	ImageURL string `json:"imageUrl"`
+
+	Hidden bool `json:"hidden"`
+}
+
+type SiteBenefit struct {
+	Title string `json:"title"`
+
+	Text string `json:"text"`
+}
+
+type FAQItem struct {
+	Question string `json:"question"`
+
+	Answer string `json:"answer"`
+}
+
+type DesignSettings struct {
+	Font string `json:"font"`
+
+	ButtonStyle string `json:"buttonStyle"`
+
+	CardStyle string `json:"cardStyle"`
+
+	LogoSize string `json:"logoSize"`
+
+	HeroLayout string `json:"heroLayout"`
+
+	ContentWidth string `json:"contentWidth"`
+
+	Spacing string `json:"spacing"`
+
+	Background string `json:"background"`
 }
 
 type GeneratedSite struct {
@@ -101,9 +141,15 @@ type GeneratedSite struct {
 
 	MetaDescription string `json:"metaDescription"`
 
+	HeroEyebrow string `json:"heroEyebrow"`
+
 	HeroTitle string `json:"heroTitle"`
 
 	HeroText string `json:"heroText"`
+
+	PrimaryCTA string `json:"primaryCta"`
+
+	SecondaryCTA string `json:"secondaryCta"`
 
 	Phone string `json:"phone"`
 
@@ -113,7 +159,25 @@ type GeneratedSite struct {
 
 	Gallery []string `json:"gallery"`
 
+	AboutTitle string `json:"aboutTitle"`
+
+	AboutText string `json:"aboutText"`
+
 	Sections []SiteSection `json:"sections"`
+
+	Benefits []SiteBenefit `json:"benefits"`
+
+	FAQ []FAQItem `json:"faq"`
+
+	ContactTitle string `json:"contactTitle"`
+
+	ContactText string `json:"contactText"`
+
+	LayoutOrder []string `json:"layoutOrder"`
+
+	HiddenBlocks []string `json:"hiddenBlocks"`
+
+	DesignSettings DesignSettings `json:"designSettings"`
 }
 
 type AIContent struct {
@@ -121,11 +185,29 @@ type AIContent struct {
 
 	MetaDescription string `json:"metaDescription"`
 
+	HeroEyebrow string `json:"heroEyebrow"`
+
 	HeroTitle string `json:"heroTitle"`
 
 	HeroText string `json:"heroText"`
 
+	PrimaryCTA string `json:"primaryCta"`
+
+	SecondaryCTA string `json:"secondaryCta"`
+
+	AboutTitle string `json:"aboutTitle"`
+
+	AboutText string `json:"aboutText"`
+
 	Sections []SiteSection `json:"sections"`
+
+	Benefits []SiteBenefit `json:"benefits"`
+
+	FAQ []FAQItem `json:"faq"`
+
+	ContactTitle string `json:"contactTitle"`
+
+	ContactText string `json:"contactText"`
 }
 
 type ModifySiteInput struct {
@@ -385,26 +467,28 @@ type LeadInput struct {
 }
 
 type Lead struct {
-	ID           int64      `json:"id"`
-	SiteID       int64      `json:"siteId"`
-	PublicSlug   string     `json:"publicSlug"`
-	BusinessName string     `json:"businessName"`
-	Name         string     `json:"name"`
-	Email        string     `json:"email"`
-	Phone        string     `json:"phone"`
-	Message      string     `json:"message"`
-	Status       string     `json:"status"`
-	Note         string     `json:"note"`
-	FollowUpAt   *time.Time `json:"followUpAt"`
-	Archived     bool       `json:"archived"`
-	CreatedAt    time.Time  `json:"createdAt"`
+	ID               int64      `json:"id"`
+	SiteID           int64      `json:"siteId"`
+	PublicSlug       string     `json:"publicSlug"`
+	BusinessName     string     `json:"businessName"`
+	Name             string     `json:"name"`
+	Email            string     `json:"email"`
+	Phone            string     `json:"phone"`
+	Message          string     `json:"message"`
+	Status           string     `json:"status"`
+	Note             string     `json:"note"`
+	FollowUpAt       *time.Time `json:"followUpAt"`
+	Archived         bool       `json:"archived"`
+	QuoteAmountCents int64      `json:"quoteAmountCents"`
+	CreatedAt        time.Time  `json:"createdAt"`
 }
 
 type LeadUpdateInput struct {
-	Status     string  `json:"status"`
-	Note       string  `json:"note"`
-	FollowUpAt *string `json:"followUpAt"`
-	Archived   bool    `json:"archived"`
+	Status           string  `json:"status"`
+	Note             string  `json:"note"`
+	FollowUpAt       *string `json:"followUpAt"`
+	Archived         bool    `json:"archived"`
+	QuoteAmountCents int64   `json:"quoteAmountCents"`
 }
 
 type PageViewInput struct {
@@ -919,6 +1003,13 @@ func createTables(ctx context.Context) error {
 
         ALTER TABLE leads
         ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT FALSE;
+
+        `,
+
+		`
+
+        ALTER TABLE leads
+        ADD COLUMN IF NOT EXISTS quote_amount_cents BIGINT NOT NULL DEFAULT 0;
 
         `,
 
@@ -1929,6 +2020,16 @@ func leadByIDHandler(
 		return
 	}
 
+	if input.QuoteAmountCents < 0 ||
+		input.QuoteAmountCents > 100000000000 {
+		http.Error(
+			w,
+			"Montant du devis invalide",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
 	note := strings.TrimSpace(input.Note)
 
 	if len(note) > 3000 {
@@ -1972,15 +2073,17 @@ func leadByIDHandler(
 			status = $1,
 			note = $2,
 			follow_up_at = $3,
-			archived = $4
+			archived = $4,
+			quote_amount_cents = $5
 		WHERE
-			id = $5
-			AND user_id = $6::uuid;
+			id = $6
+			AND user_id = $7::uuid;
 		`,
 		status,
 		note,
 		followUpAt,
 		input.Archived,
+		input.QuoteAmountCents,
 		leadID,
 		user.ID,
 	)
@@ -2012,11 +2115,12 @@ func leadByIDHandler(
 		w,
 		http.StatusOK,
 		map[string]any{
-			"success":    true,
-			"status":     status,
-			"note":       note,
-			"followUpAt": followUpAt,
-			"archived":   input.Archived,
+			"success":          true,
+			"status":           status,
+			"note":             note,
+			"followUpAt":       followUpAt,
+			"archived":         input.Archived,
+			"quoteAmountCents": input.QuoteAmountCents,
 		},
 	)
 }
@@ -2600,6 +2704,7 @@ func listLeadsHandler(
 			COALESCE(l.note, ''),
 			l.follow_up_at,
 			COALESCE(l.archived, FALSE),
+			COALESCE(l.quote_amount_cents, 0),
 			l.created_at
 		FROM leads l
 		INNER JOIN sites s
@@ -2645,6 +2750,7 @@ func listLeadsHandler(
 			&lead.Note,
 			&lead.FollowUpAt,
 			&lead.Archived,
+			&lead.QuoteAmountCents,
 			&lead.CreatedAt,
 		)
 
@@ -5543,76 +5649,82 @@ func generateSiteWithAI(
 
 	if services == "" {
 
-		services = "services liés à " + input.Activity
+		services = "Aucun service détaillé fourni. Déduire uniquement des catégories de services générales et plausibles à partir de l'activité, sans inventer de spécialité, certification, tarif ou promesse."
 
 	}
 
 	instructions := `
+Tu es le moteur de création de SiteAI, un outil qui crée des sites vitrines professionnels pour des TPE et PME françaises.
 
-Tu es le moteur de création de SiteAI.
+Ta mission est de produire un contenu réellement adapté au métier, à la ville et aux services fournis. Deux entreprises de métiers différents ne doivent pas recevoir le même site avec seulement quelques mots remplacés.
 
+OBJECTIFS :
+- donner immédiatement au visiteur une compréhension claire de l'activité
+- mettre en avant les services de façon concrète
+- rassurer sans inventer de faits
+- encourager une prise de contact naturelle
+- produire un contenu utile au référencement local
+- garder un style professionnel, humain et crédible
 
-
-Crée le contenu professionnel d'un site vitrine pour une TPE ou PME française.
-
-
-
-Règles :
-
+RÈGLES ABSOLUES :
 - français uniquement
-
-- ton professionnel et naturel
-
-- référencement local naturel
-
-- ne jamais inventer de certifications
-
+- ne jamais inventer de certification, label ou qualification
 - ne jamais inventer d'années d'expérience
+- ne jamais inventer de nombre de clients
+- ne jamais inventer de tarif, remise ou prix
+- ne jamais inventer d'avis client
+- ne jamais inventer de garantie
+- ne jamais inventer de disponibilité 24h/24 ou 7j/7
+- ne jamais inventer de délai d'intervention
+- ne jamais inventer d'adresse, d'email ou d'information de contact absente
+- ne jamais présenter comme un fait une information que l'utilisateur n'a pas fournie
+- éviter les superlatifs non prouvés comme "le meilleur", "numéro 1", "leader"
+- éviter le remplissage générique et les phrases vagues
+- ne pas répéter la même idée dans plusieurs blocs
 
-- ne jamais inventer de tarifs
+PERSONNALISATION :
+- adapte le vocabulaire au secteur d'activité
+- adapte les besoins clients évoqués au métier
+- utilise la ville de manière naturelle, sans bourrage de mots-clés
+- si des services sont fournis, donne-leur la priorité
+- si aucun service détaillé n'est fourni, reste sur des catégories générales cohérentes avec l'activité
+- les CTA doivent correspondre au métier : par exemple demander un devis, prendre contact, réserver, appeler ou découvrir les services, sans promettre une fonctionnalité qui n'existe pas
 
-- ne jamais inventer d'avis clients
+STRUCTURE À PRODUIRE :
+- metaTitle : titre SEO naturel, idéalement autour de 50 à 60 caractères
+- metaDescription : description SEO claire, idéalement autour de 140 à 160 caractères
+- heroEyebrow : courte ligne de contexte, par exemple activité + ville
+- heroTitle : titre principal spécifique et orienté bénéfice client
+- heroText : 1 à 2 phrases qui expliquent clairement la proposition de valeur
+- primaryCta : CTA principal court et adapté au métier
+- secondaryCta : CTA secondaire court
+- aboutTitle : titre de présentation de l'entreprise
+- aboutText : 2 à 3 phrases de présentation sans inventer d'historique
+- sections : entre 4 et 6 blocs de services ou besoins clients, chacun avec un titre précis et un texte utile
+- benefits : exactement 3 avantages formulés comme bénéfices, méthode de travail ou simplicité pour le client, sans fausse preuve
+- faq : 4 questions-réponses utiles et spécifiques au secteur ; les réponses doivent rester prudentes lorsqu'une information dépend de l'entreprise
+- contactTitle : titre de prise de contact
+- contactText : 1 à 2 phrases pour encourager le contact sans fausse promesse
 
-- ne jamais inventer de garanties
-
-- ne jamais inventer de disponibilité 24h/24
-
-- ne jamais inventer d'informations factuelles
-
-
-
-Crée entre 3 et 5 sections.
-
+Le résultat doit être directement publiable sur un site professionnel.
 `
 
 	userPrompt := fmt.Sprintf(
-
 		`Entreprise : %s
-
-
 
 Activité : %s
 
-
-
 Ville : %s
-
-
 
 Téléphone : %s
 
+Services fournis : %s
 
-
-Services : %s`,
-
+Crée une version complète et personnalisée du contenu du site.`,
 		input.BusinessName,
-
 		input.Activity,
-
 		input.City,
-
 		input.Phone,
-
 		services,
 	)
 
@@ -5626,7 +5738,7 @@ Services : %s`,
 
 		userPrompt,
 
-		"siteai_generated_site",
+		"siteai_generated_site_v2",
 
 		generatedContentSchema(),
 	)
@@ -5662,13 +5774,42 @@ Services : %s`,
 
 		MetaDescription: content.MetaDescription,
 
+		HeroEyebrow: content.HeroEyebrow,
+
 		HeroTitle: content.HeroTitle,
 
 		HeroText: content.HeroText,
 
+		PrimaryCTA: content.PrimaryCTA,
+
+		SecondaryCTA: content.SecondaryCTA,
+
 		Phone: input.Phone,
 
+		AboutTitle: content.AboutTitle,
+
+		AboutText: content.AboutText,
+
 		Sections: content.Sections,
+
+		Benefits: content.Benefits,
+
+		FAQ: content.FAQ,
+
+		ContactTitle: content.ContactTitle,
+
+		ContactText: content.ContactText,
+
+		LayoutOrder: []string{
+			"about",
+			"services",
+			"process",
+			"faq",
+			"gallery",
+			"contact",
+		},
+
+		HiddenBlocks: []string{},
 	}, nil
 
 }
@@ -5711,85 +5852,79 @@ func modifySiteWithAI(
 	)
 
 	instructions := `
-
 Tu es l'éditeur intelligent de SiteAI.
 
+Tu reçois le contenu complet d'un site vitrine existant et une demande de modification de l'utilisateur.
 
+PRINCIPE :
+- modifie uniquement ce qui est nécessaire pour répondre à la demande
+- conserve toutes les informations et tous les blocs non concernés
+- retourne toujours l'objet complet du site, même si une seule phrase change
 
-Modifie uniquement ce que l'utilisateur demande.
-
-
-
-Règles :
-
+QUALITÉ :
 - français uniquement
+- ton professionnel, naturel et adapté au métier
+- vocabulaire spécifique à l'activité lorsque c'est pertinent
+- référencement local naturel lorsque la demande concerne le contenu
+- éviter les répétitions, le jargon inutile et les formulations génériques
+- si l'utilisateur demande une réécriture globale, harmonise hero, à propos, services, avantages, FAQ et contact
 
-- conserver les informations non demandées
+SÉCURITÉ DU CONTENU :
+- ne jamais inventer de certification, label ou qualification
+- ne jamais inventer d'années d'expérience
+- ne jamais inventer de nombre de clients
+- ne jamais inventer de tarif ou de remise
+- ne jamais inventer d'avis client
+- ne jamais inventer de garantie
+- ne jamais inventer de disponibilité 24h/24 ou 7j/7
+- ne jamais inventer de délai d'intervention
+- ne jamais inventer d'adresse, d'email ou d'information factuelle absente
+- éviter les superlatifs non prouvés
 
-- ne pas inventer de faits
+DESIGN :
+- designStyle doit être exactement moderne, elegant, artisan, minimaliste, nature, premium, dynamique, tradition ou creatif. Conserve le style actuel sauf demande explicite de changement.
+- accentColor doit être une couleur hexadécimale valide
+- ne change le style ou la couleur que si la demande le justifie
 
-- aucun faux avis
+MÉDIAS :
+- le logo, l'image principale et la galerie sont gérés séparément par l'utilisateur
+- ne tente jamais de remplacer, supprimer ou inventer leurs URL
 
-- aucune fausse certification
+CTA :
+- primaryCta et secondaryCta doivent être courts et cohérents avec le métier
+- ne promets pas une réservation en ligne, un devis instantané ou une autre fonctionnalité absente
 
-- aucun faux prix
-
-- aucune fausse expérience
-
-- designStyle doit être moderne, elegant ou artisan
-
-- accentColor doit être une couleur hexadécimale
-
+FAQ :
+- conserve des réponses prudentes lorsque la réponse dépend de l'entreprise
+- n'invente jamais une politique commerciale ou un engagement non fourni
 `
 
 	userPrompt := fmt.Sprintf(
-
 		`SITE ACTUEL :
 
-
-
 %s
-
-
 
 ACTIVITÉ :
-
 %s
-
-
 
 VILLE :
-
 %s
 
-
-
-STYLE :
-
+STYLE ACTUEL :
 %s
 
-
-
-COULEUR :
-
+COULEUR ACTUELLE :
 %s
 
+DEMANDE DE L'UTILISATEUR :
+%s
 
-
-DEMANDE :
-
-%s`,
-
+Retourne le site complet après modification.`,
 		string(currentJSON),
-
 		input.Activity,
-
 		input.City,
-
 		currentDesign,
-
 		currentColor,
-
 		input.Instruction,
 	)
 
@@ -5803,7 +5938,7 @@ DEMANDE :
 
 		userPrompt,
 
-		"siteai_modified_site",
+		"siteai_modified_site_v2",
 
 		modifiedSiteSchema(),
 	)
@@ -5834,9 +5969,7 @@ DEMANDE :
 		result.Site.BusinessName,
 	) == "" {
 
-		result.Site.BusinessName =
-
-			input.Site.BusinessName
+		result.Site.BusinessName = input.Site.BusinessName
 
 	}
 
@@ -5845,31 +5978,7 @@ DEMANDE :
 		result.Site.Phone,
 	) == "" {
 
-		result.Site.Phone =
-
-			input.Site.Phone
-
-	}
-
-	if strings.TrimSpace(
-
-		result.Site.HeroTitle,
-	) == "" {
-
-		result.Site.HeroTitle =
-
-			input.Site.HeroTitle
-
-	}
-
-	if strings.TrimSpace(
-
-		result.Site.HeroText,
-	) == "" {
-
-		result.Site.HeroText =
-
-			input.Site.HeroText
+		result.Site.Phone = input.Site.Phone
 
 	}
 
@@ -5878,9 +5987,7 @@ DEMANDE :
 		result.Site.MetaTitle,
 	) == "" {
 
-		result.Site.MetaTitle =
-
-			input.Site.MetaTitle
+		result.Site.MetaTitle = input.Site.MetaTitle
 
 	}
 
@@ -5889,9 +5996,70 @@ DEMANDE :
 		result.Site.MetaDescription,
 	) == "" {
 
-		result.Site.MetaDescription =
+		result.Site.MetaDescription = input.Site.MetaDescription
 
-			input.Site.MetaDescription
+	}
+
+	if strings.TrimSpace(
+
+		result.Site.HeroEyebrow,
+	) == "" {
+
+		result.Site.HeroEyebrow = input.Site.HeroEyebrow
+
+	}
+
+	if strings.TrimSpace(
+
+		result.Site.HeroTitle,
+	) == "" {
+
+		result.Site.HeroTitle = input.Site.HeroTitle
+
+	}
+
+	if strings.TrimSpace(
+
+		result.Site.HeroText,
+	) == "" {
+
+		result.Site.HeroText = input.Site.HeroText
+
+	}
+
+	if strings.TrimSpace(
+
+		result.Site.PrimaryCTA,
+	) == "" {
+
+		result.Site.PrimaryCTA = input.Site.PrimaryCTA
+
+	}
+
+	if strings.TrimSpace(
+
+		result.Site.SecondaryCTA,
+	) == "" {
+
+		result.Site.SecondaryCTA = input.Site.SecondaryCTA
+
+	}
+
+	if strings.TrimSpace(
+
+		result.Site.AboutTitle,
+	) == "" {
+
+		result.Site.AboutTitle = input.Site.AboutTitle
+
+	}
+
+	if strings.TrimSpace(
+
+		result.Site.AboutText,
+	) == "" {
+
+		result.Site.AboutText = input.Site.AboutText
 
 	}
 
@@ -5900,17 +6068,97 @@ DEMANDE :
 		result.Site.Sections,
 	) == 0 {
 
-		result.Site.Sections =
+		result.Site.Sections = input.Site.Sections
 
-			input.Site.Sections
+	} else {
+
+		// Les icônes de services sont un choix manuel de l'utilisateur.
+		// L'éditeur IA ne doit pas les écraser.
+		for index := range result.Site.Sections {
+
+			if index >= len(input.Site.Sections) {
+
+				continue
+
+			}
+
+			result.Site.Sections[index].IconMode =
+				input.Site.Sections[index].IconMode
+
+			result.Site.Sections[index].Icon =
+				input.Site.Sections[index].Icon
+
+			result.Site.Sections[index].ImageMode =
+				input.Site.Sections[index].ImageMode
+
+			result.Site.Sections[index].ImageURL =
+				input.Site.Sections[index].ImageURL
+
+			result.Site.Sections[index].Hidden =
+				input.Site.Sections[index].Hidden
+
+		}
 
 	}
 
-	// Le logo est géré par l'utilisateur dans Supabase Storage.
-	// L'IA ne doit jamais le supprimer ou le remplacer.
+	if len(
+
+		result.Site.Benefits,
+	) == 0 {
+
+		result.Site.Benefits = input.Site.Benefits
+
+	}
+
+	if len(
+
+		result.Site.FAQ,
+	) == 0 {
+
+		result.Site.FAQ = input.Site.FAQ
+
+	}
+
+	if strings.TrimSpace(
+
+		result.Site.ContactTitle,
+	) == "" {
+
+		result.Site.ContactTitle = input.Site.ContactTitle
+
+	}
+
+	if strings.TrimSpace(
+
+		result.Site.ContactText,
+	) == "" {
+
+		result.Site.ContactText = input.Site.ContactText
+
+	}
+
+	// Les médias sont gérés par l'utilisateur dans Supabase Storage.
+	// L'IA ne doit jamais les supprimer ou les remplacer.
 	result.Site.LogoURL = input.Site.LogoURL
 	result.Site.HeroImageURL = input.Site.HeroImageURL
 	result.Site.Gallery = input.Site.Gallery
+	result.Site.LayoutOrder = input.Site.LayoutOrder
+	result.Site.HiddenBlocks = input.Site.HiddenBlocks
+
+	if len(result.Site.LayoutOrder) == 0 {
+		result.Site.LayoutOrder = []string{
+			"about",
+			"services",
+			"process",
+			"faq",
+			"gallery",
+			"contact",
+		}
+	}
+
+	if result.Site.HiddenBlocks == nil {
+		result.Site.HiddenBlocks = []string{}
+	}
 
 	result.Site.Slug = slugify(
 
@@ -6236,6 +6484,11 @@ func generatedContentSchema() map[string]any {
 				"type": "string",
 			},
 
+			"heroEyebrow": map[string]any{
+
+				"type": "string",
+			},
+
 			"heroTitle": map[string]any{
 
 				"type": "string",
@@ -6246,7 +6499,41 @@ func generatedContentSchema() map[string]any {
 				"type": "string",
 			},
 
+			"primaryCta": map[string]any{
+
+				"type": "string",
+			},
+
+			"secondaryCta": map[string]any{
+
+				"type": "string",
+			},
+
+			"aboutTitle": map[string]any{
+
+				"type": "string",
+			},
+
+			"aboutText": map[string]any{
+
+				"type": "string",
+			},
+
 			"sections": sectionsSchema(),
+
+			"benefits": benefitsSchema(),
+
+			"faq": faqSchema(),
+
+			"contactTitle": map[string]any{
+
+				"type": "string",
+			},
+
+			"contactText": map[string]any{
+
+				"type": "string",
+			},
 		},
 
 		"required": []string{
@@ -6255,11 +6542,29 @@ func generatedContentSchema() map[string]any {
 
 			"metaDescription",
 
+			"heroEyebrow",
+
 			"heroTitle",
 
 			"heroText",
 
+			"primaryCta",
+
+			"secondaryCta",
+
+			"aboutTitle",
+
+			"aboutText",
+
 			"sections",
+
+			"benefits",
+
+			"faq",
+
+			"contactTitle",
+
+			"contactText",
 		},
 	}
 
@@ -6287,7 +6592,7 @@ func modifiedSiteSchema() map[string]any {
 
 					"elegant",
 
-					"artisan",
+					"artisan", "minimaliste", "nature", "premium", "dynamique", "tradition", "creatif",
 				},
 			},
 
@@ -6339,6 +6644,11 @@ func siteSchema() map[string]any {
 				"type": "string",
 			},
 
+			"heroEyebrow": map[string]any{
+
+				"type": "string",
+			},
+
 			"heroTitle": map[string]any{
 
 				"type": "string",
@@ -6349,12 +6659,46 @@ func siteSchema() map[string]any {
 				"type": "string",
 			},
 
+			"primaryCta": map[string]any{
+
+				"type": "string",
+			},
+
+			"secondaryCta": map[string]any{
+
+				"type": "string",
+			},
+
 			"phone": map[string]any{
 
 				"type": "string",
 			},
 
+			"aboutTitle": map[string]any{
+
+				"type": "string",
+			},
+
+			"aboutText": map[string]any{
+
+				"type": "string",
+			},
+
 			"sections": sectionsSchema(),
+
+			"benefits": benefitsSchema(),
+
+			"faq": faqSchema(),
+
+			"contactTitle": map[string]any{
+
+				"type": "string",
+			},
+
+			"contactText": map[string]any{
+
+				"type": "string",
+			},
 		},
 
 		"required": []string{
@@ -6367,13 +6711,31 @@ func siteSchema() map[string]any {
 
 			"metaDescription",
 
+			"heroEyebrow",
+
 			"heroTitle",
 
 			"heroText",
 
+			"primaryCta",
+
+			"secondaryCta",
+
 			"phone",
 
+			"aboutTitle",
+
+			"aboutText",
+
 			"sections",
+
+			"benefits",
+
+			"faq",
+
+			"contactTitle",
+
+			"contactText",
 		},
 	}
 
@@ -6409,6 +6771,78 @@ func sectionsSchema() map[string]any {
 				"title",
 
 				"text",
+			},
+		},
+	}
+
+}
+
+func benefitsSchema() map[string]any {
+
+	return map[string]any{
+
+		"type": "array",
+
+		"items": map[string]any{
+
+			"type": "object",
+
+			"additionalProperties": false,
+
+			"properties": map[string]any{
+
+				"title": map[string]any{
+
+					"type": "string",
+				},
+
+				"text": map[string]any{
+
+					"type": "string",
+				},
+			},
+
+			"required": []string{
+
+				"title",
+
+				"text",
+			},
+		},
+	}
+
+}
+
+func faqSchema() map[string]any {
+
+	return map[string]any{
+
+		"type": "array",
+
+		"items": map[string]any{
+
+			"type": "object",
+
+			"additionalProperties": false,
+
+			"properties": map[string]any{
+
+				"question": map[string]any{
+
+					"type": "string",
+				},
+
+				"answer": map[string]any{
+
+					"type": "string",
+				},
+			},
+
+			"required": []string{
+
+				"question",
+
+				"answer",
 			},
 		},
 	}
@@ -7871,6 +8305,9 @@ func syncStripeSubscription(
 func normalizeDesignStyle(value string) string {
 
 	switch value {
+
+	case "minimaliste", "nature", "premium", "dynamique", "tradition", "creatif":
+		return value
 
 	case "elegant":
 

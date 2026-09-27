@@ -1,10 +1,12 @@
 "use client";
+import { type DesignStyle } from "@/lib/designStyles";
+
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-type DesignStyle = "moderne" | "elegant" | "artisan";
+
 
 type GeneratedSite = {
   businessName: string;

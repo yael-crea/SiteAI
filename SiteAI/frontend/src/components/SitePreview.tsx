@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 
 
 
@@ -110,13 +111,7 @@ type GeneratedSite = {
 
 
 
-type DesignStyle =
 
-  | "moderne"
-
-  | "elegant"
-
-  | "artisan";
 
 
 
@@ -188,8 +183,12 @@ function normalizeDesignSettings(
 function DesignShell({
   settings,
   children,
+  theme,
+  hasHeroImage,
 }: {
   settings: ReturnType<typeof normalizeDesignSettings>;
+  theme: DesignStyle;
+  hasHeroImage: boolean;
   children: React.ReactNode;
 }) {
   const fontFamily = {
@@ -238,6 +237,8 @@ function DesignShell({
   return (
     <div
       className="siteai-design-root"
+      data-theme={theme}
+      data-has-hero-image={hasHeroImage}
       data-card-style={settings.cardStyle}
       data-hero-layout={settings.heroLayout}
       data-background={settings.background}
@@ -258,6 +259,26 @@ function DesignShell({
       }
     >
       <style>{`
+        .siteai-design-root[data-theme="minimaliste"][data-has-hero-image="false"] [data-siteai-hero] { background: #fff; color: #0f172a; }
+        .siteai-design-root[data-theme="minimaliste"][data-has-hero-image="false"] [data-siteai-hero-content] p,
+        .siteai-design-root[data-theme="minimaliste"][data-has-hero-image="false"] [data-siteai-hero-content] h1 { color: #0f172a; }
+        .siteai-design-root[data-theme="minimaliste"] [data-siteai-hero-badges] { display: none; }
+        .siteai-design-root[data-theme="nature"] [data-siteai-hero] { background-color: #243524; }
+        .siteai-design-root[data-theme="nature"] article { border-radius: 2rem; }
+        .siteai-design-root[data-theme="nature"][data-background="auto"] [class~="bg-white"] { background-color: #f4f5eb; }
+        .siteai-design-root[data-theme="tradition"] [data-siteai-hero] { background-color: #422d1c; }
+        .siteai-design-root[data-theme="tradition"][data-background="auto"] [class~="bg-white"] { background-color: #fff8ed; }
+        .siteai-design-root[data-theme="tradition"] h2 { font-style: italic; }
+        .siteai-design-root[data-theme="premium"] [data-siteai-hero] { background-color: #171717; }
+        .siteai-design-root[data-theme="premium"] h1 { font-weight: 400; letter-spacing: -.035em; }
+        .siteai-design-root[data-theme="premium"] [data-siteai-hero-actions] a { letter-spacing: .16em; }
+        .siteai-design-root[data-theme="dynamique"] [data-siteai-hero] { background-color: #431407; }
+        .siteai-design-root[data-theme="dynamique"] h1 { text-transform: uppercase; letter-spacing: -.04em; }
+        .siteai-design-root[data-theme="dynamique"] article { border-radius: 1.5rem; }
+        .siteai-design-root[data-theme="creatif"] [data-siteai-hero] { background-color: #2e1065; }
+        .siteai-design-root[data-theme="creatif"] article { border-radius: 2rem .5rem 2rem .5rem; }
+        .siteai-design-root[data-theme="creatif"] h1 { letter-spacing: -.055em; }
+        .siteai-design-root[data-theme="creatif"][data-background="auto"] [class~="bg-white"] { background-color: #f5f3ff; }
         .siteai-design-root {
           min-height: 100%;
         }
@@ -1189,15 +1210,16 @@ export default function SitePreview({
   city,
 
 }: SitePreviewProps) {
+  const style = getDesignStyle(designStyle);
   const normalizedSite = normalizeSiteForDisplay(site);
   const designSettings = normalizeDesignSettings(
-    normalizedSite.designSettings,
+    {...style.settings, ...normalizedSite.designSettings},
   );
 
-  if (designStyle === "elegant") {
+  if (style.family === "elegant") {
 
     return (
-      <DesignShell settings={designSettings}>
+      <DesignShell settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
         <ElegantTemplate
 
         site={normalizedSite}
@@ -1216,10 +1238,10 @@ export default function SitePreview({
 
 
 
-  if (designStyle === "artisan") {
+  if (style.family === "artisan") {
 
     return (
-      <DesignShell settings={designSettings}>
+      <DesignShell settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
         <ArtisanTemplate
 
         site={normalizedSite}
@@ -1239,7 +1261,7 @@ export default function SitePreview({
 
 
   return (
-      <DesignShell settings={designSettings}>
+      <DesignShell settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
         <ModernTemplate
 
       site={normalizedSite}

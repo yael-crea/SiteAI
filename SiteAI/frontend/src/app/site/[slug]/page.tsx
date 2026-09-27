@@ -1,3 +1,4 @@
+import { normalizeDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -24,10 +25,7 @@ type GeneratedSite = {
   sections: SiteSection[];
 };
 
-type DesignStyle =
-  | "moderne"
-  | "elegant"
-  | "artisan";
+
 
 type PublicSite = {
   businessName: string;
@@ -94,11 +92,7 @@ const getPublicSite = cache(
         return null;
       }
 
-      const safeDesignStyle: DesignStyle =
-        result.designStyle === "elegant" ||
-        result.designStyle === "artisan"
-          ? result.designStyle
-          : "moderne";
+      const safeDesignStyle = normalizeDesignStyle(result.designStyle);
 
       return {
         ...result,
