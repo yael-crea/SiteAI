@@ -1407,7 +1407,7 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="mt-10">
+        <section className="mt-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-400">
@@ -1432,12 +1432,12 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
               <p className="text-sm text-slate-400">
                 Prospects créés
               </p>
-              <p className="mt-2 text-3xl font-black">
+              <p className="mt-1 text-2xl font-black">
                 {commercialStats.total30d}
               </p>
               <p className="mt-2 text-xs text-slate-600">
@@ -1445,11 +1445,11 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-5">
+            <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-4">
               <p className="text-sm text-blue-300">
                 Devis envoyés
               </p>
-              <p className="mt-2 text-3xl font-black text-blue-400">
+              <p className="mt-1 text-2xl font-black text-blue-400">
                 {commercialStats.quoteSent30d}
               </p>
               <p className="mt-2 text-xs text-slate-600">
@@ -1457,11 +1457,11 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-5">
+            <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-4">
               <p className="text-sm text-emerald-300">
                 Gagnés
               </p>
-              <p className="mt-2 text-3xl font-black text-emerald-400">
+              <p className="mt-1 text-2xl font-black text-emerald-400">
                 {commercialStats.won30d}
               </p>
               <p className="mt-2 text-xs text-slate-600">
@@ -1469,11 +1469,11 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-red-900/70 bg-red-950/20 p-5">
+            <div className="rounded-2xl border border-red-900/70 bg-red-950/20 p-4">
               <p className="text-sm text-red-300">
                 Perdus
               </p>
-              <p className="mt-2 text-3xl font-black text-red-400">
+              <p className="mt-1 text-2xl font-black text-red-400">
                 {commercialStats.lost30d}
               </p>
               <p className="mt-2 text-xs text-slate-600">
@@ -1481,11 +1481,11 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-5">
+            <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-4">
               <p className="text-sm text-violet-300">
                 Conversion commerciale
               </p>
-              <p className="mt-2 text-3xl font-black text-violet-400">
+              <p className="mt-1 text-2xl font-black text-violet-400">
                 {commercialStats.commercialConversion.toFixed(1)} %
               </p>
               <p className="mt-2 text-xs text-slate-600">
@@ -1494,13 +1494,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-5">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-4">
               <p className="text-sm text-violet-300">
                 Pipeline ouvert
               </p>
 
-              <p className="mt-2 text-3xl font-black text-violet-400">
+              <p className="mt-1 text-2xl font-black text-violet-400">
                 {formatCurrency(
                   commercialStats.openPipelineValue,
                 )}
@@ -1511,12 +1511,12 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-5">
+            <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-4">
               <p className="text-sm text-emerald-300">
                 CA gagné
               </p>
 
-              <p className="mt-2 text-3xl font-black text-emerald-400">
+              <p className="mt-1 text-2xl font-black text-emerald-400">
                 {formatCurrency(
                   commercialStats.wonValue,
                 )}
@@ -1527,12 +1527,12 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-red-900/70 bg-red-950/20 p-5">
+            <div className="rounded-2xl border border-red-900/70 bg-red-950/20 p-4">
               <p className="text-sm text-red-300">
                 CA perdu
               </p>
 
-              <p className="mt-2 text-3xl font-black text-red-400">
+              <p className="mt-1 text-2xl font-black text-red-400">
                 {formatCurrency(
                   commercialStats.lostValue,
                 )}
@@ -1543,12 +1543,12 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-5">
+            <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-4">
               <p className="text-sm text-blue-300">
                 Devis moyen
               </p>
 
-              <p className="mt-2 text-3xl font-black text-blue-400">
+              <p className="mt-1 text-2xl font-black text-blue-400">
                 {formatCurrency(
                   commercialStats.averageQuoteValue,
                 )}
@@ -1762,8 +1762,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-5 hidden gap-5 md:grid xl:grid-cols-[1.5fr_1fr]">
-            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+          <div className="mt-4 hidden gap-4 md:grid xl:grid-cols-[1.45fr_1fr]">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h3 className="font-black">
@@ -1779,7 +1779,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="mt-7 overflow-hidden pb-2">
+              <div className="mt-4 overflow-hidden pb-1">
                 <div className="flex w-full items-end gap-1.5">
                   {commercialStats.daily.map(
                     (item, index) => {
@@ -1791,7 +1791,7 @@ export default function DashboardPage() {
                               Math.round(
                                 (item.count /
                                   commercialStats.maxDaily) *
-                                  120,
+                                  90,
                               ),
                             );
 
@@ -1835,7 +1835,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
               <h3 className="font-black">
                 Répartition du pipeline
               </h3>
@@ -1844,7 +1844,7 @@ export default function DashboardPage() {
                 Statuts actuels des prospects créés sur 30 jours
               </p>
 
-              <div className="mt-6 space-y-4">
+              <div className="mt-4 space-y-3">
                 {[
                   {
                     label: "Nouveaux",
@@ -1921,7 +1921,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="mt-10">
+        <section className="mt-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.25em] text-cyan-400">
@@ -1953,13 +1953,13 @@ export default function DashboardPage() {
             </div>
           ) : analytics ? (
             <>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border border-cyan-900/70 bg-cyan-950/20 p-6">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-cyan-900/70 bg-cyan-950/20 p-4">
                   <p className="text-sm text-cyan-300">
                     Visiteurs uniques
                   </p>
 
-                  <p className="mt-2 text-4xl font-black text-cyan-400">
+                  <p className="mt-1 text-3xl font-black text-cyan-400">
                     {analytics.visitors30d}
                   </p>
 
@@ -1968,12 +1968,12 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-6">
+                <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-4">
                   <p className="text-sm text-blue-300">
                     Pages vues
                   </p>
 
-                  <p className="mt-2 text-4xl font-black text-blue-400">
+                  <p className="mt-1 text-3xl font-black text-blue-400">
                     {analytics.views30d}
                   </p>
 
@@ -1982,12 +1982,12 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-6">
+                <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-4">
                   <p className="text-sm text-emerald-300">
                     Prospects
                   </p>
 
-                  <p className="mt-2 text-4xl font-black text-emerald-400">
+                  <p className="mt-1 text-3xl font-black text-emerald-400">
                     {analytics.leads30d}
                   </p>
 
@@ -1996,12 +1996,12 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-6">
+                <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-4">
                   <p className="text-sm text-violet-300">
                     Conversion
                   </p>
 
-                  <p className="mt-2 text-4xl font-black text-violet-400">
+                  <p className="mt-1 text-3xl font-black text-violet-400">
                     {analytics.conversionRate.toFixed(1)} %
                   </p>
 
@@ -2012,8 +2012,8 @@ export default function DashboardPage() {
               </div>
 
               {analytics.sites.length > 0 && (
-                <div className="mt-5 overflow-hidden rounded-3xl border border-slate-800 bg-slate-900">
-                  <div className="border-b border-slate-800 px-6 py-5">
+                <div className="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+                  <div className="border-b border-slate-800 px-5 py-4">
                     <h3 className="font-black">
                       Détail par site
                     </h3>
@@ -2023,7 +2023,7 @@ export default function DashboardPage() {
                     {analytics.sites.map((siteStats) => (
                       <div
                         key={siteStats.siteId}
-                        className="grid gap-4 px-6 py-5 md:grid-cols-[1.5fr_repeat(4,minmax(90px,1fr))] md:items-center"
+                        className="grid gap-3 px-5 py-4 md:grid-cols-[1.5fr_repeat(4,minmax(90px,1fr))] md:items-center"
                       >
                         <div>
                           <p className="font-bold">

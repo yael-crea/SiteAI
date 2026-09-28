@@ -2,11 +2,23 @@
 
 
 
+
+
+
+
 import { useEffect, useMemo, useState } from "react";
+
+
 
 import { useRouter } from "next/navigation";
 
+
+
 import { supabase } from "@/lib/supabase";
+
+
+
+
 
 
 
@@ -14,1797 +26,2945 @@ type DesignStyle = "moderne" | "elegant" | "artisan";
 
 
 
+
+
+
+
 type GeneratedSite = {
 
-  businessName: string;
 
-  logoUrl?: string;
 
-  heroImageUrl?: string;
+  businessName: string;
+
+
+
+  logoUrl?: string;
+
+
+
+  heroImageUrl?: string;
+
+
 
 };
+
+
+
+
 
 
 
 type SavedSite = {
 
-  id: number;
 
-  businessName: string;
 
-  activity: string;
+  id: number;
 
-  city: string;
 
-  phone: string;
 
-  designStyle: DesignStyle;
+  businessName: string;
 
-  accentColor: string;
 
-  site: GeneratedSite;
 
-  published: boolean;
+  activity: string;
 
-  publicSlug: string;
 
-  publishedAt: string | null;
 
-  createdAt: string;
+  city: string;
 
-  updatedAt: string;
+
+
+  phone: string;
+
+
+
+  designStyle: DesignStyle;
+
+
+
+  accentColor: string;
+
+
+
+  site: GeneratedSite;
+
+
+
+  published: boolean;
+
+
+
+  publicSlug: string;
+
+
+
+  publishedAt: string | null;
+
+
+
+  createdAt: string;
+
+
+
+  updatedAt: string;
+
+
 
 };
+
+
+
+
 
 
 
 type FilterType = "all" | "published" | "draft";
 
+
+
 type ShareFeedback = {
-  siteID: number;
-  message: string;
-  error?: boolean;
+
+  siteID: number;
+
+  message: string;
+
+  error?: boolean;
+
 };
+
+
+
+
+
 
 
 
 
 type DomainVerification = {
 
-  type: string;
 
-  domain?: string;
 
-  value?: string;
+  type: string;
 
-  reason?: string;
+
+
+  domain?: string;
+
+
+
+  value?: string;
+
+
+
+  reason?: string;
+
+
 
 };
+
+
+
+
 
 
 
 type RecommendedRecord = {
 
-  rank: string;
 
-  value: unknown;
+
+  rank: string;
+
+
+
+  value: unknown;
+
+
 
 };
+
+
+
+
 
 
 
 type DomainStatus = {
 
-  domain: string;
 
-  verified: boolean;
 
-  configured: boolean;
+  domain: string;
 
-  configuredBy?: string;
 
-  verification?: DomainVerification[];
 
-  recommendedCNAME?: RecommendedRecord[];
+  verified: boolean;
 
-  recommendedIPv4?: RecommendedRecord[];
 
-  message?: string;
+
+  configured: boolean;
+
+
+
+  configuredBy?: string;
+
+
+
+  verification?: DomainVerification[];
+
+
+
+  recommendedCNAME?: RecommendedRecord[];
+
+
+
+  recommendedIPv4?: RecommendedRecord[];
+
+
+
+  message?: string;
+
+
 
 };
+
+
+
+
 
 
 
 type BillingStatus = {
 
-  plan: string;
 
-  status: string;
 
-  hasSubscription: boolean;
+  plan: string;
 
-  cancelAtPeriodEnd: boolean;
 
-  currentPeriodEnd?: string;
 
-  canManage: boolean;
+  status: string;
 
-  maxPublishedSites?: number;
 
-  customDomainAllowed?: boolean;
+
+  hasSubscription: boolean;
+
+
+
+  cancelAtPeriodEnd: boolean;
+
+
+
+  currentPeriodEnd?: string;
+
+
+
+  canManage: boolean;
+
+
+
+  maxPublishedSites?: number;
+
+
+
+  customDomainAllowed?: boolean;
+
+
 
 };
 
 
 
+
+
+
+
 export default function SitesPage() {
 
-  const router = useRouter();
 
 
+  const router = useRouter();
 
-  const [authLoading, setAuthLoading] = useState(true);
 
-  const [sitesLoading, setSitesLoading] = useState(true);
 
-  const [sites, setSites] = useState<SavedSite[]>([]);
 
-  const [search, setSearch] = useState("");
 
-  const [filter, setFilter] = useState<FilterType>("all");
 
-  const [error, setError] = useState("");
 
-  const [deletingID, setDeletingID] = useState<number | null>(null);
-  const [duplicatingID, setDuplicatingID] = useState<number | null>(null);
-  const [shareFeedback, setShareFeedback] = useState<ShareFeedback | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
 
 
-  const [billingLoading, setBillingLoading] = useState(true);
+  const [sitesLoading, setSitesLoading] = useState(true);
 
-  const [billing, setBilling] = useState<BillingStatus | null>(null);
 
 
+  const [sites, setSites] = useState<SavedSite[]>([]);
 
-  const [domainPanelSiteID, setDomainPanelSiteID] =
 
-    useState<number | null>(null);
 
-  const [domainInput, setDomainInput] = useState("");
+  const [search, setSearch] = useState("");
 
-  const [domainStatus, setDomainStatus] =
 
-    useState<DomainStatus | null>(null);
 
-  const [domainLoading, setDomainLoading] = useState(false);
+  const [filter, setFilter] = useState<FilterType>("all");
 
-  const [domainActionLoading, setDomainActionLoading] =
 
-    useState(false);
 
-  const [domainError, setDomainError] = useState("");
+  const [error, setError] = useState("");
 
 
 
-  useEffect(() => {
+  const [deletingID, setDeletingID] = useState<number | null>(null);
 
-    let active = true;
+  const [duplicatingID, setDuplicatingID] = useState<number | null>(null);
 
+  const [shareFeedback, setShareFeedback] = useState<ShareFeedback | null>(null);
 
 
-    async function initialize() {
 
-      try {
 
-        const { data, error: sessionError } =
 
-          await supabase.auth.getSession();
 
 
+  const [billingLoading, setBillingLoading] = useState(true);
 
-        if (sessionError || !data.session) {
 
-          if (active) {
 
-            setAuthLoading(false);
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
 
-            router.replace("/auth");
 
-          }
 
-          return;
 
-        }
 
 
 
-        if (!active) return;
+  const [domainPanelSiteID, setDomainPanelSiteID] =
 
 
 
-        setAuthLoading(false);
+    useState<number | null>(null);
 
-        await Promise.all([
 
-          loadSites(),
 
-          loadBilling(),
+  const [domainInput, setDomainInput] = useState("");
 
-        ]);
 
-      } catch (err) {
 
-        console.error(err);
+  const [domainStatus, setDomainStatus] =
 
 
 
-        if (active) {
+    useState<DomainStatus | null>(null);
 
-          setAuthLoading(false);
 
-          router.replace("/auth");
 
-        }
+  const [domainLoading, setDomainLoading] = useState(false);
 
-      }
 
-    }
 
+  const [domainActionLoading, setDomainActionLoading] =
 
 
-    initialize();
 
+    useState(false);
 
 
-    return () => {
 
-      active = false;
+  const [domainError, setDomainError] = useState("");
 
-    };
 
-  }, [router]);
 
 
 
-  async function getAccessToken() {
 
-    const { data, error: sessionError } =
 
-      await supabase.auth.getSession();
+  useEffect(() => {
 
 
 
-    if (sessionError || !data.session) {
+    let active = true;
 
-      await supabase.auth.signOut();
 
-      router.replace("/auth");
 
-      throw new Error("Session absente");
 
-    }
 
 
 
-    return data.session.access_token;
+    async function initialize() {
 
-  }
 
 
+      try {
 
-  async function authenticatedFetch(
 
-    path: string,
 
-    options: RequestInit = {},
+        const { data, error: sessionError } =
 
-  ) {
 
-    const token = await getAccessToken();
 
-    const headers = new Headers(options.headers);
+          await supabase.auth.getSession();
 
 
 
-    headers.set("Authorization", `Bearer ${token}`);
 
 
 
-    if (options.body && !headers.has("Content-Type")) {
 
-      headers.set("Content-Type", "application/json");
+        if (sessionError || !data.session) {
 
-    }
 
 
+          if (active) {
 
-    const response = await fetch(`/api-backend${path}`, {
 
-      ...options,
 
-      headers,
+            setAuthLoading(false);
 
-      cache: "no-store",
 
-    });
 
+            router.replace("/auth");
 
 
-    if (response.status === 401) {
 
-      await supabase.auth.signOut();
+          }
 
-      router.replace("/auth");
 
-    }
 
+          return;
 
 
-    return response;
 
-  }
+        }
 
 
 
-  async function loadSites() {
 
-    setSitesLoading(true);
 
-    setError("");
 
 
+        if (!active) return;
 
-    try {
 
-      const response = await authenticatedFetch("/sites");
 
 
 
-      if (!response.ok) {
 
-        throw new Error("Impossible de récupérer les sites.");
 
-      }
+        setAuthLoading(false);
 
 
 
-      const data: SavedSite[] = await response.json();
+        await Promise.all([
 
-      setSites(data);
 
-    } catch (err) {
 
-      console.error(err);
+          loadSites(),
 
-      setError("Impossible de charger tes sites.");
 
-    } finally {
 
-      setSitesLoading(false);
+          loadBilling(),
 
-    }
 
-  }
 
+        ]);
 
 
-  async function loadBilling() {
 
-    setBillingLoading(true);
+      } catch (err) {
 
 
 
-    try {
+        console.error(err);
 
-      const response =
 
-        await authenticatedFetch("/stripe/status");
 
 
 
-      if (!response.ok) {
 
-        throw new Error(
 
-          "Impossible de récupérer l’abonnement.",
+        if (active) {
 
-        );
 
-      }
 
+          setAuthLoading(false);
 
 
-      const data: BillingStatus =
 
-        await response.json();
+          router.replace("/auth");
 
 
 
-      setBilling(data);
+        }
 
-    } catch (err) {
 
-      console.error(err);
 
-      setBilling(null);
+      }
 
-    } finally {
 
-      setBillingLoading(false);
 
-    }
+    }
 
-  }
 
 
 
-  function createSite() {
 
-    sessionStorage.removeItem("siteai_site_to_open");
 
-    router.push("/builder");
 
-  }
+    initialize();
 
 
 
-  function editSite(id: number) {
 
-    sessionStorage.setItem("siteai_site_to_open", String(id));
 
-    router.push("/builder");
 
-  }
 
+    return () => {
 
 
-  function viewPublicSite(slug: string) {
 
-    if (!slug) return;
+      active = false;
 
 
 
-    window.open(
+    };
 
-      `/site/${slug}`,
 
-      "_blank",
 
-      "noopener,noreferrer",
+  }, [router]);
 
-    );
 
-  }
 
 
 
-  function publicSiteUrl(slug: string) {
-    if (typeof window === "undefined") {
-      return `/site/${encodeURIComponent(slug)}`;
-    }
 
-    return `${window.location.origin}/site/${encodeURIComponent(slug)}`;
-  }
 
-  async function copyText(value: string) {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(value);
-      return;
-    }
+  async function getAccessToken() {
 
-    const textarea = document.createElement("textarea");
-    textarea.value = value;
-    textarea.setAttribute("readonly", "");
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.select();
 
-    const copied = document.execCommand("copy");
-    document.body.removeChild(textarea);
 
-    if (!copied) {
-      throw new Error("copy-failed");
-    }
-  }
+    const { data, error: sessionError } =
 
-  async function copyPublicSite(
-    siteID: number,
-    slug: string,
-  ) {
-    if (!slug) return;
 
-    try {
-      await copyText(publicSiteUrl(slug));
 
-      setShareFeedback({
-        siteID,
-        message: "✓ Lien copié",
-      });
-    } catch (err) {
-      console.error(err);
+      await supabase.auth.getSession();
 
-      setShareFeedback({
-        siteID,
-        message: "Impossible de copier le lien.",
-        error: true,
-      });
-    }
-  }
 
-  async function sharePublicSite(
-    siteID: number,
-    slug: string,
-    businessName: string,
-  ) {
-    if (!slug) return;
 
-    const url = publicSiteUrl(slug);
 
-    try {
-      if (typeof navigator.share === "function") {
-        await navigator.share({
-          title: businessName || "Site professionnel",
-          text: `Découvre le site de ${businessName || "cette entreprise"}.`,
-          url,
-        });
 
-        setShareFeedback({
-          siteID,
-          message: "Options de partage ouvertes.",
-        });
 
-        return;
-      }
 
-      await copyText(url);
+    if (sessionError || !data.session) {
 
-      setShareFeedback({
-        siteID,
-        message: "✓ Lien copié pour le partager",
-      });
-    } catch (err) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "name" in err &&
-        err.name === "AbortError"
-      ) {
-        return;
-      }
 
-      console.error(err);
 
-      setShareFeedback({
-        siteID,
-        message: "Impossible d’ouvrir le partage.",
-        error: true,
-      });
-    }
-  }
+      await supabase.auth.signOut();
 
-  async function duplicateSite(
-    id: number,
-    businessName: string,
-  ) {
-    if (duplicatingID !== null) return;
 
-    setDuplicatingID(id);
-    setError("");
 
-    try {
-      const response = await authenticatedFetch(
-        `/sites/${id}/duplicate`,
-        {
-          method: "POST",
-        },
-      );
+      router.replace("/auth");
 
-      if (!response.ok) {
-        const message = (await response.text()).trim();
 
-        throw new Error(
-          message || "Impossible de dupliquer ce site.",
-        );
-      }
 
-      const duplicated: SavedSite = await response.json();
+      throw new Error("Session absente");
 
-      setSites((currentSites) => [
-        duplicated,
-        ...currentSites.filter((site) => site.id !== duplicated.id),
-      ]);
 
-      setSearch("");
-      setFilter("all");
-    } catch (err) {
-      console.error(err);
 
-      setError(
-        err instanceof Error
-          ? err.message
-          : `Impossible de dupliquer "${businessName}".`,
-      );
-    } finally {
-      setDuplicatingID(null);
-    }
-  }
+    }
 
-  async function deleteSite(
 
-    id: number,
 
-    businessName: string,
 
-  ) {
 
-    const confirmed = window.confirm(
 
-      `Supprimer définitivement le site "${businessName}" ?`,
 
-    );
+    return data.session.access_token;
 
 
 
-    if (!confirmed) return;
+  }
 
 
 
-    setDeletingID(id);
 
-    setError("");
 
 
 
-    try {
+  async function authenticatedFetch(
 
-      const response = await authenticatedFetch(
 
-        `/sites/${id}`,
 
-        {
+    path: string,
 
-          method: "DELETE",
 
-        },
 
-      );
+    options: RequestInit = {},
 
 
 
-      if (!response.ok) {
+  ) {
 
-        throw new Error("Erreur suppression");
 
-      }
 
+    const token = await getAccessToken();
 
 
-      setSites((currentSites) =>
 
-        currentSites.filter((site) => site.id !== id),
+    const headers = new Headers(options.headers);
 
-      );
 
 
 
-      if (domainPanelSiteID === id) {
 
-        closeDomainPanel();
 
-      }
 
-    } catch (err) {
+    headers.set("Authorization", `Bearer ${token}`);
 
-      console.error(err);
 
-      setError("Impossible de supprimer ce site.");
 
-    } finally {
 
-      setDeletingID(null);
 
-    }
 
-  }
 
+    if (options.body && !headers.has("Content-Type")) {
 
 
-  async function openDomainPanel(siteID: number) {
 
-    if (domainPanelSiteID === siteID) {
+      headers.set("Content-Type", "application/json");
 
-      closeDomainPanel();
 
-      return;
 
-    }
+    }
 
 
 
-    setDomainPanelSiteID(siteID);
 
-    setDomainInput("");
 
-    setDomainStatus(null);
 
-    setDomainError("");
 
+    const response = await fetch(`/api-backend${path}`, {
 
 
-    await loadDomainStatus(siteID);
 
-  }
+      ...options,
 
 
 
-  function closeDomainPanel() {
+      headers,
 
-    setDomainPanelSiteID(null);
 
-    setDomainInput("");
 
-    setDomainStatus(null);
+      cache: "no-store",
 
-    setDomainError("");
 
-    setDomainLoading(false);
 
-    setDomainActionLoading(false);
+    });
 
-  }
 
 
 
-  async function loadDomainStatus(siteID: number) {
 
-    setDomainLoading(true);
 
-    setDomainError("");
 
+    if (response.status === 401) {
 
 
-    try {
 
-      const response =
+      await supabase.auth.signOut();
 
-        await authenticatedFetch(
 
-          `/sites/${siteID}/domain`,
 
-        );
+      router.replace("/auth");
 
 
 
-      if (!response.ok) {
+    }
 
-        const message =
 
-          await response.text();
 
 
 
-        throw new Error(
 
-          message ||
 
-            "Impossible de récupérer le domaine.",
+    return response;
 
-        );
 
-      }
 
+  }
 
 
-      const data: DomainStatus =
 
-        await response.json();
 
 
 
-      setDomainStatus(data);
 
+  async function loadSites() {
 
 
-      if (data.domain) {
 
-        setDomainInput(data.domain);
+    setSitesLoading(true);
 
-      }
 
-    } catch (err) {
 
-      console.error(err);
+    setError("");
 
-      setDomainError(
 
-        err instanceof Error
 
-          ? err.message
 
-          : "Impossible de récupérer le domaine.",
 
-      );
 
-    } finally {
 
-      setDomainLoading(false);
+    try {
 
-    }
 
-  }
 
+      const response = await authenticatedFetch("/sites");
 
 
-  async function addDomain(siteID: number) {
 
-    const cleanDomain = domainInput
 
-      .trim()
 
-      .toLowerCase()
 
-      .replace(/^https?:\/\//, "")
 
-      .replace(/^www\./, "")
+      if (!response.ok) {
 
-      .split("/")[0];
 
 
+        throw new Error("Impossible de récupérer les sites.");
 
-    if (!cleanDomain) {
 
-      setDomainError(
 
-        "Entre un domaine, par exemple : monentreprise.fr",
+      }
 
-      );
 
-      return;
 
-    }
 
 
 
-    setDomainActionLoading(true);
 
-    setDomainError("");
+      const data: SavedSite[] = await response.json();
 
 
 
-    try {
+      setSites(data);
 
-      const response =
 
-        await authenticatedFetch(
 
-          `/sites/${siteID}/domain`,
+    } catch (err) {
 
-          {
 
-            method: "POST",
 
-            body: JSON.stringify({
+      console.error(err);
 
-              domain: cleanDomain,
 
-            }),
 
-          },
+      setError("Impossible de charger tes sites.");
 
-        );
 
 
+    } finally {
 
-      if (!response.ok) {
 
-        const message =
 
-          await response.text();
+      setSitesLoading(false);
 
 
 
-        throw new Error(
+    }
 
-          message ||
 
-            "Impossible d'ajouter ce domaine.",
 
-        );
+  }
 
-      }
 
 
 
-      const data: DomainStatus =
 
-        await response.json();
 
 
+  async function loadBilling() {
 
-      setDomainStatus(data);
 
-      setDomainInput(
 
-        data.domain || cleanDomain,
+    setBillingLoading(true);
 
-      );
 
-    } catch (err) {
 
-      console.error(err);
 
-      setDomainError(
 
-        err instanceof Error
 
-          ? err.message
 
-          : "Impossible d'ajouter le domaine.",
+    try {
 
-      );
 
-    } finally {
 
-      setDomainActionLoading(false);
+      const response =
 
-    }
 
-  }
 
+        await authenticatedFetch("/stripe/status");
 
 
-  async function verifyDomain(siteID: number) {
 
-    setDomainActionLoading(true);
 
-    setDomainError("");
 
 
 
-    try {
+      if (!response.ok) {
 
-      const response =
 
-        await authenticatedFetch(
 
-          `/sites/${siteID}/domain/verify`,
+        throw new Error(
 
-          {
 
-            method: "POST",
 
-          },
+          "Impossible de récupérer l’abonnement.",
 
-        );
 
 
+        );
 
-      if (!response.ok) {
 
-        const message =
 
-          await response.text();
+      }
 
 
 
-        throw new Error(
 
-          message ||
 
-            "Impossible de vérifier le domaine.",
 
-        );
 
-      }
+      const data: BillingStatus =
 
 
 
-      const data: DomainStatus =
+        await response.json();
 
-        await response.json();
 
 
 
-      setDomainStatus(data);
 
-    } catch (err) {
 
-      console.error(err);
 
-      setDomainError(
+      setBilling(data);
 
-        err instanceof Error
 
-          ? err.message
 
-          : "Impossible de vérifier le domaine.",
+    } catch (err) {
 
-      );
 
-    } finally {
 
-      setDomainActionLoading(false);
+      console.error(err);
 
-    }
 
-  }
 
+      setBilling(null);
 
 
-  async function deleteDomain(siteID: number) {
 
-    if (!domainStatus?.domain) {
+    } finally {
 
-      return;
 
-    }
 
+      setBillingLoading(false);
 
 
-    const confirmed = window.confirm(
 
-      `Retirer le domaine "${domainStatus.domain}" de ce site ?`,
+    }
 
-    );
 
 
+  }
 
-    if (!confirmed) {
 
-      return;
 
-    }
 
 
 
-    setDomainActionLoading(true);
 
-    setDomainError("");
+  function createSite() {
 
 
 
-    try {
+    sessionStorage.removeItem("siteai_site_to_open");
 
-      const response =
 
-        await authenticatedFetch(
 
-          `/sites/${siteID}/domain`,
+    router.push("/builder");
 
-          {
 
-            method: "DELETE",
 
-          },
+  }
 
-        );
 
 
 
-      if (!response.ok) {
 
-        const message =
 
-          await response.text();
 
+  function editSite(id: number) {
 
 
-        throw new Error(
 
-          message ||
+    sessionStorage.setItem("siteai_site_to_open", String(id));
 
-            "Impossible de retirer le domaine.",
 
-        );
 
-      }
+    router.push("/builder");
 
 
 
-      const data: DomainStatus =
+  }
 
-        await response.json();
 
 
 
-      setDomainStatus(data);
 
-      setDomainInput("");
 
-    } catch (err) {
 
-      console.error(err);
+  function viewPublicSite(slug: string) {
 
-      setDomainError(
 
-        err instanceof Error
 
-          ? err.message
+    if (!slug) return;
 
-          : "Impossible de supprimer le domaine.",
 
-      );
 
-    } finally {
 
-      setDomainActionLoading(false);
 
-    }
 
-  }
 
+    window.open(
 
 
-  function openCustomDomain() {
 
-    if (!domainStatus?.domain) {
+      `/site/${slug}`,
 
-      return;
 
-    }
 
+      "_blank",
 
 
-    window.open(
 
-      `https://${domainStatus.domain}`,
+      "noopener,noreferrer",
 
-      "_blank",
 
-      "noopener,noreferrer",
 
-    );
+    );
 
-  }
 
 
+  }
 
-  function formatRecordValue(
 
-    value: unknown,
 
-  ) {
 
-    if (typeof value === "string") {
 
-      return value;
 
-    }
 
+  function publicSiteUrl(slug: string) {
 
+    if (typeof window === "undefined") {
 
-    if (
+      return `/site/${encodeURIComponent(slug)}`;
 
-      typeof value === "number" ||
+    }
 
-      typeof value === "boolean"
 
-    ) {
 
-      return String(value);
+    return `${window.location.origin}/site/${encodeURIComponent(slug)}`;
 
-    }
+  }
 
 
 
-    if (
+  async function copyText(value: string) {
 
-      value === null ||
+    if (navigator.clipboard?.writeText) {
 
-      value === undefined
+      await navigator.clipboard.writeText(value);
 
-    ) {
+      return;
 
-      return "";
+    }
 
-    }
 
 
+    const textarea = document.createElement("textarea");
 
-    try {
+    textarea.value = value;
 
-      return JSON.stringify(value);
+    textarea.setAttribute("readonly", "");
 
-    } catch {
+    textarea.style.position = "fixed";
 
-      return String(value);
+    textarea.style.opacity = "0";
 
-    }
+    document.body.appendChild(textarea);
 
-  }
+    textarea.select();
 
 
 
-  function formatDate(value: string) {
+    const copied = document.execCommand("copy");
 
-    return new Date(value).toLocaleDateString("fr-FR", {
+    document.body.removeChild(textarea);
 
-      day: "2-digit",
 
-      month: "2-digit",
 
-      year: "numeric",
+    if (!copied) {
 
-    });
+      throw new Error("copy-failed");
 
-  }
+    }
 
+  }
 
 
-  const filteredSites = useMemo(() => {
 
-    const query = search.trim().toLowerCase();
+  async function copyPublicSite(
 
+    siteID: number,
 
+    slug: string,
 
-    return sites.filter((site) => {
+  ) {
 
-      const matchesSearch =
+    if (!slug) return;
 
-        query === "" ||
 
-        site.businessName.toLowerCase().includes(query) ||
 
-        site.activity.toLowerCase().includes(query) ||
+    try {
 
-        site.city.toLowerCase().includes(query);
+      await copyText(publicSiteUrl(slug));
 
 
 
-      const matchesFilter =
+      setShareFeedback({
 
-        filter === "all" ||
+        siteID,
 
-        (filter === "published" && site.published) ||
+        message: "✓ Lien copié",
 
-        (filter === "draft" && !site.published);
+      });
 
+    } catch (err) {
 
+      console.error(err);
 
-      return matchesSearch && matchesFilter;
 
-    });
 
-  }, [sites, search, filter]);
+      setShareFeedback({
 
+        siteID,
 
+        message: "Impossible de copier le lien.",
 
-  const publishedCount = sites.filter(
+        error: true,
 
-    (site) => site.published,
+      });
 
-  ).length;
+    }
 
+  }
 
 
-  const draftCount = sites.length - publishedCount;
 
+  async function sharePublicSite(
 
+    siteID: number,
 
-  const subscriptionActive =
+    slug: string,
 
-    billing?.status === "active" ||
+    businessName: string,
 
-    billing?.status === "trialing";
+  ) {
 
+    if (!slug) return;
 
 
-  const normalizedPlan =
 
-    (billing?.plan ?? "")
+    const url = publicSiteUrl(slug);
 
-      .trim()
 
-      .toLowerCase();
 
+    try {
 
+      if (typeof navigator.share === "function") {
 
-  const planAllowsCustomDomain =
+        await navigator.share({
 
-    normalizedPlan === "pro" ||
+          title: businessName || "Site professionnel",
 
-    normalizedPlan === "agence";
+          text: `Découvre le site de ${businessName || "cette entreprise"}.`,
 
+          url,
 
+        });
 
-  const customDomainAllowed =
 
-    subscriptionActive &&
 
-    planAllowsCustomDomain &&
+        setShareFeedback({
 
-    billing?.customDomainAllowed === true;
+          siteID,
 
+          message: "Options de partage ouvertes.",
 
+        });
 
-  if (authLoading) {
 
-    return (
 
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        return;
 
-        <div className="text-center">
+      }
 
-          <div className="text-4xl">✨</div>
 
-          <p className="mt-4 text-sm text-slate-400">
 
-            Chargement de tes sites...
+      await copyText(url);
 
-          </p>
 
-        </div>
 
-      </main>
+      setShareFeedback({
 
-    );
+        siteID,
 
-  }
+        message: "✓ Lien copié pour le partager",
 
+      });
 
+    } catch (err) {
 
-  return (
+      if (
 
-    <main className="min-h-screen bg-slate-950 pb-28 text-white md:pb-10">
+        err &&
 
+        typeof err === "object" &&
+
+        "name" in err &&
+
+        err.name === "AbortError"
+
+      ) {
+
+        return;
+
+      }
+
+
+
+      console.error(err);
+
+
+
+      setShareFeedback({
+
+        siteID,
+
+        message: "Impossible d’ouvrir le partage.",
+
+        error: true,
+
+      });
+
+    }
+
+  }
+
+
+
+  async function duplicateSite(
+
+    id: number,
+
+    businessName: string,
+
+  ) {
+
+    if (duplicatingID !== null) return;
+
+
+
+    setDuplicatingID(id);
+
+    setError("");
+
+
+
+    try {
+
+      const response = await authenticatedFetch(
+
+        `/sites/${id}/duplicate`,
+
+        {
+
+          method: "POST",
+
+        },
+
+      );
+
+
+
+      if (!response.ok) {
+
+        const message = (await response.text()).trim();
+
+
+
+        throw new Error(
+
+          message || "Impossible de dupliquer ce site.",
+
+        );
+
+      }
+
+
+
+      const duplicated: SavedSite = await response.json();
+
+
+
+      setSites((currentSites) => [
+
+        duplicated,
+
+        ...currentSites.filter((site) => site.id !== duplicated.id),
+
+      ]);
+
+
+
+      setSearch("");
+
+      setFilter("all");
+
+    } catch (err) {
+
+      console.error(err);
+
+
+
+      setError(
+
+        err instanceof Error
+
+          ? err.message
+
+          : `Impossible de dupliquer "${businessName}".`,
+
+      );
+
+    } finally {
+
+      setDuplicatingID(null);
+
+    }
+
+  }
+
+
+
+  async function deleteSite(
+
+
+
+    id: number,
+
+
+
+    businessName: string,
+
+
+
+  ) {
+
+
+
+    const confirmed = window.confirm(
+
+
+
+      `Supprimer définitivement le site "${businessName}" ?`,
+
+
+
+    );
+
+
+
+
+
+
+
+    if (!confirmed) return;
+
+
+
+
+
+
+
+    setDeletingID(id);
+
+
+
+    setError("");
+
+
+
+
+
+
+
+    try {
+
+
+
+      const response = await authenticatedFetch(
+
+
+
+        `/sites/${id}`,
+
+
+
+        {
+
+
+
+          method: "DELETE",
+
+
+
+        },
+
+
+
+      );
+
+
+
+
+
+
+
+      if (!response.ok) {
+
+
+
+        throw new Error("Erreur suppression");
+
+
+
+      }
+
+
+
+
+
+
+
+      setSites((currentSites) =>
+
+
+
+        currentSites.filter((site) => site.id !== id),
+
+
+
+      );
+
+
+
+
+
+
+
+      if (domainPanelSiteID === id) {
+
+
+
+        closeDomainPanel();
+
+
+
+      }
+
+
+
+    } catch (err) {
+
+
+
+      console.error(err);
+
+
+
+      setError("Impossible de supprimer ce site.");
+
+
+
+    } finally {
+
+
+
+      setDeletingID(null);
+
+
+
+    }
+
+
+
+  }
+
+
+
+
+
+
+
+  async function openDomainPanel(siteID: number) {
+
+
+
+    if (domainPanelSiteID === siteID) {
+
+
+
+      closeDomainPanel();
+
+
+
+      return;
+
+
+
+    }
+
+
+
+
+
+
+
+    setDomainPanelSiteID(siteID);
+
+
+
+    setDomainInput("");
+
+
+
+    setDomainStatus(null);
+
+
+
+    setDomainError("");
+
+
+
+
+
+
+
+    await loadDomainStatus(siteID);
+
+
+
+  }
+
+
+
+
+
+
+
+  function closeDomainPanel() {
+
+
+
+    setDomainPanelSiteID(null);
+
+
+
+    setDomainInput("");
+
+
+
+    setDomainStatus(null);
+
+
+
+    setDomainError("");
+
+
+
+    setDomainLoading(false);
+
+
+
+    setDomainActionLoading(false);
+
+
+
+  }
+
+
+
+
+
+
+
+  async function loadDomainStatus(siteID: number) {
+
+
+
+    setDomainLoading(true);
+
+
+
+    setDomainError("");
+
+
+
+
+
+
+
+    try {
+
+
+
+      const response =
+
+
+
+        await authenticatedFetch(
+
+
+
+          `/sites/${siteID}/domain`,
+
+
+
+        );
+
+
+
+
+
+
+
+      if (!response.ok) {
+
+
+
+        const message =
+
+
+
+          await response.text();
+
+
+
+
+
+
+
+        throw new Error(
+
+
+
+          message ||
+
+
+
+            "Impossible de récupérer le domaine.",
+
+
+
+        );
+
+
+
+      }
+
+
+
+
+
+
+
+      const data: DomainStatus =
+
+
+
+        await response.json();
+
+
+
+
+
+
+
+      setDomainStatus(data);
+
+
+
+
+
+
+
+      if (data.domain) {
+
+
+
+        setDomainInput(data.domain);
+
+
+
+      }
+
+
+
+    } catch (err) {
+
+
+
+      console.error(err);
+
+
+
+      setDomainError(
+
+
+
+        err instanceof Error
+
+
+
+          ? err.message
+
+
+
+          : "Impossible de récupérer le domaine.",
+
+
+
+      );
+
+
+
+    } finally {
+
+
+
+      setDomainLoading(false);
+
+
+
+    }
+
+
+
+  }
+
+
+
+
+
+
+
+  async function addDomain(siteID: number) {
+
+
+
+    const cleanDomain = domainInput
+
+
+
+      .trim()
+
+
+
+      .toLowerCase()
+
+
+
+      .replace(/^https?:\/\//, "")
+
+
+
+      .replace(/^www\./, "")
+
+
+
+      .split("/")[0];
+
+
+
+
+
+
+
+    if (!cleanDomain) {
+
+
+
+      setDomainError(
+
+
+
+        "Entre un domaine, par exemple : monentreprise.fr",
+
+
+
+      );
+
+
+
+      return;
+
+
+
+    }
+
+
+
+
+
+
+
+    setDomainActionLoading(true);
+
+
+
+    setDomainError("");
+
+
+
+
+
+
+
+    try {
+
+
+
+      const response =
+
+
+
+        await authenticatedFetch(
+
+
+
+          `/sites/${siteID}/domain`,
+
+
+
+          {
+
+
+
+            method: "POST",
+
+
+
+            body: JSON.stringify({
+
+
+
+              domain: cleanDomain,
+
+
+
+            }),
+
+
+
+          },
+
+
+
+        );
+
+
+
+
+
+
+
+      if (!response.ok) {
+
+
+
+        const message =
+
+
+
+          await response.text();
+
+
+
+
+
+
+
+        throw new Error(
+
+
+
+          message ||
+
+
+
+            "Impossible d'ajouter ce domaine.",
+
+
+
+        );
+
+
+
+      }
+
+
+
+
+
+
+
+      const data: DomainStatus =
+
+
+
+        await response.json();
+
+
+
+
+
+
+
+      setDomainStatus(data);
+
+
+
+      setDomainInput(
+
+
+
+        data.domain || cleanDomain,
+
+
+
+      );
+
+
+
+    } catch (err) {
+
+
+
+      console.error(err);
+
+
+
+      setDomainError(
+
+
+
+        err instanceof Error
+
+
+
+          ? err.message
+
+
+
+          : "Impossible d'ajouter le domaine.",
+
+
+
+      );
+
+
+
+    } finally {
+
+
+
+      setDomainActionLoading(false);
+
+
+
+    }
+
+
+
+  }
+
+
+
+
+
+
+
+  async function verifyDomain(siteID: number) {
+
+
+
+    setDomainActionLoading(true);
+
+
+
+    setDomainError("");
+
+
+
+
+
+
+
+    try {
+
+
+
+      const response =
+
+
+
+        await authenticatedFetch(
+
+
+
+          `/sites/${siteID}/domain/verify`,
+
+
+
+          {
+
+
+
+            method: "POST",
+
+
+
+          },
+
+
+
+        );
+
+
+
+
+
+
+
+      if (!response.ok) {
+
+
+
+        const message =
+
+
+
+          await response.text();
+
+
+
+
+
+
+
+        throw new Error(
+
+
+
+          message ||
+
+
+
+            "Impossible de vérifier le domaine.",
+
+
+
+        );
+
+
+
+      }
+
+
+
+
+
+
+
+      const data: DomainStatus =
+
+
+
+        await response.json();
+
+
+
+
+
+
+
+      setDomainStatus(data);
+
+
+
+    } catch (err) {
+
+
+
+      console.error(err);
+
+
+
+      setDomainError(
+
+
+
+        err instanceof Error
+
+
+
+          ? err.message
+
+
+
+          : "Impossible de vérifier le domaine.",
+
+
+
+      );
+
+
+
+    } finally {
+
+
+
+      setDomainActionLoading(false);
+
+
+
+    }
+
+
+
+  }
+
+
+
+
+
+
+
+  async function deleteDomain(siteID: number) {
+
+
+
+    if (!domainStatus?.domain) {
+
+
+
+      return;
+
+
+
+    }
+
+
+
+
+
+
+
+    const confirmed = window.confirm(
+
+
+
+      `Retirer le domaine "${domainStatus.domain}" de ce site ?`,
+
+
+
+    );
+
+
+
+
+
+
+
+    if (!confirmed) {
+
+
+
+      return;
+
+
+
+    }
+
+
+
+
+
+
+
+    setDomainActionLoading(true);
+
+
+
+    setDomainError("");
+
+
+
+
+
+
+
+    try {
+
+
+
+      const response =
+
+
+
+        await authenticatedFetch(
+
+
+
+          `/sites/${siteID}/domain`,
+
+
+
+          {
+
+
+
+            method: "DELETE",
+
+
+
+          },
+
+
+
+        );
+
+
+
+
+
+
+
+      if (!response.ok) {
+
+
+
+        const message =
+
+
+
+          await response.text();
+
+
+
+
+
+
+
+        throw new Error(
+
+
+
+          message ||
+
+
+
+            "Impossible de retirer le domaine.",
+
+
+
+        );
+
+
+
+      }
+
+
+
+
+
+
+
+      const data: DomainStatus =
+
+
+
+        await response.json();
+
+
+
+
+
+
+
+      setDomainStatus(data);
+
+
+
+      setDomainInput("");
+
+
+
+    } catch (err) {
+
+
+
+      console.error(err);
+
+
+
+      setDomainError(
+
+
+
+        err instanceof Error
+
+
+
+          ? err.message
+
+
+
+          : "Impossible de supprimer le domaine.",
+
+
+
+      );
+
+
+
+    } finally {
+
+
+
+      setDomainActionLoading(false);
+
+
+
+    }
+
+
+
+  }
+
+
+
+
+
+
+
+  function openCustomDomain() {
+
+
+
+    if (!domainStatus?.domain) {
+
+
+
+      return;
+
+
+
+    }
+
+
+
+
+
+
+
+    window.open(
+
+
+
+      `https://${domainStatus.domain}`,
+
+
+
+      "_blank",
+
+
+
+      "noopener,noreferrer",
+
+
+
+    );
+
+
+
+  }
+
+
+
+
+
+
+
+  function formatRecordValue(
+
+
+
+    value: unknown,
+
+
+
+  ) {
+
+
+
+    if (typeof value === "string") {
+
+
+
+      return value;
+
+
+
+    }
+
+
+
+
+
+
+
+    if (
+
+
+
+      typeof value === "number" ||
+
+
+
+      typeof value === "boolean"
+
+
+
+    ) {
+
+
+
+      return String(value);
+
+
+
+    }
+
+
+
+
+
+
+
+    if (
+
+
+
+      value === null ||
+
+
+
+      value === undefined
+
+
+
+    ) {
+
+
+
+      return "";
+
+
+
+    }
+
+
+
+
+
+
+
+    try {
+
+
+
+      return JSON.stringify(value);
+
+
+
+    } catch {
+
+
+
+      return String(value);
+
+
+
+    }
+
+
+
+  }
+
+
+
+
+
+
+
+  function formatDate(value: string) {
+
+
+
+    return new Date(value).toLocaleDateString("fr-FR", {
+
+
+
+      day: "2-digit",
+
+
+
+      month: "2-digit",
+
+
+
+      year: "numeric",
+
+
+
+    });
+
+
+
+  }
+
+
+
+
+
+
+
+  const filteredSites = useMemo(() => {
+
+
+
+    const query = search.trim().toLowerCase();
+
+
+
+
+
+
+
+    return sites.filter((site) => {
+
+
+
+      const matchesSearch =
+
+
+
+        query === "" ||
+
+
+
+        site.businessName.toLowerCase().includes(query) ||
+
+
+
+        site.activity.toLowerCase().includes(query) ||
+
+
+
+        site.city.toLowerCase().includes(query);
+
+
+
+
+
+
+
+      const matchesFilter =
+
+
+
+        filter === "all" ||
+
+
+
+        (filter === "published" && site.published) ||
+
+
+
+        (filter === "draft" && !site.published);
+
+
+
+
+
+
+
+      return matchesSearch && matchesFilter;
+
+
+
+    });
+
+
+
+  }, [sites, search, filter]);
+
+
+
+
+
+
+
+  const publishedCount = sites.filter(
+
+
+
+    (site) => site.published,
+
+
+
+  ).length;
+
+
+
+
+
+
+
+  const draftCount = sites.length - publishedCount;
+
+
+
+
+
+
+
+  const subscriptionActive =
+
+
+
+    billing?.status === "active" ||
+
+
+
+    billing?.status === "trialing";
+
+
+
+
+
+
+
+  const normalizedPlan =
+
+
+
+    (billing?.plan ?? "")
+
+
+
+      .trim()
+
+
+
+      .toLowerCase();
+
+
+
+
+
+
+
+  const planAllowsCustomDomain =
+
+
+
+    normalizedPlan === "pro" ||
+
+
+
+    normalizedPlan === "agence";
+
+
+
+
+
+
+
+  const customDomainAllowed =
+
+
+
+    subscriptionActive &&
+
+
+
+    planAllowsCustomDomain &&
+
+
+
+    billing?.customDomainAllowed === true;
+
+
+
+
+
+
+
+  if (authLoading) {
+
+
+
+    return (
+
+
+
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+
+
+
+        <div className="text-center">
+
+
+
+          <div className="text-4xl">✨</div>
+
+
+
+          <p className="mt-4 text-sm text-slate-400">
+
+
+
+            Chargement de tes sites...
+
+
+
+          </p>
+
+
+
+        </div>
+
+
+
+      </main>
+
+
+
+    );
+
+
+
+  }
+
+
+
+
+
+
+
+  return (
+    <main className="min-h-screen bg-slate-950 pb-28 text-white md:pb-12">
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
-
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
-
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
           <button
-
             type="button"
-
             onClick={() => router.push("/dashboard")}
-
             className="text-xl font-black"
-
           >
-
             Lu<span className="text-blue-500">mio</span>
-
           </button>
 
-
-
-          <button
-
-            type="button"
-
-            onClick={createSite}
-
-            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold hover:bg-blue-500"
-
-          >
-
-            + Nouveau
-
-          </button>
-
-        </div>
-
-      </header>
-
-
-
-      <section className="mx-auto max-w-5xl px-4 py-7 sm:px-6 sm:py-10">
-
-        <button
-
-          type="button"
-
-          onClick={() => router.push("/dashboard")}
-
-          className="mb-6 text-sm font-semibold text-slate-400 hover:text-white"
-
-        >
-
-          ← Retour au dashboard
-
-        </button>
-
-
-
-        <div>
-
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-400">
-
-            Mes sites
-
-          </p>
-
-
-
-          <h1 className="mt-2 text-3xl font-black sm:text-4xl">
-
-            Tous tes sites
-
-          </h1>
-
-
-
-          <p className="mt-2 text-sm leading-6 text-slate-400">
-
-            Ouvre, modifie ou consulte tes sites depuis une page simple.
-
-          </p>
-
-        </div>
-
-
-
-        <div className="mt-6 grid grid-cols-3 gap-2">
-
-          <button
-
-            type="button"
-
-            onClick={() => setFilter("all")}
-
-            className={`rounded-2xl border p-3 text-center ${
-
-              filter === "all"
-
-                ? "border-blue-500 bg-blue-500/10"
-
-                : "border-slate-800 bg-slate-900"
-
-            }`}
-
-          >
-
-            <p className="text-2xl font-black">{sites.length}</p>
-
-            <p className="mt-1 text-xs text-slate-400">
-
-              Tous
-
-            </p>
-
-          </button>
-
-
-
-          <button
-
-            type="button"
-
-            onClick={() => setFilter("published")}
-
-            className={`rounded-2xl border p-3 text-center ${
-
-              filter === "published"
-
-                ? "border-emerald-500 bg-emerald-500/10"
-
-                : "border-slate-800 bg-slate-900"
-
-            }`}
-
-          >
-
-            <p className="text-2xl font-black text-emerald-400">
-
-              {publishedCount}
-
-            </p>
-
-            <p className="mt-1 text-xs text-slate-400">
-
-              Publiés
-
-            </p>
-
-          </button>
-
-
-
-          <button
-
-            type="button"
-
-            onClick={() => setFilter("draft")}
-
-            className={`rounded-2xl border p-3 text-center ${
-
-              filter === "draft"
-
-                ? "border-amber-500 bg-amber-500/10"
-
-                : "border-slate-800 bg-slate-900"
-
-            }`}
-
-          >
-
-            <p className="text-2xl font-black text-amber-400">
-
-              {draftCount}
-
-            </p>
-
-            <p className="mt-1 text-xs text-slate-400">
-
-              Brouillons
-
-            </p>
-
-          </button>
-
-        </div>
-
-
-
-        <div className="mt-5">
-
-          <input
-
-            type="search"
-
-            value={search}
-
-            onChange={(event) =>
-
-              setSearch(event.target.value)
-
-            }
-
-            placeholder="Rechercher un site..."
-
-            className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-4 outline-none transition focus:border-blue-500"
-
-          />
-
-        </div>
-
-
-
-        {error && (
-
-          <div className="mt-5 rounded-2xl border border-red-900 bg-red-950/30 p-4 text-sm text-red-300">
-
-            {error}
-
-          </div>
-
-        )}
-
-
-
-        {sitesLoading ? (
-
-          <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400">
-
-            Chargement...
-
-          </div>
-
-        ) : filteredSites.length === 0 ? (
-
-          <div className="mt-6 rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center">
-
-            <div className="text-4xl">🌐</div>
-
-            <p className="mt-3 font-bold">
-
-              Aucun site trouvé
-
-            </p>
-
-            <p className="mt-2 text-sm text-slate-500">
-
-              Crée ton premier site ou modifie ta recherche.
-
-            </p>
-
+          <div className="flex items-center gap-2">
             <button
-
               type="button"
-
-              onClick={createSite}
-
-              className="mt-5 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold hover:bg-blue-500"
-
+              onClick={() => router.push("/dashboard")}
+              className="hidden rounded-xl border border-slate-700 px-4 py-2 text-sm font-bold text-slate-300 transition hover:border-slate-500 hover:bg-slate-900 sm:inline-flex"
             >
-
-              + Créer un site
-
+              Dashboard
             </button>
 
+            <button
+              type="button"
+              onClick={createSite}
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black transition hover:bg-blue-500"
+            >
+              + Nouveau site
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-400">
+              Mes sites
+            </p>
+
+            <h1 className="mt-2 text-3xl font-black sm:text-4xl">
+              Gère tous tes sites
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+              Retrouve rapidement un site, modifie-le et gère sa publication,
+              son partage ou son domaine depuis un seul endroit.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className={`rounded-2xl border p-4 text-left transition ${
+              filter === "all"
+                ? "border-blue-500 bg-blue-500/10"
+                : "border-slate-800 bg-slate-900 hover:border-slate-700"
+            }`}
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+              Tous
+            </p>
+            <p className="mt-1 text-2xl font-black">{sites.length}</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilter("published")}
+            className={`rounded-2xl border p-4 text-left transition ${
+              filter === "published"
+                ? "border-emerald-500 bg-emerald-500/10"
+                : "border-slate-800 bg-slate-900 hover:border-slate-700"
+            }`}
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+              Publiés
+            </p>
+            <p className="mt-1 text-2xl font-black text-emerald-400">
+              {publishedCount}
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilter("draft")}
+            className={`rounded-2xl border p-4 text-left transition ${
+              filter === "draft"
+                ? "border-amber-500 bg-amber-500/10"
+                : "border-slate-800 bg-slate-900 hover:border-slate-700"
+            }`}
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+              Brouillons
+            </p>
+            <p className="mt-1 text-2xl font-black text-amber-400">
+              {draftCount}
+            </p>
+          </button>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1">
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Rechercher par entreprise, activité ou ville..."
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+            />
           </div>
 
+          <div className="grid grid-cols-3 gap-2 sm:flex">
+            <button
+              type="button"
+              onClick={() => setFilter("all")}
+              className={`rounded-xl px-3 py-2 text-xs font-bold transition ${
+                filter === "all"
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-800 text-slate-400 hover:text-white"
+              }`}
+            >
+              Tous
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter("published")}
+              className={`rounded-xl px-3 py-2 text-xs font-bold transition ${
+                filter === "published"
+                  ? "bg-emerald-600 text-white"
+                  : "bg-slate-800 text-slate-400 hover:text-white"
+              }`}
+            >
+              Publiés
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter("draft")}
+              className={`rounded-xl px-3 py-2 text-xs font-bold transition ${
+                filter === "draft"
+                  ? "bg-amber-600 text-white"
+                  : "bg-slate-800 text-slate-400 hover:text-white"
+              }`}
+            >
+              Brouillons
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-4 rounded-2xl border border-red-900 bg-red-950/30 p-4 text-sm text-red-300">
+            {error}
+          </div>
+        )}
+
+        {sitesLoading ? (
+          <div className="mt-5 rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400">
+            Chargement...
+          </div>
+        ) : filteredSites.length === 0 ? (
+          <div className="mt-5 rounded-3xl border border-dashed border-slate-700 bg-slate-900/70 p-10 text-center">
+            <div className="text-4xl">🌐</div>
+            <p className="mt-3 font-black">Aucun site trouvé</p>
+            <p className="mt-2 text-sm text-slate-500">
+              Modifie ta recherche ou crée un nouveau site.
+            </p>
+            <button
+              type="button"
+              onClick={createSite}
+              className="mt-5 rounded-xl bg-blue-600 px-5 py-3 text-sm font-black hover:bg-blue-500"
+            >
+              + Créer un site
+            </button>
+          </div>
         ) : (
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-
+          <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {filteredSites.map((savedSite) => {
-
-              const heroImage =
-
-                savedSite.site?.heroImageUrl;
-
+              const heroImage = savedSite.site?.heroImageUrl;
               const logo = savedSite.site?.logoUrl;
-
-              const domainPanelOpen =
-
-                domainPanelSiteID === savedSite.id;
-
-
+              const domainPanelOpen = domainPanelSiteID === savedSite.id;
 
               return (
-
                 <article
-
                   key={savedSite.id}
-
-                  className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900"
-
+                  className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-sm shadow-black/20 transition hover:border-slate-700"
                 >
-
-                  <div className="relative h-40 overflow-hidden bg-slate-800">
-
+                  <div className="relative h-36 overflow-hidden bg-slate-800">
                     {heroImage ? (
-
                       <img
-
                         src={heroImage}
-
                         alt={savedSite.businessName}
-
                         className="h-full w-full object-cover"
-
                       />
-
                     ) : (
-
                       <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
-
                         {logo ? (
-
                           <img
-
                             src={logo}
-
                             alt={savedSite.businessName}
-
-                            className="h-20 w-20 rounded-2xl bg-white object-contain p-3"
-
+                            className="h-16 w-16 rounded-2xl bg-white object-contain p-2.5"
                           />
-
                         ) : (
-
                           <div className="text-4xl">✨</div>
-
                         )}
-
                       </div>
-
                     )}
 
-
-
                     <div className="absolute left-3 top-3">
-
-                      {savedSite.published ? (
-
-                        <span className="rounded-full bg-emerald-950/90 px-3 py-1 text-xs font-bold text-emerald-400">
-
-                          ● Publié
-
-                        </span>
-
-                      ) : (
-
-                        <span className="rounded-full bg-amber-950/90 px-3 py-1 text-xs font-bold text-amber-400">
-
-                          ● Brouillon
-
-                        </span>
-
-                      )}
-
+                      <span
+                        className={`rounded-full px-3 py-1 text-[11px] font-black ${
+                          savedSite.published
+                            ? "bg-emerald-950/90 text-emerald-400"
+                            : "bg-amber-950/90 text-amber-400"
+                        }`}
+                      >
+                        {savedSite.published ? "● Publié" : "● Brouillon"}
+                      </span>
                     </div>
-
                   </div>
 
-
-
                   <div className="p-5">
+                    <div className="min-w-0">
+                      <h2 className="truncate text-xl font-black">
+                        {savedSite.businessName}
+                      </h2>
+                      <p className="mt-1 truncate text-sm text-slate-400">
+                        {savedSite.activity} · {savedSite.city}
+                      </p>
+                      <p className="mt-2 text-xs text-slate-600">
+                        Modifié le {formatDate(savedSite.updatedAt)}
+                      </p>
+                    </div>
 
-                    <h2 className="break-words text-xl font-black">
-
-                      {savedSite.businessName}
-
-                    </h2>
-
-
-
-                    <p className="mt-1 break-words text-sm text-slate-400">
-
-                      {savedSite.activity} · {savedSite.city}
-
-                    </p>
-
-
-
-                    <p className="mt-2 text-xs text-slate-600">
-
-                      Modifié le {formatDate(savedSite.updatedAt)}
-
-                    </p>
-
-
-
-                    <div className="mt-5 grid gap-2">
-
+                    <div className="mt-5 flex gap-2">
                       <button
-
                         type="button"
-
                         onClick={() => editSite(savedSite.id)}
-
-                        className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500"
-
+                        className="flex-1 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black transition hover:bg-blue-500"
                       >
-
-                        ✏️ Modifier le site
-
+                        Modifier
                       </button>
 
+                      {savedSite.published && savedSite.publicSlug && (
+                        <button
+                          type="button"
+                          onClick={() => viewPublicSite(savedSite.publicSlug)}
+                          className="rounded-xl border border-emerald-800 px-4 py-3 text-sm font-bold text-emerald-400 transition hover:bg-emerald-950"
+                        >
+                          Voir
+                        </button>
+                      )}
+                    </div>
 
+                    <details className="group mt-3 overflow-hidden rounded-xl border border-slate-800 bg-slate-950/50">
+                      <summary className="cursor-pointer list-none px-4 py-3 text-center text-sm font-bold text-slate-300 transition hover:bg-slate-800">
+                        ••• Plus d&apos;actions
+                      </summary>
 
-                      <button
-                        type="button"
-                        disabled={duplicatingID === savedSite.id}
-                        onClick={() =>
-                          duplicateSite(
-                            savedSite.id,
-                            savedSite.businessName,
-                          )
-                        }
-                        className="w-full rounded-xl border border-slate-700 px-4 py-3 text-sm font-bold text-slate-200 hover:border-blue-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {duplicatingID === savedSite.id
-                          ? "Duplication..."
-                          : "📋 Dupliquer"}
-                      </button>
+                      <div className="space-y-2 border-t border-slate-800 p-3">
+                        <button
+                          type="button"
+                          disabled={duplicatingID === savedSite.id}
+                          onClick={() =>
+                            duplicateSite(savedSite.id, savedSite.businessName)
+                          }
+                          className="w-full rounded-xl border border-slate-700 px-4 py-3 text-sm font-bold text-slate-200 transition hover:border-blue-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {duplicatingID === savedSite.id
+                            ? "Duplication..."
+                            : "📋 Dupliquer"}
+                        </button>
 
-
-
-                      {savedSite.published &&
-
-                        savedSite.publicSlug && (
-
-                          <button
-
-                            type="button"
-
-                            onClick={() =>
-
-                              viewPublicSite(
-
-                                savedSite.publicSlug,
-
-                              )
-
-                            }
-
-                            className="w-full rounded-xl border border-emerald-800 px-4 py-3 text-sm font-bold text-emerald-400 hover:bg-emerald-950"
-
-                          >
-
-                            🌍 Voir le site en ligne
-
-                          </button>
-
-                        )}
-
-
-
-                      {savedSite.published &&
-                        savedSite.publicSlug && (
+                        {savedSite.published && savedSite.publicSlug && (
                           <>
                             <div className="grid grid-cols-2 gap-2">
                               <button
@@ -1815,7 +2975,7 @@ export default function SitesPage() {
                                     savedSite.publicSlug,
                                   )
                                 }
-                                className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-bold text-slate-200 hover:border-blue-500 hover:bg-slate-800"
+                                className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-bold text-slate-200 transition hover:border-blue-500 hover:bg-slate-800"
                               >
                                 🔗 Copier
                               </button>
@@ -1829,7 +2989,7 @@ export default function SitesPage() {
                                     savedSite.businessName,
                                   )
                                 }
-                                className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-bold text-slate-200 hover:border-blue-500 hover:bg-slate-800"
+                                className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-bold text-slate-200 transition hover:border-blue-500 hover:bg-slate-800"
                               >
                                 📤 Partager
                               </button>
@@ -1850,870 +3010,337 @@ export default function SitesPage() {
                           </>
                         )}
 
+                        {billingLoading ? (
+                          <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-xs text-slate-500">
+                            Vérification du domaine...
+                          </div>
+                        ) : customDomainAllowed ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openDomainPanel(savedSite.id)}
+                              className={`w-full rounded-xl border px-4 py-3 text-sm font-bold transition ${
+                                domainPanelOpen
+                                  ? "border-blue-500 bg-blue-500/10 text-blue-300"
+                                  : "border-blue-800 text-blue-400 hover:bg-blue-950"
+                              }`}
+                            >
+                              {domainPanelOpen
+                                ? "✕ Fermer le domaine"
+                                : "🌐 Gérer le domaine"}
+                            </button>
 
-
-                      {billingLoading ? (
-
-                        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-
-                          <p className="text-sm font-bold text-slate-400">
-
-                            🌐 Domaine personnalisé
-
-                          </p>
-
-                          <p className="mt-2 text-xs text-slate-600">
-
-                            Vérification de ton abonnement...
-
-                          </p>
-
-                        </div>
-
-                      ) : customDomainAllowed ? (
-
-                        <>
-
-                          <button
-
-                            type="button"
-
-                            onClick={() =>
-
-                              openDomainPanel(savedSite.id)
-
-                            }
-
-                            className={`w-full rounded-xl border px-4 py-3 text-sm font-bold transition ${
-
-                              domainPanelOpen
-
-                                ? "border-blue-500 bg-blue-500/10 text-blue-300"
-
-                                : "border-blue-800 text-blue-400 hover:bg-blue-950"
-
-                            }`}
-
-                          >
-
-                            {domainPanelOpen
-
-                              ? "✕ Fermer le domaine"
-
-                              : "🌐 Gérer mon domaine"}
-
-                          </button>
-
-
-
-                          {domainPanelOpen && (
-
-                            <div className="rounded-2xl border border-blue-900/60 bg-slate-950 p-4">
-
-                              <div>
-
-                                <p className="font-black">
-
-                                  🌐 Domaine personnalisé
-
-                                </p>
-
+                            {domainPanelOpen && (
+                              <div className="rounded-2xl border border-blue-900/60 bg-slate-950 p-4">
+                                <p className="font-black">Domaine personnalisé</p>
                                 <p className="mt-1 text-xs leading-5 text-slate-500">
-
                                   Exemple : monentreprise.fr
-
                                 </p>
 
-                              </div>
-
-
-
-                              {domainLoading ? (
-
-                                <p className="mt-4 text-sm text-slate-400">
-
-                                  Chargement...
-
-                                </p>
-
-                              ) : (
-
-                                <>
-
-                                  <input
-
-                                    value={domainInput}
-
-                                    onChange={(event) =>
-
-                                      setDomainInput(
-
-                                        event.target.value,
-
-                                      )
-
-                                    }
-
-                                    placeholder="monentreprise.fr"
-
-                                    disabled={
-
-                                      domainActionLoading
-
-                                    }
-
-                                    className="mt-4 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm outline-none focus:border-blue-500"
-
-                                  />
-
-
-
-                                  {!domainStatus?.domain && (
-
-                                    <button
-
-                                      type="button"
-
-                                      disabled={
-
-                                        domainActionLoading
-
+                                {domainLoading ? (
+                                  <p className="mt-4 text-sm text-slate-400">
+                                    Chargement...
+                                  </p>
+                                ) : (
+                                  <>
+                                    <input
+                                      value={domainInput}
+                                      onChange={(event) =>
+                                        setDomainInput(event.target.value)
                                       }
-
-                                      onClick={() =>
-
-                                        addDomain(
-
-                                          savedSite.id,
-
-                                        )
-
-                                      }
-
-                                      className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500 disabled:opacity-50"
-
-                                    >
-
-                                      {domainActionLoading
-
-                                        ? "Ajout..."
-
-                                        : "Ajouter le domaine"}
-
-                                    </button>
-
-                                  )}
-
-
-
-                                  {domainStatus?.domain && (
-
-                                    <div className="mt-5 space-y-4">
-
-                                      <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-
-                                        <p className="text-xs uppercase text-slate-500">
-
-                                          Domaine
-
-                                        </p>
-
-
-
-                                        <p className="mt-2 break-all font-black">
-
-                                          {
-
-                                            domainStatus.domain
-
-                                          }
-
-                                        </p>
-
-
-
-                                        <div className="mt-3 flex flex-wrap gap-2">
-
-                                          <span
-
-                                            className={`rounded-full px-3 py-1 text-xs font-bold ${
-
-                                              domainStatus.verified
-
-                                                ? "bg-emerald-500/10 text-emerald-400"
-
-                                                : "bg-amber-500/10 text-amber-400"
-
-                                            }`}
-
-                                          >
-
-                                            {domainStatus.verified
-
-                                              ? "✓ Vérifié"
-
-                                              : "En attente de vérification"}
-
-                                          </span>
-
-
-
-                                          <span
-
-                                            className={`rounded-full px-3 py-1 text-xs font-bold ${
-
-                                              domainStatus.configured
-
-                                                ? "bg-emerald-500/10 text-emerald-400"
-
-                                                : "bg-orange-500/10 text-orange-400"
-
-                                            }`}
-
-                                          >
-
-                                            {domainStatus.configured
-
-                                              ? "✓ DNS configuré"
-
-                                              : "DNS à configurer"}
-
-                                          </span>
-
-                                        </div>
-
-                                      </div>
-
-
-
-                                      {(domainStatus.verification ??
-
-                                        []).length > 0 && (
-
-                                        <div className="rounded-xl border border-amber-800/50 bg-amber-950/20 p-4">
-
-                                          <p className="font-bold text-amber-300">
-
-                                            Vérification du domaine
-
-                                          </p>
-
-                                          <p className="mt-2 text-xs leading-5 text-slate-400">
-
-                                            Ajoute ces informations chez le fournisseur où ton domaine a été acheté.
-
-                                          </p>
-
-
-
-                                          <div className="mt-4 space-y-3">
-
-                                            {(
-
-                                              domainStatus.verification ??
-
-                                              []
-
-                                            ).map(
-
-                                              (
-
-                                                verification,
-
-                                                index,
-
-                                              ) => (
-
-                                                <div
-
-                                                  key={index}
-
-                                                  className="rounded-lg bg-slate-950 p-3 text-xs"
-
-                                                >
-
-                                                  <p>
-
-                                                    Type :{" "}
-
-                                                    <strong>
-
-                                                      {
-
-                                                        verification.type
-
-                                                      }
-
-                                                    </strong>
-
-                                                  </p>
-
-
-
-                                                  {verification.domain && (
-
-                                                    <p className="mt-1 break-all">
-
-                                                      Nom :{" "}
-
-                                                      {
-
-                                                        verification.domain
-
-                                                      }
-
-                                                    </p>
-
-                                                  )}
-
-
-
-                                                  {verification.value && (
-
-                                                    <p className="mt-1 break-all">
-
-                                                      Valeur :{" "}
-
-                                                      {
-
-                                                        verification.value
-
-                                                      }
-
-                                                    </p>
-
-                                                  )}
-
-                                                </div>
-
-                                              ),
-
-                                            )}
-
-                                          </div>
-
-                                        </div>
-
-                                      )}
-
-
-
-                                      {(domainStatus.recommendedCNAME ??
-
-                                        []).length > 0 && (
-
-                                        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-
-                                          <p className="font-bold">
-
-                                            CNAME recommandé
-
-                                          </p>
-
-
-
-                                          <div className="mt-3 space-y-2">
-
-                                            {(
-
-                                              domainStatus.recommendedCNAME ??
-
-                                              []
-
-                                            ).map(
-
-                                              (
-
-                                                record,
-
-                                                index,
-
-                                              ) => (
-
-                                                <div
-
-                                                  key={index}
-
-                                                  className="rounded-lg bg-slate-950 p-3 text-xs"
-
-                                                >
-
-                                                  <p className="break-all">
-
-                                                    {formatRecordValue(
-
-                                                      record.value,
-
-                                                    )}
-
-                                                  </p>
-
-                                                </div>
-
-                                              ),
-
-                                            )}
-
-                                          </div>
-
-                                        </div>
-
-                                      )}
-
-
-
-                                      {(domainStatus.recommendedIPv4 ??
-
-                                        []).length > 0 && (
-
-                                        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-
-                                          <p className="font-bold">
-
-                                            Adresse IPv4 recommandée
-
-                                          </p>
-
-
-
-                                          <div className="mt-3 space-y-2">
-
-                                            {(
-
-                                              domainStatus.recommendedIPv4 ??
-
-                                              []
-
-                                            ).map(
-
-                                              (
-
-                                                record,
-
-                                                index,
-
-                                              ) => (
-
-                                                <div
-
-                                                  key={index}
-
-                                                  className="rounded-lg bg-slate-950 p-3 text-xs"
-
-                                                >
-
-                                                  <p className="break-all">
-
-                                                    {formatRecordValue(
-
-                                                      record.value,
-
-                                                    )}
-
-                                                  </p>
-
-                                                </div>
-
-                                              ),
-
-                                            )}
-
-                                          </div>
-
-                                        </div>
-
-                                      )}
-
-
-
-                                      {domainStatus.message && (
-
-                                        <p className="rounded-xl bg-slate-900 p-3 text-xs leading-5 text-slate-400">
-
-                                          {
-
-                                            domainStatus.message
-
-                                          }
-
-                                        </p>
-
-                                      )}
-
-
-
+                                      placeholder="monentreprise.fr"
+                                      disabled={domainActionLoading}
+                                      className="mt-4 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                                    />
+
+                                    {!domainStatus?.domain && (
                                       <button
-
                                         type="button"
-
-                                        disabled={
-
-                                          domainActionLoading
-
-                                        }
-
-                                        onClick={() =>
-
-                                          verifyDomain(
-
-                                            savedSite.id,
-
-                                          )
-
-                                        }
-
-                                        className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500 disabled:opacity-50"
-
+                                        disabled={domainActionLoading}
+                                        onClick={() => addDomain(savedSite.id)}
+                                        className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500 disabled:opacity-50"
                                       >
-
                                         {domainActionLoading
-
-                                          ? "Vérification..."
-
-                                          : "🔄 Vérifier le domaine"}
-
+                                          ? "Ajout..."
+                                          : "Ajouter le domaine"}
                                       </button>
+                                    )}
 
+                                    {domainStatus?.domain && (
+                                      <div className="mt-5 space-y-4">
+                                        <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                                          <p className="text-xs uppercase text-slate-500">
+                                            Domaine
+                                          </p>
+                                          <p className="mt-2 break-all font-black">
+                                            {domainStatus.domain}
+                                          </p>
 
+                                          <div className="mt-3 flex flex-wrap gap-2">
+                                            <span
+                                              className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                                domainStatus.verified
+                                                  ? "bg-emerald-500/10 text-emerald-400"
+                                                  : "bg-amber-500/10 text-amber-400"
+                                              }`}
+                                            >
+                                              {domainStatus.verified
+                                                ? "✓ Vérifié"
+                                                : "En attente de vérification"}
+                                            </span>
 
-                                      {domainStatus.verified &&
+                                            <span
+                                              className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                                domainStatus.configured
+                                                  ? "bg-emerald-500/10 text-emerald-400"
+                                                  : "bg-orange-500/10 text-orange-400"
+                                              }`}
+                                            >
+                                              {domainStatus.configured
+                                                ? "✓ DNS configuré"
+                                                : "DNS à configurer"}
+                                            </span>
+                                          </div>
+                                        </div>
 
-                                        domainStatus.configured && (
+                                        {(domainStatus.verification ?? []).length >
+                                          0 && (
+                                          <div className="rounded-xl border border-amber-800/50 bg-amber-950/20 p-4">
+                                            <p className="font-bold text-amber-300">
+                                              Vérification du domaine
+                                            </p>
+                                            <p className="mt-2 text-xs leading-5 text-slate-400">
+                                              Ajoute ces informations chez le
+                                              fournisseur où ton domaine a été
+                                              acheté.
+                                            </p>
 
-                                          <button
-
-                                            type="button"
-
-                                            onClick={
-
-                                              openCustomDomain
-
-                                            }
-
-                                            className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold hover:bg-emerald-500"
-
-                                          >
-
-                                            🌍 Ouvrir le domaine
-
-                                          </button>
-
+                                            <div className="mt-4 space-y-3">
+                                              {(domainStatus.verification ?? []).map(
+                                                (verification, index) => (
+                                                  <div
+                                                    key={index}
+                                                    className="rounded-lg bg-slate-950 p-3 text-xs"
+                                                  >
+                                                    <p>
+                                                      Type :{" "}
+                                                      <strong>
+                                                        {verification.type}
+                                                      </strong>
+                                                    </p>
+                                                    {verification.domain && (
+                                                      <p className="mt-1 break-all">
+                                                        Nom :{" "}
+                                                        {verification.domain}
+                                                      </p>
+                                                    )}
+                                                    {verification.value && (
+                                                      <p className="mt-1 break-all">
+                                                        Valeur :{" "}
+                                                        {verification.value}
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                ),
+                                              )}
+                                            </div>
+                                          </div>
                                         )}
 
+                                        {(domainStatus.recommendedCNAME ?? [])
+                                          .length > 0 && (
+                                          <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                                            <p className="font-bold">
+                                              CNAME recommandé
+                                            </p>
+                                            <div className="mt-3 space-y-2">
+                                              {(
+                                                domainStatus.recommendedCNAME ??
+                                                []
+                                              ).map((record, index) => (
+                                                <div
+                                                  key={index}
+                                                  className="rounded-lg bg-slate-950 p-3 text-xs"
+                                                >
+                                                  <p className="break-all">
+                                                    {formatRecordValue(
+                                                      record.value,
+                                                    )}
+                                                  </p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
 
+                                        {(domainStatus.recommendedIPv4 ?? [])
+                                          .length > 0 && (
+                                          <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                                            <p className="font-bold">
+                                              Adresse IPv4 recommandée
+                                            </p>
+                                            <div className="mt-3 space-y-2">
+                                              {(
+                                                domainStatus.recommendedIPv4 ??
+                                                []
+                                              ).map((record, index) => (
+                                                <div
+                                                  key={index}
+                                                  className="rounded-lg bg-slate-950 p-3 text-xs"
+                                                >
+                                                  <p className="break-all">
+                                                    {formatRecordValue(
+                                                      record.value,
+                                                    )}
+                                                  </p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
 
-                                      <button
+                                        {domainStatus.message && (
+                                          <p className="rounded-xl bg-slate-900 p-3 text-xs leading-5 text-slate-400">
+                                            {domainStatus.message}
+                                          </p>
+                                        )}
 
-                                        type="button"
+                                        <button
+                                          type="button"
+                                          disabled={domainActionLoading}
+                                          onClick={() =>
+                                            verifyDomain(savedSite.id)
+                                          }
+                                          className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500 disabled:opacity-50"
+                                        >
+                                          {domainActionLoading
+                                            ? "Vérification..."
+                                            : "🔄 Vérifier le domaine"}
+                                        </button>
 
-                                        disabled={
+                                        {domainStatus.verified &&
+                                          domainStatus.configured && (
+                                            <button
+                                              type="button"
+                                              onClick={openCustomDomain}
+                                              className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold hover:bg-emerald-500"
+                                            >
+                                              🌍 Ouvrir le domaine
+                                            </button>
+                                          )}
 
-                                          domainActionLoading
+                                        <button
+                                          type="button"
+                                          disabled={domainActionLoading}
+                                          onClick={() =>
+                                            deleteDomain(savedSite.id)
+                                          }
+                                          className="w-full rounded-xl border border-red-900 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-950 disabled:opacity-50"
+                                        >
+                                          Retirer le domaine
+                                        </button>
+                                      </div>
+                                    )}
 
-                                        }
-
-                                        onClick={() =>
-
-                                          deleteDomain(
-
-                                            savedSite.id,
-
-                                          )
-
-                                        }
-
-                                        className="w-full rounded-xl border border-red-900 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-950 disabled:opacity-50"
-
-                                      >
-
-                                        Retirer le domaine
-
-                                      </button>
-
-                                    </div>
-
-                                  )}
-
-
-
-                                  {domainError && (
-
-                                    <p className="mt-4 rounded-xl border border-red-900 bg-red-950/30 p-3 text-sm text-red-400">
-
-                                      {domainError}
-
-                                    </p>
-
-                                  )}
-
-                                </>
-
-                              )}
-
-                            </div>
-
-                          )}
-
-                        </>
-
-                      ) : billing ? (
-
-                        <div className="rounded-2xl border border-violet-700/70 bg-gradient-to-br from-violet-950/50 to-slate-950 p-4">
-
-                          <div className="flex items-start justify-between gap-3">
-
-                            <div className="flex min-w-0 gap-3">
-
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-xl">
-
-                                🔒
-
+                                    {domainError && (
+                                      <p className="mt-4 rounded-xl border border-red-900 bg-red-950/30 p-3 text-sm text-red-400">
+                                        {domainError}
+                                      </p>
+                                    )}
+                                  </>
+                                )}
                               </div>
-
-
-
-                              <div className="min-w-0">
-
-                                <p className="font-black text-violet-200">
-
-                                  Domaine personnalisé
-
-                                </p>
-
-                                <p className="mt-1 text-xs leading-5 text-slate-400">
-
-                                  Disponible avec Pro ou Agence.
-
-                                </p>
-
-                              </div>
-
-                            </div>
-
-
-
-                            <span className="shrink-0 rounded-full border border-violet-700 bg-violet-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-violet-300">
-
-                              Pro
-
-                            </span>
-
-                          </div>
-
-
-
-                          <p className="mt-4 text-xs leading-5 text-slate-500">
-
-                            Avec un abonnement Pro ou Agence, tu peux utiliser une adresse comme monentreprise.fr à la place de l&apos;URL Lumio.
-
-                          </p>
-
-
-
+                            )}
+                          </>
+                        ) : billing ? (
                           <button
-
                             type="button"
-
-                            onClick={() =>
-
-                              router.push("/pricing")
-
-                            }
-
-                            className="mt-4 w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-black text-white hover:bg-violet-500"
-
+                            onClick={() => router.push("/pricing")}
+                            className="w-full rounded-xl border border-violet-800 px-4 py-3 text-sm font-bold text-violet-300 transition hover:bg-violet-950"
                           >
-
-                            Voir Pro et Agence
-
+                            🔒 Domaine personnalisé · Pro
                           </button>
+                        ) : (
+                          <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-xs text-slate-500">
+                            Domaine personnalisé indisponible pour le moment.
+                          </div>
+                        )}
 
-                        </div>
-
-                      ) : (
-
-                        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-
-                          <p className="text-sm font-bold text-slate-300">
-
-                            🌐 Domaine personnalisé
-
-                          </p>
-
-                          <p className="mt-2 text-xs leading-5 text-slate-500">
-
-                            Impossible de vérifier ton abonnement pour le moment.
-
-                          </p>
-
-                        </div>
-
-                      )}
-
-
-
-                      <button
-
-                        type="button"
-
-                        disabled={
-
-                          deletingID === savedSite.id
-
-                        }
-
-                        onClick={() =>
-
-                          deleteSite(
-
-                            savedSite.id,
-
-                            savedSite.businessName,
-
-                          )
-
-                        }
-
-                        className="w-full rounded-xl border border-red-900 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-950 disabled:opacity-50"
-
-                      >
-
-                        {deletingID === savedSite.id
-
-                          ? "Suppression..."
-
-                          : "🗑️ Supprimer"}
-
-                      </button>
-
-                    </div>
-
+                        <button
+                          type="button"
+                          disabled={deletingID === savedSite.id}
+                          onClick={() =>
+                            deleteSite(savedSite.id, savedSite.businessName)
+                          }
+                          className="w-full rounded-xl border border-red-900 px-4 py-3 text-sm font-semibold text-red-400 transition hover:bg-red-950 disabled:opacity-50"
+                        >
+                          {deletingID === savedSite.id
+                            ? "Suppression..."
+                            : "🗑️ Supprimer"}
+                        </button>
+                      </div>
+                    </details>
                   </div>
-
                 </article>
-
               );
-
             })}
-
           </div>
-
         )}
-
       </section>
 
-
-
       <nav
-
         className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-800 bg-slate-950/98 px-2 pt-2 backdrop-blur md:hidden"
-
         style={{
-
-          paddingBottom:
-
-            "calc(env(safe-area-inset-bottom) + 0.5rem)",
-
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
         }}
-
         aria-label="Navigation mobile"
-
       >
-
         <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-1">
-
           <button
-
             type="button"
-
             onClick={() => router.push("/dashboard")}
-
             className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-slate-300"
-
           >
-
             <span className="text-lg">⌂</span>
-
             <span>Accueil</span>
-
           </button>
 
-
-
           <button
-
             type="button"
-
             className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-blue-400"
-
           >
-
             <span className="text-lg">▣</span>
-
             <span>Sites</span>
-
           </button>
 
-
-
           <button
-
             type="button"
-
             onClick={createSite}
-
             className="mx-auto flex h-14 w-14 -translate-y-2 items-center justify-center rounded-2xl bg-blue-600 text-3xl font-light text-white shadow-lg shadow-blue-950/60"
-
             aria-label="Créer un nouveau site"
-
           >
-
             +
-
           </button>
 
-
-
           <button
-
             type="button"
-
             onClick={() => router.push("/prospects")}
-
             className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-slate-300"
-
           >
-
             <span className="text-lg">✉</span>
-
             <span>Prospects</span>
-
           </button>
-
-
 
           <button
-
             type="button"
-
             onClick={() => router.push("/pricing")}
-
             className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-slate-300"
-
           >
-
             <span className="text-lg">◈</span>
-
             <span>Abonnement</span>
-
           </button>
-
         </div>
-
       </nav>
-
     </main>
-
   );
-
 }
