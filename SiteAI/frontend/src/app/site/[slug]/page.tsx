@@ -1,3 +1,4 @@
+import { SITE_URL, publicRobots, privateRobots } from "@/lib/seo";
 import { normalizeDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -48,10 +49,6 @@ type PageProps = {
     slug: string;
   }>;
 };
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://lumio-creation.vercel.app";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -214,10 +211,7 @@ export async function generateMetadata(
         "Site indisponible | Lumio",
       description:
         "Ce site n'existe pas ou n'est plus publié.",
-      robots: {
-        index: false,
-        follow: false,
-      },
+      robots: privateRobots,
     };
   }
 
@@ -242,7 +236,7 @@ export async function generateMetadata(
     )}`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
 
     alternates: {
@@ -250,19 +244,7 @@ export async function generateMetadata(
         canonicalUrl,
     },
 
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        "max-image-preview":
-          "large",
-        "max-snippet": -1,
-        "max-video-preview":
-          -1,
-      },
-    },
+    robots: publicRobots,
 
     openGraph: {
       type: "website",

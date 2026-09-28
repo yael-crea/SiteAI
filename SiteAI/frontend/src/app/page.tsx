@@ -1,3 +1,7 @@
+import { publicMetadata } from "@/lib/seo";
+
+export const metadata = publicMetadata("/", "Crée ton site professionnel avec l'IA", "Crée et personnalise ton site professionnel avec Lumio : génération par IA, éditeur simple et publication en ligne.");
+
 import Link from "next/link";
 
 import { plans, freePreviewText, domainText, aiUsageText, cancellationText, priceSuffix, priceTaxText } from "@/lib/commercialPlans";

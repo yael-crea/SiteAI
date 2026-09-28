@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/seo";
 import {
   NextRequest,
   NextResponse,
@@ -22,10 +23,7 @@ function isSiteAIDomain(
     return true;
   }
 
-  if (
-    host ===
-    "site-ai-izjx.vercel.app"
-  ) {
+  if (host === new URL(SITE_URL).hostname) {
     return true;
   }
 
