@@ -686,7 +686,7 @@ func main() {
 
 	fmt.Println("======================================")
 
-	fmt.Println("SiteAI Backend")
+	fmt.Println("Lumio Backend")
 
 	fmt.Println("Port :", port)
 
@@ -2248,7 +2248,7 @@ func sendLeadNotificationEmail(
 
 	fromEmail := strings.TrimSpace(os.Getenv("RESEND_FROM_EMAIL"))
 	if fromEmail == "" {
-		fromEmail = "SiteAI <onboarding@resend.dev>"
+		fromEmail = "Lumio <onboarding@resend.dev>"
 	}
 
 	appURL := strings.TrimRight(strings.TrimSpace(os.Getenv("SITEAI_APP_URL")), "/")
@@ -2277,7 +2277,7 @@ func sendLeadNotificationEmail(
 <body style="margin:0;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a;">
   <div style="max-width:640px;margin:0 auto;padding:32px 20px;">
     <div style="background:#0f172a;border-radius:20px;padding:28px;color:#ffffff;">
-      <div style="font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#60a5fa;">SiteAI</div>
+      <div style="font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#60a5fa;">Lumio</div>
       <h1 style="margin:10px 0 0;font-size:26px;">Nouveau prospect reçu</h1>
       <p style="margin:10px 0 0;color:#cbd5e1;line-height:1.6;">Une nouvelle demande a été envoyée depuis le site de %s.</p>
     </div>
@@ -2289,7 +2289,7 @@ func sendLeadNotificationEmail(
       <div style="padding:16px;background:#f8fafc;border-radius:12px;line-height:1.7;">%s</div>
       <a href="%s" style="display:inline-block;margin-top:24px;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:700;padding:13px 18px;border-radius:10px;">Ouvrir mes prospects</a>
     </div>
-    <p style="margin:18px 0 0;text-align:center;font-size:12px;color:#64748b;">Notification automatique SiteAI</p>
+    <p style="margin:18px 0 0;text-align:center;font-size:12px;color:#64748b;">Notification automatique Lumio</p>
   </div>
 </body>
 </html>`,
@@ -2304,7 +2304,7 @@ func sendLeadNotificationEmail(
 	payload := map[string]any{
 		"from":    fromEmail,
 		"to":      []string{toEmail},
-		"subject": fmt.Sprintf("[SiteAI] Nouveau prospect pour %s", businessName),
+		"subject": fmt.Sprintf("[Lumio] Nouveau prospect pour %s", businessName),
 		"html":    htmlBody,
 	}
 
@@ -6080,7 +6080,7 @@ func generateSiteWithAI(
 	}
 
 	instructions := `
-Tu es le moteur de création de SiteAI, un outil qui crée des sites vitrines professionnels pour des TPE et PME françaises.
+Tu es le moteur de création de Lumio, un outil qui crée des sites vitrines professionnels pour des TPE et PME françaises.
 
 Ta mission est de produire un contenu réellement adapté au métier, à la ville et aux services fournis. Deux entreprises de métiers différents ne doivent pas recevoir le même site avec seulement quelques mots remplacés.
 
@@ -6287,7 +6287,7 @@ func modifySiteWithAI(
 	)
 
 	instructions := `
-Tu es l'éditeur intelligent de SiteAI.
+Tu es l'éditeur intelligent de Lumio.
 
 Tu reçois le contenu complet d'un site vitrine existant et une demande de modification de l'utilisateur.
 
@@ -7810,7 +7810,7 @@ func getBillingStatus(
 	}
 
 	if isAdmin {
-		// Un administrateur SiteAI garde tous les droits produit,
+		// Un administrateur Lumio garde tous les droits produit,
 		// indépendamment de son abonnement Stripe.
 		// On expose "agence" + "active" pour que le frontend
 		// débloque aussi les fonctions réservées Pro/Agence.
@@ -7911,7 +7911,7 @@ func ensureStripeCustomer(
 		values.Set("email", strings.TrimSpace(user.Email))
 	}
 	values.Set("metadata[user_id]", user.ID)
-	values.Set("description", "SiteAI customer")
+	values.Set("description", "Lumio customer")
 
 	var customer StripeCustomer
 	if err := doStripeForm(

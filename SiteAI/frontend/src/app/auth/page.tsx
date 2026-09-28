@@ -278,7 +278,7 @@ export default function AuthPage() {
       <section className="mx-auto grid min-h-[calc(100vh-81px)] max-w-7xl items-center gap-12 px-6 py-12 lg:grid-cols-2">
         <div className="hidden lg:block">
           <p className="text-sm font-black uppercase tracking-[0.3em] text-blue-400">
-            SiteAI
+            Lumio
           </p>
 
           <h1 className="mt-5 max-w-xl text-5xl font-black leading-tight">
@@ -346,7 +346,7 @@ export default function AuthPage() {
                 {mode === "login"
                   ? "Bon retour 👋"
                   : mode === "signup"
-                    ? "Bienvenue sur SiteAI ✨"
+                    ? "Bienvenue sur Lumio ✨"
                     : "Mot de passe oublié 🔐"}
               </h2>
 
@@ -486,7 +486,7 @@ export default function AuthPage() {
 
             <p className="mt-6 text-center text-xs leading-5 text-slate-500">
               En continuant, tu accèdes à ton espace
-              SiteAI.
+              Lumio.
             </p>
           </div>
         </div>

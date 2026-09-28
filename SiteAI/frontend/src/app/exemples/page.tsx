@@ -16,12 +16,12 @@ export default function ExamplesPage() {
   const example = examples.find(item => item.id === selected) ?? examples[0];
   return <main className="min-h-screen bg-slate-950 text-white">
     <header className="border-b border-slate-800"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4">
-      <Link href="/" className="text-xl font-black">Site<span className="text-blue-500">AI</span></Link>
+      <Link href="/" className="text-xl font-black">Lu<span className="text-blue-500">mio</span></Link>
       <Link href="/auth" className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold">Créer mon aperçu gratuit</Link>
     </div></header>
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <h1 className="text-3xl font-black sm:text-4xl">Imagine ton activité en ligne</h1>
-      <p className="mt-3 max-w-3xl leading-7 text-slate-400">Trois démonstrations réalisées avec les modèles de SiteAI. Ces entreprises sont fictives ; les formulaires n’envoient aucun message. Tes textes, tes couleurs et tes photos restent personnalisables.</p>
+      <p className="mt-3 max-w-3xl leading-7 text-slate-400">Trois démonstrations réalisées avec les modèles de Lumio. Ces entreprises sont fictives ; les formulaires n’envoient aucun message. Tes textes, tes couleurs et tes photos restent personnalisables.</p>
       <div className="my-6 flex flex-wrap gap-3" aria-label="Choisir une démonstration">{examples.map(item => <button key={item.id} type="button" aria-pressed={selected === item.id} onClick={() => setSelected(item.id)} className={`rounded-xl border px-5 py-3 text-sm font-bold ${selected === item.id ? "border-blue-500 bg-blue-600" : "border-slate-700 hover:bg-slate-800"}`}>{item.activity}</button>)}</div>
       <div className="overflow-hidden rounded-2xl border border-slate-700 bg-white text-slate-950" onClickCapture={event => {
         const anchor = (event.target as HTMLElement).closest('a[href^="tel:"], a[href^="mailto:"]');
@@ -29,7 +29,7 @@ export default function ExamplesPage() {
       }}>
         <SitePreview key={example.id} previewOnly designStyle={example.style} accentColor={example.color} activity={example.activity} city="Votre ville" site={{
           businessName: example.name, slug: "", metaTitle: example.name, metaDescription: example.text,
-          heroEyebrow: "Démonstration SiteAI", heroTitle: example.title, heroText: example.text,
+          heroEyebrow: "Démonstration Lumio", heroTitle: example.title, heroText: example.text,
           primaryCta: "Nous contacter", secondaryCta: "Découvrir nos services", phone: "", logoUrl: "", heroImageUrl: "", gallery: [],
           sections: example.services.map(title => ({title, text: "Présentez ici cette prestation, son déroulement et les informations utiles pour vos clients."})),
           aboutTitle: "Parlons de votre projet", aboutText: example.text,

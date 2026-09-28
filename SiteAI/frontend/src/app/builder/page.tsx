@@ -3566,7 +3566,7 @@ export default function Home() {
       <section data-builder-section className="mx-auto max-w-[1800px] px-4 py-7 sm:py-10 lg:px-6 lg:py-14">
         <div data-mobile-hide className="mb-8 text-center sm:mb-12">
           <p className="text-sm font-bold uppercase tracking-[0.35em] text-blue-400">
-            SiteAI
+            Lumio
           </p>
 
           <h1 className="mt-3 text-3xl font-black sm:text-4xl md:text-6xl">
@@ -4848,8 +4848,8 @@ export default function Home() {
                                   "auto" && (
                                   <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs leading-5 text-slate-400">
                                     {site.gallery?.length
-                                      ? `✨ SiteAI utilisera automatiquement une photo de ta galerie pour ce service.`
-                                      : "✨ Ajoute des photos dans Réalisations pour que SiteAI puisse en utiliser automatiquement ici."}
+                                      ? `✨ Lumio utilisera automatiquement une photo de ta galerie pour ce service.`
+                                      : "✨ Ajoute des photos dans Réalisations pour que Lumio puisse en utiliser automatiquement ici."}
                                   </div>
                                 )}
 
@@ -4967,7 +4967,7 @@ export default function Home() {
                                       Icône du service
                                     </p>
                                     <p className="mt-1 text-xs leading-5 text-slate-500">
-                                      Laisse SiteAI choisir automatiquement, sélectionne ton icône ou masque-la.
+                                      Laisse Lumio choisir automatiquement, sélectionne ton icône ou masque-la.
                                     </p>
                                   </div>
 
@@ -5107,7 +5107,7 @@ export default function Home() {
                                 ) ===
                                   "auto" && (
                                   <p className="mt-4 text-xs text-emerald-400">
-                                    ✨ SiteAI choisira l&apos;icône selon le métier et la position du service.
+                                    ✨ Lumio choisira l&apos;icône selon le métier et la position du service.
                                   </p>
                                 )}
 
@@ -5187,7 +5187,7 @@ export default function Home() {
                       </div>
                       <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950 p-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div><p className="text-sm font-bold">Couleurs conseillées</p><p className="mt-1 text-xs text-slate-500">Choisis une couleur cohérente ou laisse SiteAI lire ton logo.</p></div>
+                          <div><p className="text-sm font-bold">Couleurs conseillées</p><p className="mt-1 text-xs text-slate-500">Choisis une couleur cohérente ou laisse Lumio lire ton logo.</p></div>
                           <button type="button" onClick={suggestAccentFromLogo} disabled={!site.logoUrl} className="rounded-lg border border-blue-700 px-3 py-2 text-xs font-bold text-blue-300 disabled:opacity-40">✨ Depuis mon logo</button>
                         </div>
                         <div className="mt-4 space-y-3">

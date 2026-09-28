@@ -12,7 +12,7 @@ const features = [
 
     title: "Création avec l’IA",
 
-    text: "Décris ton activité et SiteAI génère la base de ton site professionnel.",
+    text: "Décris ton activité et Lumio génère la base de ton site professionnel.",
 
   },
 
@@ -32,7 +32,7 @@ const features = [
 
     title: "Publication rapide",
 
-    text: "Sauvegarde ton site puis publie-le avec une adresse publique SiteAI.",
+    text: "Sauvegarde ton site puis publie-le avec une adresse publique Lumio.",
 
   },
 
@@ -62,7 +62,7 @@ const features = [
 
     title: "Abonnement intégré",
 
-    text: "Gère ta formule et tes paiements directement depuis ton espace SiteAI.",
+    text: "Gère ta formule et tes paiements directement depuis ton espace Lumio.",
 
   },
 
@@ -88,7 +88,7 @@ const steps = [
 
     title: "Laisse l’IA créer",
 
-    text: "SiteAI prépare une première version que tu peux ensuite personnaliser.",
+    text: "Lumio prépare une première version que tu peux ensuite personnaliser.",
 
   },
 
@@ -124,7 +124,7 @@ const faqs = [
 
     answer:
 
-      "Non. SiteAI est pensé pour créer et modifier un site depuis une interface simple, sans écrire de code.",
+      "Non. Lumio est pensé pour créer et modifier un site depuis une interface simple, sans écrire de code.",
 
   },
 
@@ -154,7 +154,7 @@ const faqs = [
 
     answer:
 
-      "Oui. La gestion de l’abonnement est intégrée à SiteAI et passe par Stripe.",
+      "Oui. La gestion de l’abonnement est intégrée à Lumio et passe par Stripe.",
 
   },
 
@@ -174,7 +174,7 @@ export default function HomePage() {
 
           <Link href="/" className="text-2xl font-black">
 
-            Site<span className="text-blue-500">AI</span>
+            Lu<span className="text-blue-500">mio</span>
 
           </Link>
 
@@ -280,7 +280,7 @@ export default function HomePage() {
 
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-400 md:text-xl">
 
-              SiteAI aide les indépendants, TPE et PME à créer, personnaliser
+              Lumio aide les indépendants, TPE et PME à créer, personnaliser
 
               et publier un site professionnel depuis une seule interface.
 
@@ -345,7 +345,7 @@ export default function HomePage() {
                   <span className="h-3 w-3 rounded-full bg-emerald-400" />
 
                   <span className="ml-2 text-xs font-semibold text-slate-400">
-                    SiteAI Builder
+                    Lumio Builder
                   </span>
                 </div>
 
@@ -623,7 +623,7 @@ export default function HomePage() {
 
             <p className="mt-5 text-lg leading-8 text-slate-400">
 
-              SiteAI regroupe la génération, l&apos;édition, la publication et
+              Lumio regroupe la génération, l&apos;édition, la publication et
 
               la gestion de tes sites dans un même espace.
 
@@ -947,7 +947,7 @@ export default function HomePage() {
 
           <h2 className="mx-auto mt-4 max-w-3xl text-4xl font-black md:text-5xl">
 
-            Présente ton entreprise en ligne avec SiteAI.
+            Présente ton entreprise en ligne avec Lumio.
 
           </h2>
 
@@ -987,7 +987,7 @@ export default function HomePage() {
 
             <span className="font-black text-white">
 
-              Site<span className="text-blue-500">AI</span>
+              Lu<span className="text-blue-500">mio</span>
 
             </span>{" "}
 

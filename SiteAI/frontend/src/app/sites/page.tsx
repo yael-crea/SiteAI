@@ -1363,7 +1363,7 @@ export default function SitesPage() {
 
           >
 
-            Site<span className="text-blue-500">AI</span>
+            Lu<span className="text-blue-500">mio</span>
 
           </button>
 
@@ -2504,7 +2504,7 @@ export default function SitesPage() {
 
                           <p className="mt-4 text-xs leading-5 text-slate-500">
 
-                            Avec un abonnement Pro ou Agence, tu peux utiliser une adresse comme monentreprise.fr à la place de l&apos;URL SiteAI.
+                            Avec un abonnement Pro ou Agence, tu peux utiliser une adresse comme monentreprise.fr à la place de l&apos;URL Lumio.
 
                           </p>
 

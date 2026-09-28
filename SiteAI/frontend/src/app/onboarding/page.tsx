@@ -358,7 +358,7 @@ export default function OnboardingPage() {
 
           <div className="mt-10 text-center">
             <p className="text-sm font-black uppercase tracking-[0.3em] text-blue-400">
-              Bienvenue sur SiteAI
+              Bienvenue sur Lumio
             </p>
 
             <h1 className="mt-4 text-4xl font-black md:text-5xl">
@@ -367,7 +367,7 @@ export default function OnboardingPage() {
 
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-400">
               Renseigne simplement ton entreprise.
-              SiteAI va générer automatiquement ton
+              Lumio va générer automatiquement ton
               premier site, le sauvegarder puis l&apos;ouvrir
               directement dans l&apos;éditeur.
             </p>
@@ -439,7 +439,7 @@ export default function OnboardingPage() {
               {creating && (
                 <div className="rounded-xl border border-blue-900 bg-blue-950/30 p-4">
                   <p className="font-bold text-blue-300">
-                    ✨ SiteAI crée ton site...
+                    ✨ Lumio crée ton site...
                   </p>
 
                   <p className="mt-2 text-sm leading-6 text-slate-400">

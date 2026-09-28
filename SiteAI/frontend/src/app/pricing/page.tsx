@@ -587,7 +587,7 @@ export default function PricingPage() {
       <section className="mx-auto max-w-7xl px-6 py-16">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-black uppercase tracking-[0.3em] text-blue-400">
-            Abonnements SiteAI
+            Abonnements Lumio
           </p>
 
           <h1 className="mt-5 text-4xl font-black md:text-6xl">
@@ -716,7 +716,7 @@ export default function PricingPage() {
 
         {billing?.isOwner && (
           <div className="mx-auto mt-8 max-w-4xl rounded-2xl border border-emerald-700 bg-emerald-950/20 p-6">
-            <p className="font-bold text-emerald-300">Toutes les fonctionnalités, sans abonnement SiteAI</p>
+            <p className="font-bold text-emerald-300">Toutes les fonctionnalités, sans abonnement Lumio</p>
             <p className="mt-3 text-sm text-slate-300">Publication sans limite de formule, domaines personnalisés, espace Agence, statistiques et IA sans quota mensuel. La limite de 20 demandes IA par heure reste active. Les frais externes éventuels (IA, hébergement, domaine) restent à ta charge.</p>
             {billing.hasSubscription && <p className="mt-3 text-sm text-amber-300">Un abonnement Stripe existe encore : cet accès ne le résilie pas automatiquement. Tu peux le gérer avec le bouton ci-dessus.</p>}
             <a href="/admin" className="mt-4 inline-block font-bold text-emerald-300 underline">Ouvrir l’administration</a>

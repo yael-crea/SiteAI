@@ -176,7 +176,7 @@ export default function ResetPasswordPage() {
 
             <p className="mt-3 leading-7 text-slate-400">
               Choisis un nouveau mot de passe pour ton
-              compte SiteAI.
+              compte Lumio.
             </p>
           </div>
 

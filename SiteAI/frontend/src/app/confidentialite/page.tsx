@@ -6,7 +6,7 @@ export default function LegalPage() {
       <header className="border-b border-slate-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
           <Link href="/" className="text-2xl font-black">
-            Site<span className="text-blue-500">AI</span>
+            Lu<span className="text-blue-500">mio</span>
           </Link>
 
           <Link
@@ -25,11 +25,11 @@ export default function LegalPage() {
           </p>
           <h1 className="mt-4 text-4xl font-black md:text-5xl">Politique de confidentialité</h1>
           <p className="mt-5 max-w-3xl leading-7 text-slate-400">
-            Cette politique décrit de manière provisoire les principales catégories de données utilisées par SiteAI. Elle devra être adaptée aux traitements réellement déployés au moment du lancement.
+            Cette politique décrit de manière provisoire les principales catégories de données utilisées par Lumio. Elle devra être adaptée aux traitements réellement déployés au moment du lancement.
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : SiteAI n&apos;est pas encore rattaché à une
+            ⚠️ Version provisoire : Lumio n&apos;est pas encore rattaché à une
             entreprise immatriculée. Tous les champs marqués [À COMPLÉTER]
             devront être renseignés avant une mise en ligne commerciale.
           </div>
@@ -47,7 +47,7 @@ E-mail relatif aux données personnelles : [À COMPLÉTER]
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">2. Données susceptibles d’être traitées</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Selon l’utilisation de SiteAI, les données peuvent notamment inclure :
+              Selon l’utilisation de Lumio, les données peuvent notamment inclure :
 • adresse e-mail et informations de compte ;
 • informations fournies lors de la création d’un site ;
 • contenus, textes, images, logos et domaines ajoutés par l’utilisateur ;
@@ -56,7 +56,7 @@ E-mail relatif aux données personnelles : [À COMPLÉTER]
 • identifiant aléatoire conservé dans le navigateur, pages vues et clics sur les moyens de contact ;
 • journaux techniques nécessaires à la sécurité, au diagnostic et au fonctionnement du service.
 
-Les données de carte bancaire ne sont pas destinées à être stockées directement par SiteAI lorsque le paiement est traité par Stripe.
+Les données de carte bancaire ne sont pas destinées à être stockées directement par Lumio lorsque le paiement est traité par Stripe.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
@@ -79,7 +79,7 @@ Les données de carte bancaire ne sont pas destinées à être stockées directe
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
               Les bases juridiques exactes devront être validées avant le lancement.
 
-Selon le traitement, SiteAI pourra notamment s’appuyer sur :
+Selon le traitement, Lumio pourra notamment s’appuyer sur :
 • l’exécution du contrat pour fournir le service ;
 • le respect d’une obligation légale ;
 • l’intérêt légitime pour certaines opérations de sécurité et de prévention des abus ;
@@ -89,7 +89,7 @@ Selon le traitement, SiteAI pourra notamment s’appuyer sur :
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">5. Prestataires techniques</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              SiteAI utilise actuellement ou prévoit d’utiliser notamment :
+              Lumio utilise actuellement ou prévoit d’utiliser notamment :
 • Supabase pour l’authentification, le stockage et la base de données ;
 • Stripe pour les paiements et abonnements ;
 • Vercel pour le frontend et le déploiement ;
@@ -122,9 +122,9 @@ Les utilisateurs peuvent également introduire une réclamation auprès de la CN
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
               Les traceurs strictement nécessaires au fonctionnement, à l’authentification ou à la sécurité peuvent être utilisés lorsque la réglementation le permet.
 
-Sur les sites publiés, SiteAI utilise un identifiant aléatoire enregistré dans le stockage local du navigateur afin de compter les visiteurs uniques et d’éviter les doublons. SiteAI enregistre également les pages vues et les clics sur le téléphone ou l’e-mail. Ces mesures servent uniquement à fournir des statistiques au propriétaire du site ; elles ne sont pas utilisées pour la publicité ciblée.
+Sur les sites publiés, Lumio utilise un identifiant aléatoire enregistré dans le stockage local du navigateur afin de compter les visiteurs uniques et d’éviter les doublons. Lumio enregistre également les pages vues et les clics sur le téléphone ou l’e-mail. Ces mesures servent uniquement à fournir des statistiques au propriétaire du site ; elles ne sont pas utilisées pour la publicité ciblée.
 
-La base juridique, la durée de conservation et la nécessité éventuelle d’un consentement devront être confirmées avant le lancement selon la configuration définitive. Si SiteAI ajoute des outils publicitaires ou des traceurs tiers nécessitant un consentement, un mécanisme de consentement et de retrait devra être mis en place avant leur activation.
+La base juridique, la durée de conservation et la nécessité éventuelle d’un consentement devront être confirmées avant le lancement selon la configuration définitive. Si Lumio ajoute des outils publicitaires ou des traceurs tiers nécessitant un consentement, un mécanisme de consentement et de retrait devra être mis en place avant leur activation.
             </div>
           </section>
         </div>

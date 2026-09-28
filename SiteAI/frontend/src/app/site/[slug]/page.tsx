@@ -211,7 +211,7 @@ export async function generateMetadata(
   if (!publicSite) {
     return {
       title:
-        "Site indisponible | SiteAI",
+        "Site indisponible | Lumio",
       description:
         "Ce site n'existe pas ou n'est plus publié.",
       robots: {

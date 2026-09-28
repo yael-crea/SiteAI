@@ -9,14 +9,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
   title: {
-    default: "SiteAI - Crée ton site professionnel avec l'IA",
-    template: "%s | SiteAI",
+    default: "Lumio - Crée ton site professionnel avec l'IA",
+    template: "%s | Lumio",
   },
 
   description:
-    "SiteAI permet aux TPE, PME et indépendants de créer rapidement un site professionnel grâce à l'intelligence artificielle.",
+    "Lumio permet aux TPE, PME et indépendants de créer rapidement un site professionnel grâce à l'intelligence artificielle.",
 
-  applicationName: "SiteAI",
+  applicationName: "Lumio",
 
   keywords: [
     "création site internet",
@@ -30,12 +30,12 @@ export const metadata: Metadata = {
 
   authors: [
     {
-      name: "SiteAI",
+      name: "Lumio",
     },
   ],
 
-  creator: "SiteAI",
-  publisher: "SiteAI",
+  creator: "Lumio",
+  publisher: "Lumio",
 
   alternates: {
     canonical: "/",
@@ -45,15 +45,15 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_FR",
     url: siteUrl,
-    siteName: "SiteAI",
-    title: "SiteAI - Crée ton site professionnel avec l'IA",
+    siteName: "Lumio",
+    title: "Lumio - Crée ton site professionnel avec l'IA",
     description:
       "Crée rapidement un site professionnel pour ton entreprise grâce à l'intelligence artificielle.",
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "SiteAI - Crée ton site professionnel avec l'IA",
+    title: "Lumio - Crée ton site professionnel avec l'IA",
     description:
       "Crée rapidement un site professionnel grâce à l'intelligence artificielle.",
   },

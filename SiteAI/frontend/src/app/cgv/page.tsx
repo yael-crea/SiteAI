@@ -9,7 +9,7 @@ export default function CGVPage() {
       <header className="border-b border-slate-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
           <Link href="/" className="text-2xl font-black">
-            Site<span className="text-blue-500">AI</span>
+            Lu<span className="text-blue-500">mio</span>
           </Link>
 
           <Link
@@ -32,7 +32,7 @@ export default function CGVPage() {
           </h1>
 
           <p className="mt-5 max-w-3xl leading-7 text-slate-400">
-            Version provisoire des conditions commerciales de SiteAI.
+            Version provisoire des conditions commerciales de Lumio.
           </p>
 
           <p className="mt-3 text-sm font-bold text-blue-300">
@@ -40,7 +40,7 @@ export default function CGVPage() {
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Cette version est un brouillon de préparation. SiteAI
+            ⚠️ Cette version est un brouillon de préparation. Lumio
             n&apos;est pas encore rattaché à une entreprise immatriculée.
             Les champs [À COMPLÉTER] devront être finalisés avant la
             commercialisation. Cette version est pensée principalement pour
@@ -67,7 +67,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
               Les présentes Conditions générales de vente encadrent la
-              souscription et l&apos;utilisation des offres payantes SiteAI,
+              souscription et l&apos;utilisation des offres payantes Lumio,
               service permettant notamment de générer, personnaliser,
               sauvegarder et publier des sites internet à l&apos;aide de
               fonctionnalités d&apos;intelligence artificielle.
@@ -88,17 +88,17 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             </p>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Si SiteAI est ultérieurement proposé à des consommateurs, une
+              Si Lumio est ultérieurement proposé à des consommateurs, une
               version adaptée aux règles B2C devra être mise en place avant
               cette commercialisation.
             </p>
           </section>
 
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <h2 className="text-xl font-black">4. Offres SiteAI</h2>
+            <h2 className="text-xl font-black">4. Offres Lumio</h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              SiteAI propose actuellement les formules suivantes. Les
+              Lumio propose actuellement les formules suivantes. Les
               fonctionnalités affichées sur la page de tarification au moment
               de la souscription constituent la référence commerciale.
             </p>
@@ -127,7 +127,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
 
             <p className="mt-5 text-xs leading-6 text-slate-500">
               Les prix ci-dessus correspondent aux offres actuellement
-              configurées dans SiteAI. Toute modification tarifaire future
+              configurées dans Lumio. Toute modification tarifaire future
               devra être affichée avant la souscription ou le renouvellement
               concerné, selon les règles applicables.
             </p>
@@ -137,7 +137,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             <h2 className="text-xl font-black">5. Création du compte</h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              La souscription nécessite un compte SiteAI. Le client est
+              La souscription nécessite un compte Lumio. Le client est
               responsable de l&apos;exactitude des informations fournies et de
               la confidentialité de ses identifiants. Il doit signaler toute
               utilisation non autorisée de son compte dès qu&apos;il en a
@@ -180,7 +180,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
               Les abonnements sont actuellement réglés par paiement en ligne
               via Stripe. Les informations de carte bancaire sont traitées par
               le prestataire de paiement et ne sont pas destinées à être
-              stockées directement par SiteAI.
+              stockées directement par Lumio.
             </p>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
@@ -233,7 +233,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              SiteAI fournit un service en ligne pouvant dépendre de
+              Lumio fournit un service en ligne pouvant dépendre de
               prestataires tiers, notamment pour l&apos;hébergement,
               l&apos;authentification, la génération par intelligence
               artificielle, le paiement et la gestion des domaines.
@@ -243,7 +243,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
               Le service peut être temporairement interrompu pour maintenance,
               mise à jour, incident technique ou intervention d&apos;un
               prestataire tiers. Les éventuels engagements de disponibilité
-              garantis devront être définis séparément si SiteAI décide
+              garantis devront être définis séparément si Lumio décide
               d&apos;en proposer.
             </p>
           </section>
@@ -262,7 +262,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             </p>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              SiteAI ne garantit pas qu&apos;un contenu généré sera adapté à
+              Lumio ne garantit pas qu&apos;un contenu généré sera adapté à
               toutes les obligations particulières applicables au secteur
               d&apos;activité du client.
             </p>
@@ -297,7 +297,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              SiteAI pourra suspendre l&apos;accès à certaines fonctionnalités
+              Lumio pourra suspendre l&apos;accès à certaines fonctionnalités
               en cas de paiement refusé, utilisation manifestement abusive,
               atteinte à la sécurité du service ou violation grave des
               conditions contractuelles, sous réserve des règles applicables.
@@ -316,7 +316,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             </p>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Si SiteAI accepte des clients consommateurs, les informations et
+              Si Lumio accepte des clients consommateurs, les informations et
               modalités de rétractation applicables aux contrats conclus à
               distance devront être ajoutées au parcours de commande et aux
               CGV avant la commercialisation auprès de ce public.
@@ -329,7 +329,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Les traitements de données personnelles liés à SiteAI sont
+              Les traitements de données personnelles liés à Lumio sont
               décrits dans la Politique de confidentialité, accessible
               séparément.
             </p>
@@ -347,7 +347,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
               Les règles définitives de responsabilité devront être adaptées
-              au futur statut juridique de SiteAI, aux garanties réellement
+              au futur statut juridique de Lumio, aux garanties réellement
               proposées et au type de clientèle. Aucune exclusion générale de
               responsabilité n&apos;est prévue dans cette version
               préparatoire.
@@ -371,7 +371,7 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              SiteAI pourra faire évoluer ses CGV afin de tenir compte des
+              Lumio pourra faire évoluer ses CGV afin de tenir compte des
               évolutions du service, des offres ou de la réglementation. Les
               modalités d&apos;information des clients en cas de modification
               substantielle devront être précisées dans la version

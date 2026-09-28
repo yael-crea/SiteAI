@@ -295,7 +295,7 @@ export async function generateMetadata(
   if (!publicSite) {
     return {
       title:
-        "Site indisponible | SiteAI",
+        "Site indisponible | Lumio",
 
       description:
         "Ce domaine n'est associé à aucun site publié.",

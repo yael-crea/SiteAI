@@ -1039,7 +1039,7 @@ export default function DashboardPage() {
               onClick={() => router.push("/dashboard")}
               className="shrink-0 text-2xl font-black"
             >
-              Site<span className="text-blue-500">AI</span>
+              Lu<span className="text-blue-500">mio</span>
             </button>
 
             <button
@@ -1159,7 +1159,7 @@ export default function DashboardPage() {
 
             <p className="mt-3 max-w-2xl text-slate-400">
               Gère tes sites, publications, domaines personnalisés et ton
-              abonnement depuis SiteAI.
+              abonnement depuis Lumio.
             </p>
           </div>
 

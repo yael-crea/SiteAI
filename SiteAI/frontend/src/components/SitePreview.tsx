@@ -2931,7 +2931,7 @@ function ModernTemplate({
 
           <div className="flex flex-col gap-3 pt-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
             <p>© {new Date().getFullYear()} {site.businessName}</p>
-            <p>Site créé avec SiteAI</p>
+            <p>Site créé avec Lumio</p>
           </div>
         </div>
       </footer>
@@ -3659,7 +3659,7 @@ function ElegantTemplate({
 
           <div className="flex flex-col gap-3 pt-6 text-xs uppercase tracking-[0.14em] text-neutral-400 sm:flex-row sm:items-center sm:justify-between">
             <p>© {new Date().getFullYear()} {site.businessName}</p>
-            <p>Site créé avec SiteAI</p>
+            <p>Site créé avec Lumio</p>
           </div>
         </div>
       </footer>
@@ -4414,7 +4414,7 @@ function ArtisanTemplate({
 
           <div className="flex flex-col gap-3 pt-6 text-xs text-stone-500 sm:flex-row sm:items-center sm:justify-between">
             <p>© {new Date().getFullYear()} {site.businessName}</p>
-            <p>Site créé avec SiteAI</p>
+            <p>Site créé avec Lumio</p>
           </div>
         </div>
       </footer>

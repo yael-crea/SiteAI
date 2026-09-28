@@ -110,7 +110,7 @@ export default function AdminPage() {
       }
 
       if (response.status === 403) {
-        setError("Ce compte n'est pas administrateur SiteAI.");
+        setError("Ce compte n'est pas administrateur Lumio.");
         return;
       }
 
@@ -150,7 +150,7 @@ export default function AdminPage() {
       <header className="border-b border-slate-800">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <Link href="/" className="text-2xl font-black">
-            Site<span className="text-blue-500">AI</span>{" "}
+            Lu<span className="text-blue-500">mio</span>{" "}
             <span className="text-sm text-slate-500">Admin</span>
           </Link>
 
@@ -262,7 +262,7 @@ export default function AdminPage() {
 
             <p className="mt-5 text-xs leading-5 text-slate-600">
               Le MRR est une estimation basée sur les abonnements actifs/trialing
-              enregistrés dans SiteAI et les tarifs actuels : 19,90 €, 39,90 € et
+              enregistrés dans Lumio et les tarifs actuels : 19,90 €, 39,90 € et
               79,90 € par mois. Il ne correspond pas au solde bancaire Stripe.
             </p>
           </>

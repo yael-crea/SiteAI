@@ -6,7 +6,7 @@ export default function LegalPage() {
       <header className="border-b border-slate-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
           <Link href="/" className="text-2xl font-black">
-            Site<span className="text-blue-500">AI</span>
+            Lu<span className="text-blue-500">mio</span>
           </Link>
 
           <Link
@@ -25,11 +25,11 @@ export default function LegalPage() {
           </p>
           <h1 className="mt-4 text-4xl font-black md:text-5xl">Conditions générales d’utilisation</h1>
           <p className="mt-5 max-w-3xl leading-7 text-slate-400">
-            Les présentes CGU constituent une base provisoire pour définir les règles d’utilisation de SiteAI. Elles devront être revues et complétées avant une commercialisation.
+            Les présentes CGU constituent une base provisoire pour définir les règles d’utilisation de Lumio. Elles devront être revues et complétées avant une commercialisation.
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : SiteAI n&apos;est pas encore rattaché à une
+            ⚠️ Version provisoire : Lumio n&apos;est pas encore rattaché à une
             entreprise immatriculée. Tous les champs marqués [À COMPLÉTER]
             devront être renseignés avant une mise en ligne commerciale.
           </div>
@@ -39,7 +39,7 @@ export default function LegalPage() {
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">1. Objet</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              SiteAI est un service permettant notamment de générer, personnaliser, sauvegarder et publier des sites internet avec l’aide de fonctionnalités d’intelligence artificielle.
+              Lumio est un service permettant notamment de générer, personnaliser, sauvegarder et publier des sites internet avec l’aide de fonctionnalités d’intelligence artificielle.
 
 Les présentes CGU encadrent l’accès à la plateforme et son utilisation.
             </div>
@@ -55,7 +55,7 @@ L’utilisateur est responsable des actions réalisées depuis son compte, sauf 
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">3. Utilisation autorisée</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              L’utilisateur s’engage à ne pas utiliser SiteAI pour :
+              L’utilisateur s’engage à ne pas utiliser Lumio pour :
 • publier des contenus manifestement illicites ;
 • porter atteinte aux droits de tiers ;
 • importer du contenu sans disposer des droits nécessaires ;
@@ -66,7 +66,7 @@ L’utilisateur est responsable des actions réalisées depuis son compte, sauf 
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">4. Contenus générés par intelligence artificielle</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Les contenus générés par SiteAI peuvent contenir des erreurs, approximations ou formulations inadaptées.
+              Les contenus générés par Lumio peuvent contenir des erreurs, approximations ou formulations inadaptées.
 
 L’utilisateur doit vérifier les textes, images, informations professionnelles, mentions réglementaires et autres contenus avant publication. La génération automatique ne remplace pas une validation humaine lorsque celle-ci est nécessaire.
             </div>
@@ -74,7 +74,7 @@ L’utilisateur doit vérifier les textes, images, informations professionnelles
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">5. Contenus de l’utilisateur</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              L’utilisateur demeure responsable des contenus qu’il fournit, importe ou publie via SiteAI.
+              L’utilisateur demeure responsable des contenus qu’il fournit, importe ou publie via Lumio.
 
 Il doit notamment disposer des droits nécessaires sur les logos, marques, photographies, textes et autres contenus utilisés dans ses sites.
             </div>
@@ -82,7 +82,7 @@ Il doit notamment disposer des droits nécessaires sur les logos, marques, photo
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">6. Disponibilité du service</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              SiteAI peut faire l’objet d’opérations de maintenance, de mises à jour ou d’interruptions techniques.
+              Lumio peut faire l’objet d’opérations de maintenance, de mises à jour ou d’interruptions techniques.
 
 Les engagements précis de disponibilité, de support et, le cas échéant, de niveau de service devront être définis avant commercialisation.
             </div>
@@ -90,7 +90,7 @@ Les engagements précis de disponibilité, de support et, le cas échéant, de n
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">7. Abonnements et paiement</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              SiteAI prévoit des formules d’abonnement payantes.
+              Lumio prévoit des formules d’abonnement payantes.
 
 Les conditions tarifaires, modalités de paiement, renouvellement, résiliation, remboursement et éventuel droit de rétractation devront être précisées dans des Conditions générales de vente (CGV) distinctes avant la commercialisation du service.
             </div>
@@ -119,7 +119,7 @@ Juridiction / mécanisme de règlement des litiges : [À COMPLÉTER selon le sta
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">11. Contact</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Contact SiteAI : [À COMPLÉTER]
+              Contact Lumio : [À COMPLÉTER]
             </div>
           </section>
         </div>

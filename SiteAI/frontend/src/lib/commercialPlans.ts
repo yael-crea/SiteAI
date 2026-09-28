@@ -68,7 +68,7 @@ export const aiUsageText =
   "Les demandes IA incluent la création et la modification. Le quota est partagé entre tous les sites du compte et renouvelé le 1er de chaque mois à 00 h UTC, sans report. Une demande lancée est comptée, même si la génération échoue. Maximum : 20 demandes par heure. Une fois le quota atteint, l’édition manuelle reste disponible.";
 
 export const domainText =
-  "La connexion d’un domaine personnel est incluse dès Essentiel. Son achat et son renouvellement auprès d’un fournisseur de domaines restent à ta charge. Une adresse publique SiteAI est également fournie.";
+  "La connexion d’un domaine personnel est incluse dès Essentiel. Son achat et son renouvellement auprès d’un fournisseur de domaines restent à ta charge. Une adresse publique Lumio est également fournie.";
 
 export const cancellationText =
   "Abonnement mensuel renouvelé automatiquement, résiliable depuis ton espace client. Si tu programmes la résiliation à l’échéance, le site reste en ligne jusqu’à la fin de la période payée. À la fin effective de l’abonnement, il est retiré du public ; son contenu reste dans ton compte en brouillon. Après réabonnement, tu peux le republier.";
