@@ -148,9 +148,9 @@ export default function ResetPasswordPage() {
             href="/"
             className="text-2xl font-black"
           >
-            Site
+            Lum
             <span className="text-blue-500">
-              AI
+              io
             </span>
           </Link>
 

@@ -2052,11 +2052,11 @@ export default function ProspectsPage() {
 
           >
 
-            Site
+            Lum
 
             <span className="text-blue-500">
 
-              AI
+              io
 
             </span>
 

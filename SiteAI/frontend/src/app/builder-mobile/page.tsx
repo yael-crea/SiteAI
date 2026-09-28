@@ -1764,9 +1764,9 @@ export default function MobileBuilderPage() {
             }
             className="text-xl font-black"
           >
-            Site
+            Lum
             <span className="text-blue-500">
-              AI
+              io
             </span>
           </button>
 

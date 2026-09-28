@@ -3,7 +3,7 @@ import "./globals.css";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://site-ai-jzjx.vercel.app";
+  "https://lumio-creation.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

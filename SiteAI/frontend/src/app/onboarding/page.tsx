@@ -319,9 +319,9 @@ export default function OnboardingPage() {
       <header className="border-b border-slate-800">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <div className="text-2xl font-black">
-            Site
+            Lum
             <span className="text-blue-500">
-              AI
+              io
             </span>
           </div>
 

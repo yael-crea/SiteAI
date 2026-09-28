@@ -51,7 +51,7 @@ type PageProps = {
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://site-ai-izjx.vercel.app";
+  "https://lumio-creation.vercel.app";
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_API_URL ||

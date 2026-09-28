@@ -1331,6 +1331,7 @@ function normalizeSiteForDisplay(site: GeneratedSite): GeneratedSite {
 
   return {
     ...site,
+    hiddenBlocks: goalAction(site)?.href === "#contact" ? (site.hiddenBlocks ?? []).filter(block => block !== "contact") : site.hiddenBlocks,
     businessName: displayBusinessName,
     metaTitle: normalize(site.metaTitle) ?? site.metaTitle,
     metaDescription: normalize(site.metaDescription) ?? site.metaDescription,

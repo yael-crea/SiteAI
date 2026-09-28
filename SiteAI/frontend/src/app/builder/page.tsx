@@ -3311,9 +3311,9 @@ export default function Home() {
               onClick={returnToDashboard}
               className="shrink-0 text-2xl font-black"
             >
-              Site
+              Lum
               <span className="text-blue-500">
-                AI
+                io
               </span>
             </button>
 
@@ -3750,7 +3750,7 @@ export default function Home() {
                     <div className="mt-4 space-y-4">
                       <div data-advanced-option>
                         <label htmlFor="site-goal" className="mb-2 block text-xs font-bold text-slate-400">
-                          Objectif principal
+                          Précision de l’objectif pour l’IA
                         </label>
                         <select
                           id="site-goal"
