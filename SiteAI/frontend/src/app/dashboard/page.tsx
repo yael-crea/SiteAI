@@ -1146,7 +1146,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <section id="dashboard-top" className="mx-auto max-w-7xl px-4 py-8 pb-28 sm:px-6 sm:py-12 md:pb-12">
+      <section id="dashboard-top" className="mx-auto max-w-7xl px-4 py-7 pb-28 sm:px-6 sm:py-9 md:pb-12">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-blue-400">
@@ -1158,8 +1158,7 @@ export default function DashboardPage() {
             </h1>
 
             <p className="mt-3 max-w-2xl text-slate-400">
-              Gère tes sites, publications, domaines personnalisés et ton
-              abonnement depuis Lumio.
+              Retrouve tes sites, tes prospects et les chiffres essentiels de ton activité.
             </p>
           </div>
 
@@ -1172,31 +1171,31 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <button
             type="button"
             onClick={() => setFilter("all")}
-            className={`rounded-2xl border p-6 text-left transition ${
+            className={`rounded-2xl border p-4 text-left transition ${
               filter === "all"
                 ? "border-blue-500 bg-blue-500/10"
                 : "border-slate-800 bg-slate-900 hover:border-slate-700"
             }`}
           >
             <p className="text-sm text-slate-400">Tous les sites</p>
-            <p className="mt-2 text-4xl font-black">{sites.length}</p>
+            <p className="mt-1 text-3xl font-black">{sites.length}</p>
           </button>
 
           <button
             type="button"
             onClick={() => setFilter("published")}
-            className={`rounded-2xl border p-6 text-left transition ${
+            className={`rounded-2xl border p-4 text-left transition ${
               filter === "published"
                 ? "border-emerald-500 bg-emerald-500/10"
                 : "border-slate-800 bg-slate-900 hover:border-slate-700"
             }`}
           >
             <p className="text-sm text-slate-400">Publiés</p>
-            <p className="mt-2 text-4xl font-black text-emerald-400">
+            <p className="mt-1 text-3xl font-black text-emerald-400">
               {publishedSites}
             </p>
           </button>
@@ -1204,14 +1203,14 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => setFilter("draft")}
-            className={`rounded-2xl border p-6 text-left transition ${
+            className={`rounded-2xl border p-4 text-left transition ${
               filter === "draft"
                 ? "border-amber-500 bg-amber-500/10"
                 : "border-slate-800 bg-slate-900 hover:border-slate-700"
             }`}
           >
             <p className="text-sm text-slate-400">Brouillons</p>
-            <p className="mt-2 text-4xl font-black text-amber-400">
+            <p className="mt-1 text-3xl font-black text-amber-400">
               {draftSites}
             </p>
           </button>
@@ -1219,7 +1218,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => router.push("/prospects")}
-            className="rounded-2xl border border-emerald-900 bg-emerald-950/20 p-6 text-left transition hover:border-emerald-500"
+            className="rounded-2xl border border-emerald-900 bg-emerald-950/20 p-4 text-left transition hover:border-emerald-500"
           >
             <p className="text-sm text-emerald-300">Prospects</p>
 
@@ -1227,7 +1226,7 @@ export default function DashboardPage() {
               <p className="mt-3 text-sm text-slate-500">Chargement...</p>
             ) : (
               <>
-                <p className="mt-2 text-4xl font-black text-emerald-400">
+                <p className="mt-1 text-3xl font-black text-emerald-400">
                   {newLeadsCount}
                 </p>
                 <p className="mt-2 text-xs text-slate-500">
@@ -1240,7 +1239,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => router.push("/pricing")}
-            className="rounded-2xl border border-violet-800 bg-violet-950/30 p-6 text-left transition hover:border-violet-500"
+            className="rounded-2xl border border-violet-800 bg-violet-950/30 p-4 text-left transition hover:border-violet-500"
           >
             <p className="text-sm text-violet-300">Abonnement</p>
 
@@ -1264,7 +1263,7 @@ export default function DashboardPage() {
         </div>
 
         {!billingLoading && (
-          <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+          <div className="mt-4 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
@@ -1308,6 +1307,106 @@ export default function DashboardPage() {
           </div>
         )}
 
+        <section className="mt-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.25em] text-blue-400">
+                Sites
+              </p>
+              <h2 className="mt-2 text-2xl font-black">Tes sites</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Accède directement aux sites que tu gères le plus récemment.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push("/sites")}
+              className="rounded-xl border border-blue-800 px-4 py-2 text-sm font-bold text-blue-300 transition hover:bg-blue-950"
+            >
+              Voir tous les sites →
+            </button>
+          </div>
+
+          {sitesLoading ? (
+            <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center text-slate-500">
+              Chargement des sites...
+            </div>
+          ) : sites.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-dashed border-slate-700 bg-slate-900/60 p-7 text-center">
+              <p className="font-black">Aucun site pour le moment</p>
+              <p className="mt-2 text-sm text-slate-500">
+                Crée ton premier site avec Lumio.
+              </p>
+              <button
+                type="button"
+                onClick={createSite}
+                className="mt-4 rounded-xl bg-blue-600 px-5 py-3 text-sm font-black hover:bg-blue-500"
+              >
+                + Créer un site
+              </button>
+            </div>
+          ) : (
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {sites.slice(0, 3).map((savedSite) => (
+                <article
+                  key={`dashboard-site-${savedSite.id}`}
+                  className="rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-slate-700"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-lg font-black">
+                        {savedSite.businessName}
+                      </p>
+                      <p className="mt-1 truncate text-sm text-slate-500">
+                        {savedSite.activity} · {savedSite.city}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${
+                        savedSite.published
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : "bg-amber-500/10 text-amber-400"
+                      }`}
+                    >
+                      {savedSite.published ? "Publié" : "Brouillon"}
+                    </span>
+                  </div>
+
+                  <div className="mt-5 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => editSite(savedSite.id)}
+                      className="flex-1 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black hover:bg-blue-500"
+                    >
+                      Modifier
+                    </button>
+
+                    {savedSite.published && savedSite.publicSlug ? (
+                      <button
+                        type="button"
+                        onClick={() => viewPublicSite(savedSite.publicSlug)}
+                        className="rounded-xl border border-slate-700 px-4 py-3 text-sm font-bold text-slate-300 hover:border-emerald-600"
+                      >
+                        Voir
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => editSite(savedSite.id)}
+                        className="rounded-xl border border-slate-700 px-4 py-3 text-sm font-bold text-slate-300 hover:border-blue-500"
+                      >
+                        Ouvrir
+                      </button>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
         <section className="mt-10">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
@@ -1316,7 +1415,7 @@ export default function DashboardPage() {
               </p>
 
               <h2 className="mt-2 text-2xl font-black">
-                Pipeline des 30 derniers jours
+                Pipeline commercial
               </h2>
 
               <p className="mt-2 text-sm text-slate-500">
@@ -1680,8 +1779,8 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="mt-7 overflow-x-auto pb-2">
-                <div className="flex min-w-[720px] items-end gap-2">
+              <div className="mt-7 overflow-hidden pb-2">
+                <div className="flex w-full items-end gap-1.5">
                   {commercialStats.daily.map(
                     (item, index) => {
                       const height =
@@ -1990,515 +2089,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div id="mes-sites" className="hidden scroll-mt-28 md:block">
-        <div className="mt-10 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Rechercher par entreprise, activité ou ville..."
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500 lg:max-w-xl"
-            />
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setFilter("all")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-                  filter === "all"
-                    ? "bg-blue-600"
-                    : "bg-slate-800 text-slate-400 hover:text-white"
-                }`}
-              >
-                Tous
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilter("published")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-                  filter === "published"
-                    ? "bg-emerald-600"
-                    : "bg-slate-800 text-slate-400 hover:text-white"
-                }`}
-              >
-                Publiés
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFilter("draft")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-                  filter === "draft"
-                    ? "bg-amber-600"
-                    : "bg-slate-800 text-slate-400 hover:text-white"
-                }`}
-              >
-                Brouillons
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  loadSites();
-                  loadBilling();
-                  loadLeads();
-                  loadAnalytics();
-                }}
-                className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 hover:border-blue-500"
-              >
-                Actualiser
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {sitesLoading ? (
-          <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-900 p-12 text-center">
-            Chargement...
-          </div>
-        ) : filteredSites.length === 0 ? (
-          <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-900 p-12 text-center text-slate-400">
-            Aucun site trouvé.
-          </div>
-        ) : (
-          <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {filteredSites.map((savedSite) => {
-              const heroImage = savedSite.site?.heroImageUrl;
-              const logo = savedSite.site?.logoUrl;
-              const domainPanelOpen = domainPanelSiteID === savedSite.id;
-
-              return (
-                <article
-                  key={savedSite.id}
-                  className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900"
-                >
-                  <div className="relative h-48 overflow-hidden bg-slate-800">
-                    {heroImage ? (
-                      <img
-                        src={heroImage}
-                        alt={savedSite.businessName}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
-                        {logo ? (
-                          <img
-                            src={logo}
-                            alt={savedSite.businessName}
-                            className="h-24 w-24 rounded-2xl bg-white object-contain p-3"
-                          />
-                        ) : (
-                          <div className="text-5xl">✨</div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="absolute left-4 top-4">
-                      {savedSite.published ? (
-                        <span className="rounded-full bg-emerald-950/90 px-3 py-1 text-xs font-bold text-emerald-400">
-                          ● Publié
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-amber-950/90 px-3 py-1 text-xs font-bold text-amber-400">
-                          ● Brouillon
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold">
-                      {savedSite.businessName}
-                    </h3>
-
-                    <p className="mt-1 text-sm text-slate-400">
-                      {savedSite.activity} · {savedSite.city}
-                    </p>
-
-                    <p className="mt-3 text-xs text-slate-600">
-                      Modifié le {formatDate(savedSite.updatedAt)}
-                    </p>
-
-                    <div className="mt-6 grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => editSite(savedSite.id)}
-                        className="col-span-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500"
-                      >
-                        ✏️ Modifier
-                      </button>
-
-                      <button
-                        type="button"
-                        disabled={duplicatingID === savedSite.id}
-                        onClick={() =>
-                          duplicateSite(savedSite.id, savedSite.businessName)
-                        }
-                        className="col-span-2 rounded-xl border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200 hover:border-blue-500 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {duplicatingID === savedSite.id
-                          ? "Duplication..."
-                          : "📋 Dupliquer"}
-                      </button>
-
-                      {savedSite.published && savedSite.publicSlug ? (
-                        <button
-                          type="button"
-                          onClick={() => viewPublicSite(savedSite.publicSlug)}
-                          className="rounded-xl border border-emerald-800 px-3 py-3 text-sm font-semibold text-emerald-400 hover:bg-emerald-950"
-                        >
-                          🌍 Voir
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => editSite(savedSite.id)}
-                          className="rounded-xl border border-slate-700 px-3 py-3 text-sm"
-                        >
-                          🚀 Publier
-                        </button>
-                      )}
-
-                      {savedSite.published && savedSite.publicSlug && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void copyPublicSite(
-                                savedSite.id,
-                                savedSite.publicSlug,
-                              )
-                            }
-                            className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-semibold text-slate-200 hover:border-blue-500 hover:bg-slate-800"
-                          >
-                            🔗 Copier
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void sharePublicSite(
-                                savedSite.id,
-                                savedSite.publicSlug,
-                                savedSite.businessName,
-                              )
-                            }
-                            className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-semibold text-slate-200 hover:border-blue-500 hover:bg-slate-800"
-                          >
-                            📤 Partager
-                          </button>
-
-                          {shareFeedback?.siteID === savedSite.id && (
-                            <p
-                              role="status"
-                              className={`col-span-2 text-center text-xs ${
-                                shareFeedback.error
-                                  ? "text-amber-300"
-                                  : "text-emerald-300"
-                              }`}
-                            >
-                              {shareFeedback.message}
-                            </p>
-                          )}
-                        </>
-                      )}
-
-                      {billingLoading ? (
-                        <button
-                          type="button"
-                          disabled
-                          className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-semibold text-slate-500 opacity-60"
-                        >
-                          🌐 Domaine
-                        </button>
-                      ) : customDomainAllowed ? (
-                        <button
-                          type="button"
-                          onClick={() => openDomainPanel(savedSite.id)}
-                          className="rounded-xl border border-blue-800 px-3 py-3 text-sm font-semibold text-blue-400 hover:bg-blue-950"
-                        >
-                          🌐 Domaine
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => router.push("/pricing")}
-                          className="rounded-xl border border-violet-800 px-3 py-3 text-sm font-semibold text-violet-300 hover:bg-violet-950"
-                        >
-                          🔒 Domaine Pro
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        disabled={deletingID === savedSite.id}
-                        onClick={() =>
-                          deleteSite(savedSite.id, savedSite.businessName)
-                        }
-                        className="col-span-2 rounded-xl border border-red-900 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-950 disabled:opacity-50"
-                      >
-                        🗑️ Supprimer
-                      </button>
-                    </div>
-
-                    {!billingLoading && !customDomainAllowed && (
-                      <div className="mt-4 rounded-xl border border-violet-900/70 bg-violet-950/20 p-4">
-                        <p className="text-sm font-bold text-violet-300">
-                          🔒 Domaine personnalisé
-                        </p>
-
-                        <p className="mt-2 text-xs leading-5 text-slate-400">
-                          Disponible avec les formules Pro ou Agence.
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() => router.push("/pricing")}
-                          className="mt-3 rounded-lg bg-violet-600 px-4 py-2 text-xs font-bold text-white hover:bg-violet-500"
-                        >
-                          Voir les formules
-                        </button>
-                      </div>
-                    )}
-
-                    {domainPanelOpen && customDomainAllowed && (
-                      <div className="mt-6 border-t border-slate-800 pt-6">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <h4 className="font-bold">
-                              🌐 Domaine personnalisé
-                            </h4>
-
-                            <p className="mt-1 text-xs text-slate-500">
-                              Exemple : dupont-plomberie.fr
-                            </p>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={closeDomainPanel}
-                            className="text-sm text-slate-500"
-                          >
-                            Fermer
-                          </button>
-                        </div>
-
-                        {domainLoading ? (
-                          <p className="mt-5 text-sm text-slate-400">
-                            Chargement...
-                          </p>
-                        ) : (
-                          <>
-                            <input
-                              value={domainInput}
-                              onChange={(event) =>
-                                setDomainInput(event.target.value)
-                              }
-                              placeholder="monentreprise.fr"
-                              disabled={domainActionLoading}
-                              className="mt-5 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
-                            />
-
-                            {!domainStatus?.domain && (
-                              <button
-                                type="button"
-                                disabled={domainActionLoading}
-                                onClick={() => addDomain(savedSite.id)}
-                                className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500 disabled:opacity-50"
-                              >
-                                {domainActionLoading
-                                  ? "Ajout..."
-                                  : "Ajouter le domaine"}
-                              </button>
-                            )}
-
-                            {domainStatus?.domain && (
-                              <div className="mt-5 space-y-4">
-                                <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                                  <p className="text-xs uppercase text-slate-500">
-                                    Domaine
-                                  </p>
-
-                                  <p className="mt-2 break-all font-bold">
-                                    {domainStatus.domain}
-                                  </p>
-
-                                  <div className="mt-3 flex flex-wrap gap-2">
-                                    <span
-                                      className={`rounded-full px-3 py-1 text-xs font-bold ${
-                                        domainStatus.verified
-                                          ? "bg-emerald-500/10 text-emerald-400"
-                                          : "bg-amber-500/10 text-amber-400"
-                                      }`}
-                                    >
-                                      {domainStatus.verified
-                                        ? "✓ Vérifié"
-                                        : "En attente de vérification"}
-                                    </span>
-
-                                    <span
-                                      className={`rounded-full px-3 py-1 text-xs font-bold ${
-                                        domainStatus.configured
-                                          ? "bg-emerald-500/10 text-emerald-400"
-                                          : "bg-orange-500/10 text-orange-400"
-                                      }`}
-                                    >
-                                      {domainStatus.configured
-                                        ? "✓ DNS configuré"
-                                        : "DNS à configurer"}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {(domainStatus.verification ?? []).length >
-                                  0 && (
-                                  <div className="rounded-xl border border-amber-800/50 bg-amber-950/20 p-4">
-                                    <p className="font-bold text-amber-300">
-                                      Vérification du domaine
-                                    </p>
-
-                                    <p className="mt-2 text-xs leading-5 text-slate-400">
-                                      Ajoute ces informations chez le
-                                      fournisseur où ton domaine a été acheté.
-                                    </p>
-
-                                    <div className="mt-4 space-y-3">
-                                      {(domainStatus.verification ?? []).map(
-                                        (verification, index) => (
-                                          <div
-                                            key={index}
-                                            className="rounded-lg bg-slate-950 p-3 text-xs"
-                                          >
-                                            <p>
-                                              Type :{" "}
-                                              <strong>
-                                                {verification.type}
-                                              </strong>
-                                            </p>
-
-                                            {verification.domain && (
-                                              <p className="mt-1 break-all">
-                                                Nom : {verification.domain}
-                                              </p>
-                                            )}
-
-                                            {verification.value && (
-                                              <p className="mt-1 break-all">
-                                                Valeur : {verification.value}
-                                              </p>
-                                            )}
-                                          </div>
-                                        ),
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {(domainStatus.recommendedCNAME ?? []).length >
-                                  0 && (
-                                  <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                                    <p className="font-bold">
-                                      CNAME recommandé
-                                    </p>
-
-                                    <div className="mt-3 space-y-2">
-                                      {(
-                                        domainStatus.recommendedCNAME ?? []
-                                      ).map((record, index) => (
-                                        <div
-                                          key={index}
-                                          className="rounded-lg bg-slate-900 p-3 text-xs"
-                                        >
-                                          <p className="break-all">
-                                            {formatRecordValue(record.value)}
-                                          </p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {(domainStatus.recommendedIPv4 ?? []).length >
-                                  0 && (
-                                  <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                                    <p className="font-bold">
-                                      Adresse IPv4 recommandée
-                                    </p>
-
-                                    <div className="mt-3 space-y-2">
-                                      {(
-                                        domainStatus.recommendedIPv4 ?? []
-                                      ).map((record, index) => (
-                                        <div
-                                          key={index}
-                                          className="rounded-lg bg-slate-900 p-3 text-xs"
-                                        >
-                                          <p className="break-all">
-                                            {formatRecordValue(record.value)}
-                                          </p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {domainStatus.message && (
-                                  <p className="rounded-xl bg-slate-950 p-3 text-xs leading-5 text-slate-400">
-                                    {domainStatus.message}
-                                  </p>
-                                )}
-
-                                <button
-                                  type="button"
-                                  disabled={domainActionLoading}
-                                  onClick={() => verifyDomain(savedSite.id)}
-                                  className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500 disabled:opacity-50"
-                                >
-                                  {domainActionLoading
-                                    ? "Vérification..."
-                                    : "🔄 Vérifier le domaine"}
-                                </button>
-
-                                {domainStatus.verified &&
-                                  domainStatus.configured && (
-                                    <button
-                                      type="button"
-                                      onClick={openCustomDomain}
-                                      className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold hover:bg-emerald-500"
-                                    >
-                                      🌍 Ouvrir le domaine
-                                    </button>
-                                  )}
-
-                                <button
-                                  type="button"
-                                  disabled={domainActionLoading}
-                                  onClick={() => deleteDomain(savedSite.id)}
-                                  className="w-full rounded-xl border border-red-900 px-4 py-3 text-sm font-semibold text-red-400 hover:bg-red-950 disabled:opacity-50"
-                                >
-                                  Retirer le domaine
-                                </button>
-                              </div>
-                            )}
-
-                            {domainError && (
-                              <p className="mt-4 rounded-xl border border-red-900 bg-red-950/30 p-3 text-sm text-red-400">
-                                {domainError}
-                              </p>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-        </div>
       </section>
 
       <nav
