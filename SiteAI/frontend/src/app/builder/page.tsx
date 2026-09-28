@@ -3351,7 +3351,7 @@ export default function Home() {
                 onClick={returnToDashboard}
                 className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold hover:border-blue-500"
               >
-                ← Dashboard
+                Mes sites
               </button>
 
               <button
@@ -3394,7 +3394,7 @@ export default function Home() {
                   }}
                   className="w-full rounded-xl border border-slate-700 px-4 py-3 text-left text-sm font-semibold hover:border-blue-500"
                 >
-                  ← Dashboard
+                  Mes sites
                 </button>
 
                 <button
@@ -3427,8 +3427,8 @@ export default function Home() {
       <AIUsage ready={Boolean(draftUserId)} busy={busy} />
       <nav aria-label="Outils du builder" className="hidden shrink-0 items-center gap-2 overflow-x-auto border-b border-slate-800 bg-slate-900/60 px-5 py-3 md:flex">
         {([
-          ["infos", "1 · Infos"], ["contenu", "2 · Contenu"], ["apparence", "3 · Apparence"],
-          ["apercu", "4 · Aperçu"], ["publication", "5 · Publication"],
+          ["infos", "1 · Informations"], ["contenu", "2 · Contenu"], ["apparence", "3 · Design"],
+          ["apercu", "4 · Aperçu"], ["publication", "5 · Publier"],
         ] as const).map(([value, label]) => (
           <button key={value} type="button" disabled={!site && !["infos", "sites"].includes(value)}
             aria-pressed={activeDesktopPanel === value}
@@ -3443,7 +3443,7 @@ export default function Home() {
           <option value="">Autres outils</option><option value="ia" disabled={!site}>Assistant IA</option><option value="sites">Mes sites</option>
         </select>
       </nav>
-      <div className="shrink-0 border-b border-slate-800 bg-slate-950 px-4 py-2">
+      <div className="shrink-0 border-b border-slate-800/80 bg-slate-950/80 px-4 py-2 text-slate-300">
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" aria-pressed={advancedMode} onClick={() => setAdvancedMode(value => !value)} className="rounded-lg border border-blue-700 px-3 py-2 text-xs font-semibold">{advancedMode ? "Revenir au mode simple" : "Options avancées"}</button>
           <button type="button" disabled={!draft.canUndo || busy} onClick={draft.undo} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30">↶ Annuler</button>
@@ -3519,7 +3519,7 @@ export default function Home() {
           [data-siteai-builder] > header > div { max-width: none; padding-top: .65rem; padding-bottom: .65rem; }
           [data-builder-section] { display: flex; flex-direction: column; width: 100%; max-width: none; flex: 1; min-height: 0; overflow: hidden; padding: .75rem; }
           [data-builder-section] > [data-mobile-hide] { display: none; }
-          [data-builder-grid] { flex: 1; width: 100%; height: 100%; min-height: 0; grid-template-columns: clamp(300px, 26vw, 390px) minmax(0, 1fr); gap: 1rem; }
+          [data-builder-grid] { flex: 1; width: 100%; height: 100%; min-height: 0; grid-template-columns: minmax(360px, 35%) minmax(0, 65%); gap: 1rem; }
           [data-builder-editor] { display: block; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: .25rem; }
           [data-builder-editor] > * { display: none; margin: 0; }
           [data-builder-editor] { overflow-x: hidden; }
@@ -3565,26 +3565,26 @@ export default function Home() {
           [data-mobile-step="2"] [data-mobile-appearance] { border: 0; padding-top: 0; margin-top: 0; }
         }
       `}</style>
-      <section data-builder-section className="mx-auto max-w-[1800px] px-4 py-7 sm:py-10 lg:px-6 lg:py-14">
-        <div data-mobile-hide className="mb-8 text-center sm:mb-12">
-          <p className="text-sm font-bold uppercase tracking-[0.35em] text-blue-400">
-            Lumio
+      <section data-builder-section className="mx-auto max-w-[1800px] px-4 py-5 lg:px-6">
+        <div data-mobile-hide className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-blue-400">
+              Créateur de site
+            </p>
+            <h1 className="mt-1 text-2xl font-black text-white">
+              Construis ton site simplement
+            </h1>
+          </div>
+          <p className="hidden max-w-xl text-right text-sm text-slate-500 xl:block">
+            Renseigne ton entreprise, choisis un style et laisse l&apos;IA préparer une première version.
           </p>
-
-          <h1 className="mt-3 text-3xl font-black sm:text-4xl md:text-6xl">
-            Crée ton site professionnel
-
-            <span className="block text-blue-500">
-              avec l&apos;IA
-            </span>
-          </h1>
         </div>
 
         <div data-builder-grid
           className={`grid gap-6 ${
             editorCollapsed
               ? "grid-cols-1"
-              : "xl:grid-cols-[360px_minmax(0,1fr)]"
+              : "xl:grid-cols-[minmax(360px,35%)_minmax(0,65%)]"
           }`}
         >
           <fieldset disabled={busy} data-builder-editor
@@ -3600,7 +3600,12 @@ export default function Home() {
               }
               className="rounded-3xl border border-slate-800 bg-slate-900 p-5 sm:p-7"
             >
-              <SiteGoalPicker value={newSiteGoal} bookingUrl={newBookingUrl} disabled={busy} onChange={value => { setNewSiteGoal(value); setSiteGoal(value === "calls" ? "recevoir des appels" : value === "booking" ? "obtenir des rendez-vous" : "obtenir des demandes de devis"); }} onBookingUrlChange={setNewBookingUrl} />
+              <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-950/55 p-4">
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
+                  Objectif du site
+                </p>
+                <SiteGoalPicker value={newSiteGoal} bookingUrl={newBookingUrl} disabled={busy} onChange={value => { setNewSiteGoal(value); setSiteGoal(value === "calls" ? "recevoir des appels" : value === "booking" ? "obtenir des rendez-vous" : "obtenir des demandes de devis"); }} onBookingUrlChange={setNewBookingUrl} />
+              </div>
               <h2 className="text-2xl font-bold">
                 Ton entreprise
               </h2>
@@ -3739,15 +3744,14 @@ export default function Home() {
                 </div>
 
                 {!site && (
-                  <div className="rounded-2xl border border-blue-900/60 bg-blue-950/20 p-4 sm:p-5">
-                    <div>
-                      <p className="font-black text-blue-300">
-                        ✨ Rendre le site plus personnalisé
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-slate-400">
-                        Ces choix sont facultatifs, mais ils permettent à l&apos;IA d&apos;adapter davantage le contenu à tes clients et à ton objectif.
-                      </p>
-                    </div>
+                  <details className="group rounded-2xl border border-slate-800 bg-slate-950/45 p-4 sm:p-5">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-slate-200">
+                      <span>Personnaliser davantage</span>
+                      <span className="text-sm text-blue-400 transition group-open:rotate-180">⌄</span>
+                    </summary>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Facultatif : précise la clientèle, le ton et l&apos;action principale seulement si tu en as besoin.
+                    </p>
 
                     <div className="mt-4 space-y-4">
                       <div data-advanced-option>
@@ -3888,12 +3892,12 @@ export default function Home() {
                         </select>
                       </div>
                     </div>
-                  </div>
+                  </details>
                 )}
 
                 <div>
                   <p className="mb-2 text-sm text-slate-400">
-                    Style
+                    Style du site
                   </p>
 
                   <StylePicker compact={!advancedMode} value={designStyle} onChange={selectDesignStyle} disabled={loading || editLoading || saving || publishing} />
@@ -5577,12 +5581,23 @@ export default function Home() {
                   </div>
 
                   <h2 className="mt-5 text-3xl font-bold">
-                    Aperçu du site
+                    Ton site prend forme ici
                   </h2>
 
-                  <p className="mt-3 text-slate-500">
-                    Crée ou ouvre un site pour commencer.
+                  <p className="mx-auto mt-3 max-w-md leading-6 text-slate-400">
+                    Renseigne les informations de ton entreprise à gauche. Lumio préparera automatiquement le contenu et le design de ton site.
                   </p>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      document.getElementById("business-name")?.focus();
+                      document.getElementById("business-name")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }}
+                    className="mt-6 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-500"
+                  >
+                    Commencer avec mon entreprise
+                  </button>
                 </div>
               </div>
             ) : (
