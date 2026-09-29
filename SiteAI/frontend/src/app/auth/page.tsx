@@ -4,6 +4,10 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import {
+  readExampleTemplate,
+  rememberExampleTemplate,
+} from "@/lib/exampleTemplates";
 
 type AuthMode = "login" | "signup" | "forgot";
 
@@ -22,6 +26,11 @@ export default function AuthPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    const templateID = new URLSearchParams(window.location.search).get("modele");
+    if (templateID) rememberExampleTemplate(templateID);
+  }, []);
+
+  useEffect(() => {
     let active = true;
 
     async function checkSession() {
@@ -33,7 +42,7 @@ export default function AuthPage() {
         }
 
         if (data.session) {
-          router.replace("/dashboard");
+          router.replace(readExampleTemplate() ? "/builder" : "/dashboard");
           return;
         }
       } catch (err) {
@@ -162,7 +171,7 @@ export default function AuthPage() {
           throw loginError;
         }
 
-        router.replace("/dashboard");
+        router.replace(readExampleTemplate() ? "/builder" : "/dashboard");
         router.refresh();
         return;
       }

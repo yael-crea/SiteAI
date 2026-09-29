@@ -28,6 +28,10 @@ import { normalizeDesignExtras } from "@/lib/appearanceSettings";
 import StylePicker from "@/components/StylePicker";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { getSiteHealth, type Testimonial } from "@/lib/siteGrowth";
+import {
+  clearExampleTemplate,
+  readExampleTemplate,
+} from "@/lib/exampleTemplates";
 
 import type {
   IconMode,
@@ -994,6 +998,25 @@ export default function Home() {
         setAuthLoading(false);
 
         await loadSavedSites();
+
+        const selectedTemplate = readExampleTemplate();
+
+        if (selectedTemplate) {
+          setSavedSiteID(null);
+          setSite(null);
+          setBusinessName(selectedTemplate.businessName);
+          setActivity(selectedTemplate.activity);
+          setCity(selectedTemplate.city);
+          setServices(selectedTemplate.services.join(", "));
+          setDesignStyle(selectedTemplate.designStyle);
+          setAccentColor(selectedTemplate.accentColor);
+          setMobileStep(0);
+          setDesktopPanel("infos");
+          setSaveMessage("Modèle chargé. Remplace les informations par celles de ton entreprise, puis génère ton site.");
+          clearExampleTemplate();
+          if (active) setDraftReady(true);
+          return;
+        }
 
         const siteToOpen = sessionStorage.getItem("siteai_site_to_open");
 

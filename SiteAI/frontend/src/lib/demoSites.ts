@@ -99,4 +99,32 @@ export const demoSites: {
       },
     ],
   },
+  {
+    id: "beaute",
+    name: "Studio Nacre",
+    activity: "Beauté des ongles",
+    style: "elegant",
+    color: "#9d174d",
+    title: "Des ongles soignés, pensés jusque dans les détails.",
+    text: "Une manucure naturelle, une pose gel ou une création plus affirmée : chaque rendez-vous commence par un échange sur vos envies.",
+    image: "/images/demos/studio-nacre.webp",
+    imageAlt: "Manucure professionnelle dans un studio chaleureux",
+    gallery: ["/images/demos/studio-nacre.webp"],
+    about:
+      "Studio Nacre vous reçoit sur rendez-vous dans une atmosphère calme. La technique, la forme et les couleurs sont choisies selon vos goûts, votre quotidien et la nature de vos ongles.",
+    services: [
+      {
+        title: "Manucure naturelle",
+        text: "Mise en forme, soin des cuticules et finition nette pour des mains élégantes au quotidien.",
+      },
+      {
+        title: "Pose gel ou capsules",
+        text: "Longueur, forme et construction adaptées à vos habitudes pour un résultat confortable et équilibré.",
+      },
+      {
+        title: "Couleur et nail art",
+        text: "Teintes sobres, effets délicats ou détail graphique : une finition composée selon votre style.",
+      },
+    ],
+  },
 ];

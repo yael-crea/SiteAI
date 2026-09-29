@@ -10,6 +10,7 @@ export const metadata = publicMetadata(
 );
 
 import Link from "next/link";
+import Image from "next/image";
 
 import {
   plans,
@@ -250,18 +251,29 @@ export default function HomePage() {
           site.
         </p>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {demoSites.map((metier) => (
             <Link
               key={metier.id}
               href={"/exemples?metier=" + metier.id}
-              className="rounded-2xl border border-slate-700 bg-slate-900 p-6 transition hover:border-blue-500"
+              className="group overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 transition hover:-translate-y-1 hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-950/30"
             >
-              <p className="text-xs text-slate-400">Démonstration</p>
-              <h3 className="mt-2 text-xl font-bold">{metier.activity}</h3>
-              <p className="mt-4 text-sm text-blue-300">
-                Explorer les modèles →
-              </p>
+              <div className="relative aspect-[4/3] overflow-hidden bg-slate-800">
+                <Image
+                  src={metier.image}
+                  alt={metier.imageAlt}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                  className="object-cover transition duration-500 group-hover:scale-105"
+                />
+              </div>
+              <div className="p-6">
+                <p className="text-xs uppercase tracking-wider text-slate-400">Démonstration fictive</p>
+                <h3 className="mt-2 text-xl font-bold">{metier.activity}</h3>
+                <p className="mt-4 text-sm font-bold text-blue-300">
+                  Explorer ce modèle →
+                </p>
+              </div>
             </Link>
           ))}
         </div>

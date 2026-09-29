@@ -3,6 +3,10 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import {
+  clearExampleTemplate,
+  readExampleTemplate,
+} from "@/lib/exampleTemplates";
 
 type SiteSection = {
   title: string;
@@ -40,6 +44,17 @@ export default function OnboardingPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const template = readExampleTemplate();
+    if (!template) return;
+    const frame = window.requestAnimationFrame(() => {
+      setBusinessName(template.businessName);
+      setActivity(template.activity);
+      setCity(template.city);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
     let active = true;
 
     async function initialize() {
@@ -72,7 +87,7 @@ export default function OnboardingPage() {
           const sites: SavedSite[] = await response.json();
 
           if (sites.length > 0) {
-            router.replace("/dashboard");
+            router.replace(readExampleTemplate() ? "/builder" : "/dashboard");
             return;
           }
         }
@@ -168,6 +183,7 @@ export default function OnboardingPage() {
     setCreating(true);
 
     try {
+      const selectedTemplate = readExampleTemplate();
       const generateResponse = await authenticatedFetch(
         "/generate",
         {
@@ -177,7 +193,7 @@ export default function OnboardingPage() {
             activity: cleanActivity,
             city: cleanCity,
             phone: "",
-            services: [],
+            services: selectedTemplate?.services ?? [],
           }),
         },
       );
@@ -217,8 +233,8 @@ export default function OnboardingPage() {
             site: generatedSite,
             activity: cleanActivity,
             city: cleanCity,
-            designStyle: "moderne",
-            accentColor: "#2563eb",
+            designStyle: selectedTemplate?.designStyle ?? "moderne",
+            accentColor: selectedTemplate?.accentColor ?? "#2563eb",
           }),
         },
       );
@@ -257,6 +273,8 @@ export default function OnboardingPage() {
         "siteai_site_to_open",
         String(savedSite.id),
       );
+
+      clearExampleTemplate();
 
       router.push("/builder");
     } catch (err) {

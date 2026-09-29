@@ -10,3 +10,7 @@ Téléchargées depuis Unsplash le 29 septembre 2026. Les entreprises des démon
 - plantations.jpg : https://images.unsplash.com/photo-1466692476868-aef1dfb1e735
 
 Images servies localement, sans requête du navigateur vers Unsplash.
+
+## Visuel original Lumio
+
+- studio-nacre.webp : image générée pour Lumio le 29 septembre 2026 avec l’outil d’images OpenAI. Entreprise fictive, sans marque ni personne identifiable.
