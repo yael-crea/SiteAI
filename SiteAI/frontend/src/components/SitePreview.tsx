@@ -162,6 +162,27 @@ type SitePreviewProps = {
 
 };
 
+function getContrastTextColor(backgroundColor: string) {
+  const normalized = backgroundColor.trim().replace(/^#/, "");
+  const hex = normalized.length === 3
+    ? normalized.split("").map((character) => character + character).join("")
+    : normalized.slice(0, 6);
+
+  if (!/^[0-9a-f]{6}$/i.test(hex)) return "#ffffff";
+
+  const channels = [0, 2, 4].map((offset) => {
+    const value = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return value <= 0.04045
+      ? value / 12.92
+      : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  const darkContrast = (luminance + 0.05) / 0.05;
+  const lightContrast = 1.05 / (luminance + 0.05);
+
+  return darkContrast >= lightContrast ? "#0f172a" : "#ffffff";
+}
+
 function previewEditProps(target: PreviewEditTarget, enabled: boolean) {
   if (!enabled) return {};
 
@@ -272,11 +293,13 @@ function DesignShell({
   children,
   theme,
   hasHeroImage,
+  accentColor,
   onEdit,
 }: {
   settings: ReturnType<typeof normalizeDesignSettings>;
   theme: DesignStyle;
   hasHeroImage: boolean;
+  accentColor: string;
   children: React.ReactNode;
   onEdit?: SitePreviewProps["onEdit"];
 }) {
@@ -371,6 +394,8 @@ function DesignShell({
             contentWidth,
           "--siteai-spacing":
             spacingMultiplier,
+          "--siteai-accent-contrast":
+            getContrastTextColor(accentColor),
         } as React.CSSProperties
       }
     >
@@ -404,6 +429,10 @@ function DesignShell({
         .siteai-design-root[data-theme="creatif"][data-background="auto"] [class~="bg-white"] { background-color: #f5f3ff; }
         .siteai-design-root {
           min-height: 100%;
+        }
+
+        .siteai-design-root [data-siteai-accent-background] {
+          color: var(--siteai-accent-contrast) !important;
         }
 
         .siteai-design-root [data-siteai-hero-actions] a,
@@ -2073,6 +2102,7 @@ function MobileContactBar({
 
         <a
           href="#contact"
+          data-siteai-accent-background
           className="flex min-h-12 items-center justify-center rounded-xl px-3 text-center text-sm font-black text-white shadow-sm"
           style={{ backgroundColor: accentColor }}
         >
@@ -2112,7 +2142,7 @@ function SitePreviewContent({
   if (style.family === "elegant") {
 
     return (
-      <DesignShell onEdit={onEdit} settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
+      <DesignShell onEdit={onEdit} settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)} accentColor={accentColor}>
         <ElegantTemplate
 
         onEdit={onEdit}
@@ -2136,7 +2166,7 @@ site={normalizedSite}
   if (style.family === "artisan") {
 
     return (
-      <DesignShell onEdit={onEdit} settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
+      <DesignShell onEdit={onEdit} settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)} accentColor={accentColor}>
         <ArtisanTemplate
 
         onEdit={onEdit}
@@ -2158,7 +2188,7 @@ site={normalizedSite}
 
 
   return (
-      <DesignShell onEdit={onEdit} settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)}>
+      <DesignShell onEdit={onEdit} settings={designSettings} theme={style.id} hasHeroImage={Boolean(normalizedSite.heroImageUrl)} accentColor={accentColor}>
         <ModernTemplate
 
       onEdit={onEdit}
@@ -2218,6 +2248,7 @@ function ModernTemplate({
               />
             ) : (
               <div {...edit({ kind: "field", field: "logoUrl" })}
+                data-siteai-accent-background
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-black text-white"
                 style={{ backgroundColor: accentColor }}
               >
@@ -2250,6 +2281,7 @@ function ModernTemplate({
 
             {(site.phone || goalAction(site)) && (
               <a {...edit({ kind: "field", field: "phone" })}
+                data-siteai-accent-background
                 href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                 style={{ backgroundColor: accentColor }}
                 className="rounded-xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5"
@@ -2280,6 +2312,7 @@ function ModernTemplate({
 
               {(site.phone || goalAction(site)) && (
                 <a {...edit({ kind: "field", field: "phone" })}
+                  data-siteai-accent-background
                   href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                   style={{ backgroundColor: accentColor }}
                   className="mt-2 block rounded-xl px-4 py-3 text-center text-sm font-black text-white"
@@ -2344,6 +2377,7 @@ function ModernTemplate({
               <div data-siteai-hero-actions className={`mt-9 flex flex-wrap gap-3 ${site.heroImageUrl ? "" : "justify-center"}`}>
                 {(site.phone || goalAction(site)) && (
                   <a {...edit({ kind: "field", field: "phone" })}
+                    data-siteai-accent-background
                     href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                     style={{ backgroundColor: accentColor }}
                     className="w-full rounded-xl px-6 py-4 text-center text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5 sm:w-auto"
@@ -2404,6 +2438,7 @@ function ModernTemplate({
               className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-5"
             >
               <div
+                data-siteai-accent-background
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-black text-white"
                 style={{ backgroundColor: accentColor }}
               >
@@ -2633,6 +2668,7 @@ function ModernTemplate({
 
             <a
               href={goalAction(site)?.href ?? "#contact"}
+              data-siteai-accent-background
               className="w-full rounded-xl px-6 py-4 text-center text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 sm:w-auto"
               style={{ backgroundColor: accentColor }}
             >
@@ -2800,6 +2836,7 @@ function ModernTemplate({
 
                       <span
 
+                        data-siteai-accent-background
                         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-black text-white"
 
                         style={{ backgroundColor: accentColor }}
@@ -2869,6 +2906,7 @@ function ModernTemplate({
                   />
                 ) : (
                   <div {...edit({ kind: "field", field: "logoUrl" })}
+                    data-siteai-accent-background
                     className="flex h-11 w-11 items-center justify-center rounded-xl font-black text-white"
                     style={{ backgroundColor: accentColor }}
                   >
@@ -3712,6 +3750,7 @@ function ArtisanTemplate({
               />
             ) : (
               <div {...edit({ kind: "field", field: "logoUrl" })}
+                data-siteai-accent-background
                 style={{ backgroundColor: accentColor }}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-black text-white"
               >
@@ -3744,6 +3783,7 @@ function ArtisanTemplate({
 
             {(site.phone || goalAction(site)) && (
               <a {...edit({ kind: "field", field: "phone" })}
+                data-siteai-accent-background
                 href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                 style={{ backgroundColor: accentColor }}
                 className="rounded-xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5"
@@ -3774,6 +3814,7 @@ function ArtisanTemplate({
 
               {(site.phone || goalAction(site)) && (
                 <a {...edit({ kind: "field", field: "phone" })}
+                  data-siteai-accent-background
                   href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                   style={{ backgroundColor: accentColor }}
                   className="mt-2 block rounded-xl px-4 py-3 text-center text-sm font-black text-white"
@@ -3794,6 +3835,7 @@ function ArtisanTemplate({
             <div data-siteai-hero-content className="max-w-2xl">
               <div data-siteai-hero-badges className="flex flex-wrap gap-2">
                 <span
+                  data-siteai-accent-background
                   style={{ backgroundColor: accentColor }}
                   className="inline-block rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.2em]"
                 >
@@ -3819,6 +3861,7 @@ function ArtisanTemplate({
               <div data-siteai-hero-actions className="mt-9 flex flex-wrap gap-3">
                 {(site.phone || goalAction(site)) && (
                   <a {...edit({ kind: "field", field: "phone" })}
+                    data-siteai-accent-background
                     href={goalAction(site)?.href ?? `tel:${phoneHref(site.phone)}`}
                     style={{ backgroundColor: accentColor }}
                     className="rounded-xl px-6 py-4 text-sm font-black text-white shadow-xl transition hover:-translate-y-0.5"
@@ -3885,6 +3928,7 @@ function ArtisanTemplate({
               className="flex gap-4 rounded-2xl border border-stone-300 bg-white/70 p-5 shadow-sm"
             >
               <div
+                data-siteai-accent-background
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-black text-white"
                 style={{ backgroundColor: accentColor }}
               >
@@ -4115,6 +4159,7 @@ function ArtisanTemplate({
 
             <a
               href={goalAction(site)?.href ?? "#contact"}
+              data-siteai-accent-background
               className="w-full rounded-xl px-6 py-4 text-center text-sm font-black text-white shadow-sm transition hover:-translate-y-0.5 sm:w-auto"
               style={{ backgroundColor: accentColor }}
             >
@@ -4351,6 +4396,7 @@ function ArtisanTemplate({
                   />
                 ) : (
                   <div {...edit({ kind: "field", field: "logoUrl" })}
+                    data-siteai-accent-background
                     className="flex h-11 w-11 items-center justify-center rounded-full font-black text-white"
                     style={{ backgroundColor: accentColor }}
                   >
@@ -4535,6 +4581,7 @@ function AboutSection({
             <p className="text-base leading-8 text-slate-600 sm:text-lg">{text}</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <span
+                data-siteai-accent-background
                 className="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-white"
                 style={{ backgroundColor: accentColor }}
               >
@@ -4546,6 +4593,7 @@ function AboutSection({
             </div>
             <a
               href="#contact"
+              data-siteai-accent-background
               className="mt-7 inline-flex rounded-xl px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5"
               style={{ backgroundColor: accentColor }}
             >
@@ -4665,7 +4713,8 @@ function ProcessSection({
                 className="rounded-2xl border border-stone-300 bg-[#f3eee4] p-6 shadow-sm"
               >
                 <div
-                  className="flex h-11 w-11 items-center justify-center rounded-full font-black text-white"
+                data-siteai-accent-background
+                className="flex h-11 w-11 items-center justify-center rounded-full font-black text-white"
                   style={{ backgroundColor: accentColor }}
                 >
                   {index + 1}
@@ -4713,6 +4762,7 @@ function ProcessSection({
               />
 
               <div
+                data-siteai-accent-background
                 className="flex h-11 w-11 items-center justify-center rounded-xl text-sm font-black text-white"
                 style={{ backgroundColor: accentColor }}
               >
@@ -4865,6 +4915,7 @@ function FaqSection({
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-5">
                   <div className="flex gap-4">
                     <div
+                      data-siteai-accent-background
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black text-white"
                       style={{ backgroundColor: accentColor }}
                     >
@@ -4934,6 +4985,7 @@ function FaqSection({
                   </div>
 
                   <span
+                    data-siteai-accent-background
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-black text-white transition-transform duration-300 group-open:rotate-45"
                     style={{ backgroundColor: accentColor }}
                   >
@@ -5004,6 +5056,7 @@ function LeadForm({
 
   const isElegant = variant === "elegant";
   const isArtisan = variant === "artisan";
+  const accentTextColor = getContrastTextColor(accentColor);
 
   const fieldClass = isElegant
     ? "w-full border-b border-neutral-300 bg-transparent px-0 py-3 text-sm text-neutral-950 outline-none placeholder:text-neutral-400 focus:border-neutral-900"
@@ -5014,7 +5067,7 @@ function LeadForm({
   const mutedClass = isElegant
     ? "text-neutral-500"
     : isArtisan
-      ? "text-white/75"
+      ? "opacity-75"
       : "text-slate-400";
 
   async function resolvePublicSlug() {
@@ -5151,14 +5204,18 @@ function LeadForm({
   }
 
   return (
-    <form onSubmit={submitLead} data-siteai-lead-form>
+    <form
+      onSubmit={submitLead}
+      data-siteai-lead-form
+      style={isArtisan ? { color: accentTextColor } : undefined}
+    >
       {previewOnly && <p className="mb-4 rounded-lg border border-current p-3 text-sm">Mode aperçu : aucun message ne sera envoyé.</p>}
       <p
         className={
           isElegant
             ? "text-xs font-bold uppercase tracking-[0.3em] text-neutral-500"
             : isArtisan
-              ? "text-sm font-black uppercase tracking-[0.22em] text-white/75"
+              ? "text-sm font-black uppercase tracking-[0.22em] opacity-75"
               : "text-sm font-black uppercase tracking-[0.2em] text-slate-400"
         }
       >
@@ -5270,6 +5327,7 @@ function LeadForm({
               ? undefined
               : {
                   backgroundColor: accentColor,
+                  color: accentTextColor,
                 }
         }
         className={
@@ -5290,7 +5348,7 @@ function LeadForm({
             isElegant
               ? "mt-4 block text-center text-sm text-neutral-500 underline underline-offset-4"
               : isArtisan
-                ? "mt-4 block text-center text-sm font-bold text-white/80"
+                ? "mt-4 block text-center text-sm font-bold opacity-80"
                 : "mt-4 block text-center text-sm font-bold text-slate-400"
           }
         >
@@ -5439,8 +5497,11 @@ function ContactSection({
               </div>
 
               <div
-                className="p-8 text-white sm:p-10 lg:p-12"
-                style={{ backgroundColor: accentColor }}
+                className="p-8 sm:p-10 lg:p-12"
+                style={{
+                  backgroundColor: accentColor,
+                  color: getContrastTextColor(accentColor),
+                }}
               >
                 <LeadForm
                   site={site}
