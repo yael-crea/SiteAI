@@ -165,8 +165,8 @@ type DesignSettings struct {
 }
 
 type GeneratedSite struct {
-	SiteGoal string `json:"siteGoal,omitempty"`
-	BookingURL string `json:"bookingUrl,omitempty"`
+	SiteGoal     string `json:"siteGoal,omitempty"`
+	BookingURL   string `json:"bookingUrl,omitempty"`
 	BusinessName string `json:"businessName"`
 
 	Slug string `json:"slug"`
@@ -222,6 +222,8 @@ type GeneratedSite struct {
 	ClientName string `json:"clientName"`
 
 	ClientEmail string `json:"clientEmail"`
+
+	SocialLinks map[string]string `json:"socialLinks,omitempty"`
 }
 
 type AIContent struct {

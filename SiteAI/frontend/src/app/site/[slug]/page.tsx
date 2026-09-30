@@ -28,6 +28,7 @@ type GeneratedSite = {
   testimonials?: Testimonial[];
   serviceArea?: string;
   openingHours?: string;
+  socialLinks?: Record<string, string>;
 };
 
 

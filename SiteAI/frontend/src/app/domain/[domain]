@@ -29,6 +29,7 @@ type GeneratedSite = {
   heroImageUrl: string;
   gallery: string[];
   sections: SiteSection[];
+  socialLinks?: Record<string, string>;
 };
 
 type DesignStyle =

@@ -36,6 +36,15 @@ export type DesignSettings = DesignExtras & {
   background: "auto" | "light" | "dark";
 };
 
+export type SocialLinks = {
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
+  linkedin?: string;
+  youtube?: string;
+  whatsapp?: string;
+};
+
 export type GeneratedSite = {
   siteGoal?: SiteGoal;
   bookingUrl?: string;
@@ -58,6 +67,7 @@ export type GeneratedSite = {
   openingHours?: string;
   clientName?: string;
   clientEmail?: string;
+  socialLinks?: SocialLinks;
 };
 
 export type PreviewDevice = "desktop" | "tablet" | "mobile";

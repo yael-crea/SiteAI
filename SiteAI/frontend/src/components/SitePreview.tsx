@@ -51,6 +51,15 @@ type FAQItem = {
   answer: string;
 };
 
+type SocialLinks = {
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
+  linkedin?: string;
+  youtube?: string;
+  whatsapp?: string;
+};
+
 
 type DesignSettings = DesignExtras & {
   font?: "system" | "modern" | "classic" | "editorial" | "mono";
@@ -122,6 +131,8 @@ type GeneratedSite = {
   clientName?: string;
 
   clientEmail?: string;
+
+  socialLinks?: SocialLinks;
 
 };
 
@@ -1309,6 +1320,72 @@ function phoneHref(value: string) {
 
   const prefix = clean.startsWith("+") ? "+" : "";
   return prefix + clean.replace(/\D/g, "");
+}
+
+const socialNetworks: Array<{ key: keyof SocialLinks; label: string }> = [
+  { key: "instagram", label: "Instagram" },
+  { key: "facebook", label: "Facebook" },
+  { key: "tiktok", label: "TikTok" },
+  { key: "linkedin", label: "LinkedIn" },
+  { key: "youtube", label: "YouTube" },
+  { key: "whatsapp", label: "WhatsApp" },
+];
+
+function safeSocialUrl(value: string | undefined, network: keyof SocialLinks) {
+  const clean = value?.trim();
+  if (!clean) return "";
+
+  if (network === "whatsapp" && /^\+?[\d\s().-]+$/.test(clean)) {
+    const digits = clean.replace(/\D/g, "");
+    return digits.length >= 8 ? `https://wa.me/${digits}` : "";
+  }
+
+  try {
+    const url = new URL(/^https?:\/\//i.test(clean) ? clean : `https://${clean}`);
+    return (url.protocol === "https:" || url.protocol === "http:") &&
+      url.hostname.includes(".")
+      ? url.toString()
+      : "";
+  } catch {
+    return "";
+  }
+}
+
+function SocialLinksList({
+  links,
+  accentColor,
+  light = false,
+}: {
+  links?: SocialLinks;
+  accentColor: string;
+  light?: boolean;
+}) {
+  const visibleLinks = socialNetworks.flatMap(({ key, label }) => {
+    const href = safeSocialUrl(links?.[key], key);
+    return href ? [{ key, label, href }] : [];
+  });
+
+  if (!visibleLinks.length) return null;
+
+  return (
+    <div className="mt-5 flex flex-wrap gap-2" aria-label="Réseaux sociaux">
+      {visibleLinks.map(({ key, label, href }) => (
+        <a
+          key={key}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${label} de l’entreprise (nouvel onglet)`}
+          className={`rounded-full border px-3 py-1.5 text-xs font-bold transition hover:-translate-y-0.5 ${
+            light ? "border-neutral-300 text-neutral-700" : "border-white/15 text-white"
+          }`}
+          style={{ borderColor: accentColor }}
+        >
+          {label}
+        </a>
+      ))}
+    </div>
+  );
 }
 
 function escapeRegExp(value: string) {
@@ -2965,6 +3042,7 @@ function ModernTemplate({
                   {formatPhoneNumber(site.phone)}
                 </a>
               )}
+              <SocialLinksList links={site.socialLinks} accentColor={accentColor} />
             </div>
           </div>
 
@@ -3693,6 +3771,7 @@ function ElegantTemplate({
                   {formatPhoneNumber(site.phone)}
                 </a>
               )}
+              <SocialLinksList links={site.socialLinks} accentColor={accentColor} light />
             </div>
           </div>
 
@@ -4456,6 +4535,7 @@ function ArtisanTemplate({
                   {formatPhoneNumber(site.phone)}
                 </a>
               )}
+              <SocialLinksList links={site.socialLinks} accentColor={accentColor} />
             </div>
           </div>
 

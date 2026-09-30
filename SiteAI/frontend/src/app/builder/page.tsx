@@ -38,6 +38,7 @@ import type {
   ImageMode,
   LayoutBlock,
   SiteSection,
+  SocialLinks,
   DesignSettings,
   GeneratedSite,
   PreviewDevice,
@@ -45,6 +46,27 @@ import type {
   SavedSite,
   ChatMessage,
 } from "@/lib/builderTypes";
+
+const socialLinkFields = [
+  { key: "instagram", label: "Instagram", placeholder: "instagram.com/ton-entreprise" },
+  { key: "facebook", label: "Facebook", placeholder: "facebook.com/ton-entreprise" },
+  { key: "tiktok", label: "TikTok", placeholder: "tiktok.com/@ton-entreprise" },
+  { key: "linkedin", label: "LinkedIn", placeholder: "linkedin.com/company/ton-entreprise" },
+  { key: "youtube", label: "YouTube", placeholder: "youtube.com/@ton-entreprise" },
+  { key: "whatsapp", label: "WhatsApp", placeholder: "+33 6 12 34 56 78 ou wa.me/…" },
+] as const satisfies ReadonlyArray<{
+  key: keyof SocialLinks;
+  label: string;
+  placeholder: string;
+}>;
+
+function normalizeSocialLinks(value?: SocialLinks | null): SocialLinks {
+  return socialLinkFields.reduce<SocialLinks>((links, { key }) => {
+    const url = value?.[key]?.trim();
+    if (url) links[key] = url;
+    return links;
+  }, {});
+}
 
 const defaultDesignSettings: DesignSettings = {
   font: "system",
@@ -1186,6 +1208,7 @@ export default function Home() {
         openingHours: data.openingHours ?? "",
         clientName: data.clientName ?? "",
         clientEmail: data.clientEmail ?? "",
+        socialLinks: normalizeSocialLinks(data.socialLinks),
       };
 
       draft.clearDraft();
@@ -1292,6 +1315,9 @@ export default function Home() {
         openingHours: site.openingHours ?? data.site.openingHours ?? "",
         clientName: site.clientName ?? data.site.clientName ?? "",
         clientEmail: site.clientEmail ?? data.site.clientEmail ?? "",
+        socialLinks: normalizeSocialLinks(
+          site.socialLinks ?? data.site.socialLinks,
+        ),
       };
 
       setSite(modifiedSite);
@@ -1356,6 +1382,7 @@ export default function Home() {
       layoutOrder: normalizeLayoutOrder(site.layoutOrder),
       hiddenBlocks: normalizeHiddenBlocks(site.hiddenBlocks),
       designSettings: normalizeDesignSettings(site.designSettings),
+      socialLinks: normalizeSocialLinks(site.socialLinks),
     };
 
     setSite(synchronizedSite);
@@ -1425,6 +1452,7 @@ export default function Home() {
         openingHours: saved.site.openingHours ?? "",
         clientName: saved.site.clientName ?? "",
         clientEmail: saved.site.clientEmail ?? "",
+        socialLinks: normalizeSocialLinks(saved.site.socialLinks),
       });
 
       setSaveMessage(
@@ -1616,6 +1644,7 @@ export default function Home() {
         openingHours: saved.site.openingHours ?? "",
         clientName: saved.site.clientName ?? "",
         clientEmail: saved.site.clientEmail ?? "",
+        socialLinks: normalizeSocialLinks(saved.site.socialLinks),
       });
 
       setBusinessName(saved.businessName);
@@ -2291,6 +2320,21 @@ export default function Home() {
     setSaveMessage("");
   }
 
+  function updateSocialLink(key: keyof SocialLinks, value: string) {
+    setSite((current) =>
+      current
+        ? {
+            ...current,
+            socialLinks: {
+              ...current.socialLinks,
+              [key]: value,
+            },
+          }
+        : current,
+    );
+    setSaveMessage("");
+  }
+
   function updateDesignSetting<K extends keyof DesignSettings>(
     field: K,
     value: DesignSettings[K],
@@ -2677,6 +2721,7 @@ export default function Home() {
       openingHours: value.openingHours ?? "",
       clientName: value.clientName ?? "",
       clientEmail: value.clientEmail ?? "",
+      socialLinks: normalizeSocialLinks(value.socialLinks),
     };
   }
   const hasUnsavedChanges = Boolean(
@@ -3691,6 +3736,37 @@ export default function Home() {
                         className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
                       />
                     </div>
+
+                    <details className="rounded-2xl border border-slate-700 bg-slate-950/45 p-4">
+                      <summary className="cursor-pointer font-bold text-slate-200">
+                        Réseaux sociaux
+                      </summary>
+                      <p className="mt-2 text-xs leading-5 text-slate-400">
+                        Ajoute uniquement les profils que tu souhaites afficher dans le pied de page du site.
+                      </p>
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        {socialLinkFields.map(({ key, label, placeholder }) => (
+                          <label key={key} className="block">
+                            <span className="mb-2 block text-sm text-slate-400">
+                              {label}
+                            </span>
+                            <input
+                              type="text"
+                              inputMode={key === "whatsapp" ? "tel" : "url"}
+                              value={site.socialLinks?.[key] ?? ""}
+                              onChange={(event) =>
+                                updateSocialLink(key, event.target.value)
+                              }
+                              placeholder={placeholder}
+                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-xs text-slate-500">
+                        Tu peux coller un lien avec ou sans https://. Pour WhatsApp, un numéro de téléphone suffit.
+                      </p>
+                    </details>
 
                     <div>
                       <label className="mb-2 block text-sm text-slate-400">
