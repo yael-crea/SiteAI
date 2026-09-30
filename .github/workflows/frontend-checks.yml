@@ -19,7 +19,7 @@ jobs:
         working-directory: SiteAI/frontend
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-key
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-key
       NEXT_PUBLIC_API_URL: https://example.com
     steps:
       - name: Récupérer le dépôt
