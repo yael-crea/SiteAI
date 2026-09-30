@@ -495,67 +495,660 @@ function ResponsiveSitePreview({
 const activityExamples = [
   {
     label: "Plombier",
-    keywords: ["plomb", "chauffag"],
+    keywords: ["plomb", "sanitaire", "fuite", "robinet", "chauffe-eau"],
     services: [
       "Recherche de fuite",
+      "Dépannage plomberie",
+      "Débouchage de canalisation",
       "Installation sanitaire",
+      "Remplacement de robinetterie",
+      "Installation de douche",
+      "Installation de baignoire",
       "Remplacement de chauffe-eau",
       "Rénovation de salle de bain",
+      "Réparation de chasse d’eau",
+      "Installation WC",
+      "Entretien des canalisations",
     ],
   },
   {
     label: "Électricien",
-    keywords: ["electric"],
+    keywords: ["electric", "élect", "prise", "tableau", "domotique"],
     services: [
       "Dépannage électrique",
       "Installation de prises",
-      "Rénovation électrique",
       "Installation d’éclairage",
+      "Remplacement de tableau électrique",
+      "Mise aux normes électriques",
+      "Installation de disjoncteurs",
+      "Installation extérieure",
+      "Installation domotique",
+      "Recherche de panne",
+      "Installation de borne de recharge",
+      "Rénovation électrique",
+      "Installation d’interphone",
     ],
   },
   {
-    label: "Coiffeur",
-    keywords: ["coiff", "barbier"],
-    services: ["Coupe femme", "Coupe homme", "Coloration", "Taille de barbe"],
-  },
-  {
-    label: "Restaurant",
-    keywords: ["restaur", "pizzeria", "traiteur"],
+    label: "Chauffagiste / Climatisation",
+    keywords: ["chauff", "clim", "climatisation", "chaudiere", "chaudière", "pompe a chaleur", "pompe à chaleur"],
     services: [
-      "Repas sur place",
-      "Plats à emporter",
-      "Réservation de table",
-      "Repas de groupe",
+      "Installation de climatisation",
+      "Entretien de climatisation",
+      "Dépannage climatisation",
+      "Installation de chaudière",
+      "Entretien de chaudière",
+      "Dépannage chauffage",
+      "Installation de pompe à chaleur",
+      "Entretien pompe à chaleur",
+      "Remplacement de radiateurs",
+      "Installation de thermostat",
     ],
   },
   {
-    label: "Paysagiste",
-    keywords: ["paysag", "jardin"],
+    label: "Serrurier",
+    keywords: ["serrur", "porte", "verrou", "blindage"],
     services: [
-      "Entretien de jardin",
-      "Taille de haies",
-      "Tonte de pelouse",
-      "Aménagement extérieur",
+      "Ouverture de porte",
+      "Remplacement de serrure",
+      "Réparation de serrure",
+      "Installation de serrure",
+      "Blindage de porte",
+      "Changement de cylindre",
+      "Installation de verrou",
+      "Sécurisation après effraction",
+      "Ouverture de porte claquée",
+      "Installation de serrure multipoints",
     ],
   },
   {
-    label: "Entreprise de nettoyage",
-    keywords: ["nettoy", "menage"],
+    label: "Couvreur / Zingueur",
+    keywords: ["couvr", "toiture", "zing", "gouttiere", "gouttière"],
     services: [
-      "Nettoyage de bureaux",
-      "Entretien de locaux",
-      "Nettoyage de vitres",
-      "Remise en état",
+      "Réparation de toiture",
+      "Rénovation de toiture",
+      "Recherche de fuite toiture",
+      "Nettoyage de toiture",
+      "Démoussage",
+      "Pose de gouttières",
+      "Réparation de gouttières",
+      "Travaux de zinguerie",
+      "Isolation de toiture",
+      "Pose de fenêtres de toit",
+    ],
+  },
+  {
+    label: "Maçon",
+    keywords: ["macon", "maçon", "maconnerie", "maçonnerie", "beton", "béton"],
+    services: [
+      "Construction de murs",
+      "Création de dalle béton",
+      "Ouverture de mur",
+      "Rénovation de façade",
+      "Création de terrasse",
+      "Fondations",
+      "Extension de maison",
+      "Construction de clôture",
+      "Réparation de fissures",
+      "Travaux de maçonnerie générale",
+    ],
+  },
+  {
+    label: "Menuisier",
+    keywords: ["menuis", "bois", "fenetre", "fenêtre", "porte", "placard"],
+    services: [
+      "Pose de fenêtres",
+      "Pose de portes",
+      "Création de placards",
+      "Création de meubles sur mesure",
+      "Pose de parquet",
+      "Aménagement intérieur",
+      "Création de dressing",
+      "Pose de volets",
+      "Rénovation de menuiseries",
+      "Création d’escalier",
+    ],
+  },
+  {
+    label: "Carreleur",
+    keywords: ["carrel", "faience", "faïence", "sol"],
+    services: [
+      "Pose de carrelage",
+      "Pose de faïence",
+      "Carrelage de salle de bain",
+      "Carrelage de cuisine",
+      "Carrelage extérieur",
+      "Pose de mosaïque",
+      "Rénovation de sols",
+      "Dépose ancien carrelage",
+      "Création de douche italienne",
     ],
   },
   {
     label: "Peintre en bâtiment",
-    keywords: ["peint"],
+    keywords: ["peint", "mur", "facade", "façade", "papier peint"],
     services: [
       "Peinture intérieure",
       "Peinture extérieure",
+      "Peinture de façade",
       "Préparation des murs",
+      "Pose de papier peint",
       "Pose de revêtements muraux",
+      "Peinture plafond",
+      "Peinture boiseries",
+      "Rénovation après dégâts des eaux",
+      "Ravalement de façade",
+    ],
+  },
+  {
+    label: "Plaquiste",
+    keywords: ["placo", "plaquiste", "platre", "plâtre", "cloison"],
+    services: [
+      "Pose de plaques de plâtre",
+      "Création de cloisons",
+      "Création de faux plafond",
+      "Isolation intérieure",
+      "Doublage des murs",
+      "Création de niches",
+      "Aménagement de combles",
+      "Pose de bandes",
+    ],
+  },
+  {
+    label: "Paysagiste / Jardinier",
+    keywords: ["paysag", "jardin", "pelouse", "haie", "arbre"],
+    services: [
+      "Entretien de jardin",
+      "Tonte de pelouse",
+      "Taille de haies",
+      "Élagage",
+      "Débroussaillage",
+      "Création de jardin",
+      "Plantation",
+      "Pose de gazon",
+      "Création de terrasse",
+      "Installation d’arrosage",
+      "Entretien des espaces verts",
+      "Abattage d’arbre",
+    ],
+  },
+  {
+    label: "Pisciniste",
+    keywords: ["piscin", "spa", "bassin"],
+    services: [
+      "Construction de piscine",
+      "Rénovation de piscine",
+      "Entretien de piscine",
+      "Nettoyage de piscine",
+      "Mise en service",
+      "Hivernage",
+      "Recherche de fuite",
+      "Installation de pompe",
+      "Installation de filtration",
+      "Installation de spa",
+    ],
+  },
+  {
+    label: "Entreprise de nettoyage",
+    keywords: ["nettoy", "menage", "ménage", "proprete", "propreté"],
+    services: [
+      "Nettoyage de bureaux",
+      "Entretien de locaux",
+      "Nettoyage de vitres",
+      "Nettoyage de maison",
+      "Nettoyage d’appartement",
+      "Nettoyage après travaux",
+      "Remise en état",
+      "Nettoyage de copropriété",
+      "Nettoyage Airbnb",
+      "Nettoyage industriel",
+      "Nettoyage de terrasse",
+    ],
+  },
+  {
+    label: "Déménagement",
+    keywords: ["demenag", "déménag", "transport meuble"],
+    services: [
+      "Déménagement particulier",
+      "Déménagement professionnel",
+      "Emballage des meubles",
+      "Démontage et remontage",
+      "Transport de mobilier",
+      "Débarras",
+      "Location avec chauffeur",
+      "Garde-meubles",
+    ],
+  },
+  {
+    label: "Garage / Mécanicien",
+    keywords: ["garage", "mecan", "mécan", "auto", "voiture", "vehicule", "véhicule"],
+    services: [
+      "Révision automobile",
+      "Vidange",
+      "Diagnostic électronique",
+      "Changement de pneus",
+      "Freinage",
+      "Embrayage",
+      "Distribution",
+      "Batterie",
+      "Climatisation automobile",
+      "Réparation moteur",
+      "Préparation contrôle technique",
+      "Entretien automobile",
+    ],
+  },
+  {
+    label: "Carrossier",
+    keywords: ["carross", "debosselage", "débosselage", "peinture auto"],
+    services: [
+      "Réparation carrosserie",
+      "Débosselage",
+      "Peinture automobile",
+      "Réparation pare-chocs",
+      "Réparation après accident",
+      "Polissage",
+      "Rénovation carrosserie",
+      "Remplacement d’éléments de carrosserie",
+    ],
+  },
+  {
+    label: "Lavage / Detailing automobile",
+    keywords: ["detailing", "lavage auto", "nettoyage voiture", "polissage"],
+    services: [
+      "Lavage extérieur",
+      "Nettoyage intérieur",
+      "Nettoyage complet",
+      "Shampoing sièges",
+      "Nettoyage cuir",
+      "Polissage carrosserie",
+      "Protection céramique",
+      "Rénovation des phares",
+      "Nettoyage jantes",
+    ],
+  },
+  {
+    label: "Coiffeur",
+    keywords: ["coiff", "cheveux", "coupe", "coloration"],
+    services: [
+      "Coupe femme",
+      "Coupe homme",
+      "Coupe enfant",
+      "Brushing",
+      "Coloration",
+      "Balayage",
+      "Mèches",
+      "Patine",
+      "Soin capillaire",
+      "Lissage",
+      "Coiffure de mariage",
+      "Chignon",
+    ],
+  },
+  {
+    label: "Barbier",
+    keywords: ["barbier", "barber", "barbe"],
+    services: [
+      "Coupe homme",
+      "Taille de barbe",
+      "Rasage traditionnel",
+      "Contour de barbe",
+      "Soin de barbe",
+      "Coupe + barbe",
+      "Dégradé",
+      "Soin du visage homme",
+    ],
+  },
+  {
+    label: "Institut de beauté / Esthéticienne",
+    keywords: ["esthet", "esthét", "beaute", "beauté", "epilation", "épilation", "visage"],
+    services: [
+      "Soin du visage",
+      "Soin du corps",
+      "Épilation",
+      "Épilation au fil",
+      "Maquillage",
+      "Maquillage mariage",
+      "Rehaussement de cils",
+      "Extension de cils",
+      "Teinture des sourcils",
+      "Massage relaxant",
+      "Bronzage",
+    ],
+  },
+  {
+    label: "Prothésiste ongulaire",
+    keywords: ["ongle", "onglerie", "manucure", "gel", "nail"],
+    services: [
+      "Manucure",
+      "Pose de gel",
+      "Pose américaine",
+      "Vernis semi-permanent",
+      "Nail art",
+      "Remplissage",
+      "Dépose",
+      "Renforcement des ongles",
+      "Extension des ongles",
+      "Beauté des pieds",
+    ],
+  },
+  {
+    label: "Massage / Bien-être",
+    keywords: ["massage", "bien etre", "bien-être", "relaxation", "spa"],
+    services: [
+      "Massage relaxant",
+      "Massage sportif",
+      "Massage californien",
+      "Massage aux huiles",
+      "Massage du dos",
+      "Massage en duo",
+      "Massage jambes",
+      "Massage bien-être",
+      "Réflexologie",
+    ],
+  },
+  {
+    label: "Tatoueur / Piercing",
+    keywords: ["tatou", "tattoo", "piercing"],
+    services: [
+      "Tatouage personnalisé",
+      "Tatouage noir et gris",
+      "Tatouage couleur",
+      "Tatouage minimaliste",
+      "Cover tattoo",
+      "Retouche tatouage",
+      "Piercing",
+      "Conseil avant projet",
+    ],
+  },
+  {
+    label: "Restaurant",
+    keywords: ["restaurant", "restaur", "cuisine", "repas"],
+    services: [
+      "Repas sur place",
+      "Réservation de table",
+      "Plats à emporter",
+      "Menu du midi",
+      "Menu du soir",
+      "Menu enfant",
+      "Repas de groupe",
+      "Privatisation",
+      "Événements",
+      "Livraison",
+    ],
+  },
+  {
+    label: "Pizzeria",
+    keywords: ["pizza", "pizzeria"],
+    services: [
+      "Pizza sur place",
+      "Pizza à emporter",
+      "Livraison",
+      "Pizza artisanale",
+      "Menu du midi",
+      "Formules",
+      "Commande en ligne",
+      "Repas de groupe",
+    ],
+  },
+  {
+    label: "Traiteur",
+    keywords: ["traiteur", "buffet", "reception", "réception"],
+    services: [
+      "Buffet",
+      "Cocktail",
+      "Mariage",
+      "Repas d’entreprise",
+      "Anniversaire",
+      "Plateaux repas",
+      "Livraison",
+      "Événement privé",
+      "Événement professionnel",
+    ],
+  },
+  {
+    label: "Boulangerie / Pâtisserie",
+    keywords: ["boulanger", "patis", "pâtis", "gateau", "gâteau", "viennoiserie"],
+    services: [
+      "Pain artisanal",
+      "Viennoiseries",
+      "Pâtisseries",
+      "Gâteaux personnalisés",
+      "Gâteaux d’anniversaire",
+      "Pièces montées",
+      "Snacking",
+      "Sandwichs",
+      "Commande spéciale",
+      "Click & collect",
+    ],
+  },
+  {
+    label: "Photographe / Vidéaste",
+    keywords: ["photo", "photographe", "video", "vidéo", "videaste", "vidéaste"],
+    services: [
+      "Portrait",
+      "Photo professionnelle",
+      "Mariage",
+      "Événement",
+      "Photo immobilière",
+      "Photo produit",
+      "Shooting entreprise",
+      "Vidéo promotionnelle",
+      "Reportage vidéo",
+      "Montage vidéo",
+      "Drone",
+    ],
+  },
+  {
+    label: "DJ / Événementiel",
+    keywords: ["dj", "evenement", "événement", "animation", "mariage"],
+    services: [
+      "Animation mariage",
+      "Soirée privée",
+      "Anniversaire",
+      "Événement professionnel",
+      "Sonorisation",
+      "Éclairage",
+      "Location de matériel",
+      "Animation musicale",
+    ],
+  },
+  {
+    label: "Fleuriste",
+    keywords: ["fleur", "bouquet", "floral"],
+    services: [
+      "Bouquet personnalisé",
+      "Fleurs de saison",
+      "Mariage",
+      "Décoration florale",
+      "Livraison de fleurs",
+      "Composition florale",
+      "Fleurs de deuil",
+      "Abonnement floral",
+    ],
+  },
+  {
+    label: "Coach sportif",
+    keywords: ["coach sportif", "coaching", "sport", "fitness", "musculation"],
+    services: [
+      "Coaching individuel",
+      "Coaching à domicile",
+      "Remise en forme",
+      "Perte de poids",
+      "Prise de masse",
+      "Préparation physique",
+      "Programme personnalisé",
+      "Coaching en ligne",
+      "Séance en groupe",
+    ],
+  },
+  {
+    label: "Yoga / Pilates",
+    keywords: ["yoga", "pilates", "meditation", "méditation"],
+    services: [
+      "Cours de yoga",
+      "Cours de Pilates",
+      "Cours particulier",
+      "Cours collectif",
+      "Yoga débutant",
+      "Yoga prénatal",
+      "Méditation",
+      "Atelier bien-être",
+    ],
+  },
+  {
+    label: "Avocat / Cabinet juridique",
+    keywords: ["avocat", "jurid", "droit", "cabinet juridique"],
+    services: [
+      "Droit de la famille",
+      "Droit du travail",
+      "Droit des affaires",
+      "Droit immobilier",
+      "Droit pénal",
+      "Conseil juridique",
+      "Rédaction de contrats",
+      "Assistance contentieuse",
+      "Consultation juridique",
+    ],
+  },
+  {
+    label: "Expert-comptable",
+    keywords: ["comptable", "comptabilite", "comptabilité", "fiscal", "gestion"],
+    services: [
+      "Tenue comptable",
+      "Création d’entreprise",
+      "Déclarations fiscales",
+      "Bilan comptable",
+      "Gestion de paie",
+      "Conseil fiscal",
+      "Prévisionnel financier",
+      "Accompagnement dirigeant",
+    ],
+  },
+  {
+    label: "Agence immobilière",
+    keywords: ["immobilier", "agence immobiliere", "agence immobilière", "location", "vente maison"],
+    services: [
+      "Vente immobilière",
+      "Location",
+      "Estimation immobilière",
+      "Gestion locative",
+      "Recherche de bien",
+      "Accompagnement vendeur",
+      "Accompagnement acheteur",
+      "Photographie immobilière",
+    ],
+  },
+  {
+    label: "Architecte / Décorateur",
+    keywords: ["architect", "decor", "décor", "interieur", "intérieur"],
+    services: [
+      "Architecture intérieure",
+      "Décoration intérieure",
+      "Conception de plans",
+      "Rénovation",
+      "Aménagement intérieur",
+      "Conseil décoration",
+      "Suivi de chantier",
+      "Home staging",
+    ],
+  },
+  {
+    label: "Agence web / Développeur",
+    keywords: ["site web", "web", "developpeur", "développeur", "application", "seo"],
+    services: [
+      "Création de site vitrine",
+      "Création de site e-commerce",
+      "Refonte de site internet",
+      "Développement sur mesure",
+      "Référencement SEO",
+      "Maintenance de site",
+      "Hébergement",
+      "Création d’application",
+      "Optimisation des performances",
+    ],
+  },
+  {
+    label: "Marketing / Communication",
+    keywords: ["marketing", "communication", "reseaux sociaux", "réseaux sociaux", "publicite", "publicité"],
+    services: [
+      "Gestion des réseaux sociaux",
+      "Création de contenu",
+      "Publicité en ligne",
+      "Stratégie marketing",
+      "Identité visuelle",
+      "Création de logo",
+      "Community management",
+      "Campagnes publicitaires",
+      "Email marketing",
+    ],
+  },
+  {
+    label: "Consultant",
+    keywords: ["consult", "conseil", "strategie", "stratégie"],
+    services: [
+      "Audit",
+      "Conseil personnalisé",
+      "Accompagnement stratégique",
+      "Diagnostic",
+      "Plan d’action",
+      "Formation",
+      "Suivi de projet",
+      "Accompagnement d’entreprise",
+    ],
+  },
+  {
+    label: "Formateur",
+    keywords: ["formation", "formateur", "cours", "apprentissage"],
+    services: [
+      "Formation individuelle",
+      "Formation en groupe",
+      "Formation en entreprise",
+      "Formation à distance",
+      "Atelier pratique",
+      "Accompagnement personnalisé",
+      "Formation débutant",
+      "Formation avancée",
+    ],
+  },
+  {
+    label: "Toiletteur animalier",
+    keywords: ["toilett", "chien", "chat", "animal", "animaux"],
+    services: [
+      "Toilettage chien",
+      "Toilettage chat",
+      "Bain",
+      "Coupe",
+      "Tonte",
+      "Démêlage",
+      "Coupe des griffes",
+      "Soin du pelage",
+    ],
+  },
+  {
+    label: "Taxi / VTC",
+    keywords: ["taxi", "vtc", "chauffeur", "transport personne"],
+    services: [
+      "Trajet local",
+      "Transfert aéroport",
+      "Transfert gare",
+      "Trajet longue distance",
+      "Transport professionnel",
+      "Mise à disposition",
+      "Transport événementiel",
+    ],
+  },
+  {
+    label: "Hôtel / Gîte / Chambre d’hôtes",
+    keywords: ["hotel", "hôtel", "gite", "gîte", "chambre d'hote", "chambre d’hôte"],
+    services: [
+      "Réservation de chambre",
+      "Petit-déjeuner",
+      "Séjour week-end",
+      "Séjour professionnel",
+      "Parking",
+      "Wi-Fi",
+      "Accueil de groupes",
+      "Location saisonnière",
     ],
   },
 ] as const;
@@ -699,6 +1292,7 @@ export default function Home() {
   const [businessName, setBusinessName] = useState("");
 
   const [activity, setActivity] = useState("");
+  const [activitySuggestionsOpen, setActivitySuggestionsOpen] = useState(false);
 
   const [city, setCity] = useState("Montpellier");
 
@@ -717,12 +1311,90 @@ export default function Home() {
 
   const [primaryAction, setPrimaryAction] = useState("nous contacter");
 
-  const suggestedActivity = activityExamples.find((example) =>
-    example.keywords.some((keyword) =>
-      normalizeActivity(activity).includes(keyword),
-    ),
-  );
   const selectedServices = parseServices(services).map(normalizeActivity);
+
+  const normalizedActivitySearch = normalizeActivity(activity);
+
+  const activitySuggestions = activityExamples
+    .filter((example) => {
+      if (!normalizedActivitySearch) {
+        return true;
+      }
+
+      const normalizedLabel = normalizeActivity(example.label);
+
+      return (
+        normalizedLabel.includes(normalizedActivitySearch) ||
+        example.keywords.some((keyword) =>
+          normalizeActivity(keyword).includes(normalizedActivitySearch),
+        )
+      );
+    })
+    .slice(0, 6);
+
+  const hasExactActivityMatch = activityExamples.some(
+    (example) =>
+      normalizeActivity(example.label) === normalizedActivitySearch,
+  );
+
+  const activitySearch = normalizeActivity(activity);
+  const servicesSearch = normalizeActivity(services);
+
+  const suggestedActivities = activityExamples
+    .map((example) => {
+      const normalizedLabel = normalizeActivity(example.label);
+
+      const activityKeywordMatch = example.keywords.some((keyword) => {
+        const normalizedKeyword = normalizeActivity(keyword);
+
+        return (
+          activitySearch.includes(normalizedKeyword) ||
+          (activitySearch.length >= 3 &&
+            normalizedKeyword.includes(activitySearch))
+        );
+      });
+
+      const serviceKeywordMatch = example.keywords.some((keyword) => {
+        const normalizedKeyword = normalizeActivity(keyword);
+
+        return (
+          servicesSearch.includes(normalizedKeyword) ||
+          (servicesSearch.length >= 3 &&
+            normalizedKeyword.includes(servicesSearch))
+        );
+      });
+
+      const labelMatch =
+        activitySearch.length >= 3 &&
+        (normalizedLabel.includes(activitySearch) ||
+          activitySearch.includes(normalizedLabel));
+
+      let score = 0;
+
+      if (labelMatch) score += 10;
+      if (activityKeywordMatch) score += 6;
+      if (serviceKeywordMatch) score += 3;
+
+      return {
+        example,
+        score,
+      };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map((item) => item.example);
+
+  const suggestedServices = Array.from(
+    new Set(
+      suggestedActivities.flatMap((example) => example.services),
+    ),
+  )
+    .filter(
+      (suggestion) =>
+        !selectedServices.includes(normalizeActivity(suggestion)),
+    )
+    .slice(0, 20);
 
   const [designStyle, setDesignStyle] = useState<DesignStyle>("moderne");
 
@@ -1771,6 +2443,7 @@ export default function Home() {
 
     setBusinessName("");
     setActivity("");
+    setActivitySuggestionsOpen(false);
     setCity("Montpellier");
     setPhone("");
     setServices("");
@@ -3291,7 +3964,7 @@ export default function Home() {
                   />
                 </div>
 
-                <div>
+                <div className="relative">
                   <label
                     htmlFor="business-activity"
                     className="mb-2 block text-sm text-slate-400"
@@ -3299,22 +3972,107 @@ export default function Home() {
                     Activité
                   </label>
 
-                  <input
-                    id="business-activity"
-                    list="activity-examples"
-                    value={activity}
-                    onChange={(event) => setActivity(event.target.value)}
-                    placeholder="Plombier"
-                    required
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
-                  />
-                </div>
+                  <div className="relative">
+                    <input
+                      id="business-activity"
+                      value={activity}
+                      onChange={(event) => {
+                        setActivity(event.target.value);
+                        setActivitySuggestionsOpen(true);
+                      }}
+                      onFocus={() => setActivitySuggestionsOpen(true)}
+                      onBlur={() => {
+                        window.setTimeout(() => {
+                          setActivitySuggestionsOpen(false);
+                        }, 150);
+                      }}
+                      autoComplete="off"
+                      placeholder="Ex. Plombier, coiffeur, restaurant..."
+                      required
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 pr-11 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                    />
 
-                <datalist id="activity-examples">
-                  {activityExamples.map((example) => (
-                    <option key={example.label} value={example.label} />
-                  ))}
-                </datalist>
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      aria-label="Afficher les suggestions"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() =>
+                        setActivitySuggestionsOpen((open) => !open)
+                      }
+                      className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800 hover:text-white"
+                    >
+                      <span
+                        className={`text-xs transition ${
+                          activitySuggestionsOpen ? "rotate-180" : ""
+                        }`}
+                      >
+                        ▼
+                      </span>
+                    </button>
+                  </div>
+
+                  {activitySuggestionsOpen &&
+                    activitySuggestions.length > 0 &&
+                    !hasExactActivityMatch && (
+                      <div className="absolute left-0 right-0 top-full z-[100] mt-2 overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl shadow-black/40">
+                        <div className="border-b border-slate-800 px-4 py-2.5">
+                          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                            Suggestions
+                          </p>
+                        </div>
+
+                        <div className="max-h-72 overflow-y-auto p-2">
+                          {activitySuggestions.map((example) => (
+                            <button
+                              key={example.label}
+                              type="button"
+                              onMouseDown={(event) =>
+                                event.preventDefault()
+                              }
+                              onClick={() => {
+                                setActivity(example.label);
+                                setActivitySuggestionsOpen(false);
+                              }}
+                              className="group flex w-full items-center justify-between gap-4 rounded-xl px-3 py-3 text-left transition hover:bg-blue-500/10"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-slate-100 transition group-hover:text-blue-300">
+                                  {example.label}
+                                </p>
+
+                                <p className="mt-1 truncate text-xs text-slate-500">
+                                  {example.services
+                                    .slice(0, 3)
+                                    .join(" · ")}
+                                </p>
+                              </div>
+
+                              <span className="shrink-0 text-sm text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-blue-400">
+                                →
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {activitySuggestionsOpen &&
+                    normalizedActivitySearch.length >= 2 &&
+                    activitySuggestions.length === 0 && (
+                      <div className="absolute left-0 right-0 top-full z-[100] mt-2 rounded-2xl border border-slate-700 bg-slate-950 p-4 shadow-2xl shadow-black/40">
+                        <p className="text-sm font-semibold text-slate-200">
+                          Utiliser « {activity} »
+                        </p>
+
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          Aucun métier prédéfini ne correspond exactement.
+                          Lumio utilisera quand même cette activité pour créer
+                          le site.
+                        </p>
+                      </div>
+                    )}
+                </div>
 
                 <div>
                   <label
@@ -3379,19 +4137,30 @@ export default function Home() {
                     Une prestation par ligne, ou séparée par une virgule.
                     Précise ce que tu proposes réellement à tes clients.
                   </p>
-                  {suggestedActivity && (
+                  {suggestedServices.length > 0 && (
                     <>
-                      <p className="mt-3 text-sm font-semibold">
-                        Idées de prestations
-                      </p>
-                      <p className="mt-1 text-xs text-slate-400">
-                        Clique uniquement sur celles que tu proposes.
-                      </p>
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold">
+                            Idées de prestations
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Suggestions adaptées à ce que tu écris dans
+                            Activité et Services.
+                          </p>
+                        </div>
+
+                        <span className="shrink-0 rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-[11px] font-bold text-blue-300">
+                          {suggestedServices.length} idées
+                        </span>
+                      </div>
+
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {suggestedActivity.services.map((suggestion) => {
+                        {suggestedServices.map((suggestion) => {
                           const added = selectedServices.includes(
                             normalizeActivity(suggestion),
                           );
+
                           return (
                             <button
                               key={suggestion}
@@ -3402,7 +4171,7 @@ export default function Home() {
                                   appendService(current, suggestion),
                                 )
                               }
-                              className="rounded-lg border border-slate-600 px-3 py-2 text-left text-xs text-blue-200 hover:border-blue-400 disabled:border-emerald-900 disabled:text-emerald-300"
+                              className="rounded-lg border border-slate-600 px-3 py-2 text-left text-xs text-blue-200 transition hover:border-blue-400 hover:bg-blue-500/10 disabled:border-emerald-900 disabled:bg-emerald-950/20 disabled:text-emerald-300"
                             >
                               {added ? "✓ " : "+ "}
                               {suggestion}
