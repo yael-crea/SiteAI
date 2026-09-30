@@ -241,6 +241,36 @@ const colors = [
   },
 ];
 
+function getReadableTextColor(backgroundColor: string) {
+  const rawHex = backgroundColor.trim().replace("#", "");
+  const hex =
+    rawHex.length === 3
+      ? rawHex
+          .split("")
+          .map((character) => character + character)
+          .join("")
+      : rawHex;
+
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) {
+    return "#ffffff";
+  }
+
+  const red = Number.parseInt(hex.slice(0, 2), 16) / 255;
+  const green = Number.parseInt(hex.slice(2, 4), 16) / 255;
+  const blue = Number.parseInt(hex.slice(4, 6), 16) / 255;
+
+  const linearize = (channel: number) =>
+    channel <= 0.04045
+      ? channel / 12.92
+      : Math.pow((channel + 0.055) / 1.055, 2.4);
+
+  const luminance =
+    0.2126 * linearize(red) +
+    0.7152 * linearize(green) +
+    0.0722 * linearize(blue);
+
+  return luminance > 0.45 ? "#0f172a" : "#ffffff";
+}
 const previewViewports: Record<
   PreviewDevice,
   {
@@ -3596,6 +3626,7 @@ export default function Home() {
                   disabled={loading}
                   style={{
                     backgroundColor: accentColor,
+                    color: getReadableTextColor(accentColor),
                   }}
                   className="w-full rounded-xl px-6 py-4 font-bold disabled:opacity-50"
                 >
@@ -4612,6 +4643,7 @@ export default function Home() {
                     disabled={editLoading}
                     style={{
                       backgroundColor: accentColor,
+                      color: getReadableTextColor(accentColor),
                     }}
                     className="mt-3 w-full rounded-xl px-6 py-4 font-bold disabled:opacity-50"
                   >
