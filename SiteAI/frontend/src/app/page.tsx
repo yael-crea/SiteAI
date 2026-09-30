@@ -1,7 +1,17 @@
+import Image from "next/image";
+import Link from "next/link";
 import { demoSites } from "@/lib/demoSites";
-import HomeDemo from "@/components/HomeDemo";
-import MobileNavigation from "@/components/MobileNavigation";
+import {
+  aiUsageText,
+  cancellationText,
+  domainText,
+  freePreviewText,
+  plans,
+  priceSuffix,
+  priceTaxText,
+} from "@/lib/commercialPlans";
 import { publicMetadata } from "@/lib/seo";
+import styles from "./home.module.css";
 
 export const metadata = publicMetadata(
   "/",
@@ -9,555 +19,127 @@ export const metadata = publicMetadata(
   "Crée et personnalise ton site professionnel avec Lumio : génération par IA, éditeur simple et publication en ligne.",
 );
 
-import Link from "next/link";
-import Image from "next/image";
-
-import {
-  plans,
-  freePreviewText,
-  domainText,
-  aiUsageText,
-  cancellationText,
-  priceSuffix,
-  priceTaxText,
-} from "@/lib/commercialPlans";
-
-const features = [
-  {
-    icon: "✨",
-
-    title: "Création avec l’IA",
-
-    text: "Décris ton activité et Lumio génère la base de ton site professionnel.",
-  },
-
-  {
-    icon: "✍️",
-
-    title: "Éditeur simple",
-
-    text: "Modifie les textes, les sections, les couleurs, le logo et les images sans repartir de zéro.",
-  },
-
-  {
-    icon: "🚀",
-
-    title: "Publication rapide",
-
-    text: "Sauvegarde ton site puis publie-le avec une adresse publique Lumio.",
-  },
-
-  {
-    icon: "🌐",
-
-    title: "Domaine personnalisé",
-
-    text: "Dès Essentiel, connecte ton propre domaine. Achat et renouvellement du domaine séparés.",
-  },
-
-  {
-    icon: "🖼️",
-
-    title: "Galerie photos",
-
-    text: "Ajoute et réorganise les images qui présentent ton entreprise, tes réalisations ou tes services.",
-  },
-
-  {
-    icon: "💳",
-
-    title: "Abonnement intégré",
-
-    text: "Gère ta formule et tes paiements directement depuis ton espace Lumio.",
-  },
-];
+const Arrow = () => <span aria-hidden="true">↗</span>;
 
 const steps = [
-  {
-    number: "01",
+  ["01", "Parle-nous de ton métier", "Ton activité, tes services, ta ville et ce qui te rend différent."],
+  ["02", "Découvre ta première version", "Lumio transforme tes réponses en un site clair, structuré et crédible."],
+  ["03", "Ajuste puis publie", "Change les textes, les couleurs et les photos, puis partage ton adresse."],
+];
 
-    title: "Présente ton entreprise",
-
-    text: "Indique ton activité, ta ville, tes services et ton style.",
-  },
-
-  {
-    number: "02",
-
-    title: "Laisse l’IA créer",
-
-    text: "Lumio prépare une première version que tu peux ensuite personnaliser.",
-  },
-
-  {
-    number: "03",
-
-    title: "Publie ton site",
-
-    text: "Une fois satisfait de ton aperçu, choisis une formule mensuelle pour publier et partager ton site.",
-  },
+const benefits = [
+  ["01", "Une base vraiment adaptée", "Le contenu part de ton activité, pas d’un modèle vide à remplir."],
+  ["02", "Tout reste modifiable", "Textes, images, services, couleurs et appels à l’action évoluent avec toi."],
+  ["03", "Une publication simple", "Ton aperçu reste gratuit. Tu choisis une formule seulement quand il te convient."],
 ];
 
 const faqs = [
-  { question: "Puis-je essayer avant de payer ?", answer: freePreviewText },
-
-  {
-    question: "Que devient mon site après résiliation ?",
-    answer: cancellationText,
-  },
-
-  { question: "Quelles sont les limites de l’IA ?", answer: aiUsageText },
-
-  {
-    question: "Est-ce que je dois savoir coder ?",
-
-    answer:
-      "Non. Lumio est pensé pour créer et modifier un site depuis une interface simple, sans écrire de code.",
-  },
-
-  {
-    question: "Puis-je modifier le site après sa création ?",
-
-    answer:
-      "Oui. Tu peux modifier le contenu, les sections, les couleurs, le logo, les images et enregistrer tes changements.",
-  },
-
-  {
-    question: "Puis-je utiliser mon propre domaine ?",
-
-    answer:
-      "Oui, dès Essentiel. La connexion est incluse ; tu achètes et renouvelles ton domaine auprès du fournisseur de ton choix.",
-  },
-
-  {
-    question: "Puis-je changer de formule ?",
-
-    answer:
-      "Oui. La gestion de l’abonnement est intégrée à Lumio et passe par Stripe.",
-  },
+  ["Puis-je essayer avant de payer ?", freePreviewText],
+  ["Est-ce que je dois savoir coder ?", "Non. Lumio est conçu pour être utilisé sans écrire une seule ligne de code."],
+  ["Puis-je modifier le site après sa création ?", "Oui. Tu peux reprendre les textes, les couleurs, les photos, les services et les coordonnées à tout moment."],
+  ["Puis-je utiliser mon propre domaine ?", domainText],
+  ["Quelles sont les limites de l’IA ?", aiUsageText],
+  ["Que devient mon site après résiliation ?", cancellationText],
 ];
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-4 sm:gap-4 sm:px-6">
-          <Link href="/" className="text-2xl font-black">
-            Lu<span className="text-blue-500">mio</span>
+    <div className={styles.home}>
+      <a className={styles.skip} href="#contenu">Aller au contenu</a>
+
+      <header className={styles.header}>
+        <div className={styles.navbar}>
+          <Link href="/" className={styles.logo} aria-label="Lumio, accueil">
+            <span className={styles.logoMark} aria-hidden="true">✳︎</span>
+            lumio<span className={styles.logoDot}>.</span>
           </Link>
-
-          <nav className="hidden items-center gap-7 text-sm text-slate-300 md:flex">
-            <a href="#fonctionnalites" className="hover:text-white">
-              Fonctionnalités
-            </a>
-
-            <a href="#comment-ca-marche" className="hover:text-white">
-              Comment ça marche
-            </a>
-
-            <a href="#tarifs" className="hover:text-white">
-              Tarifs
-            </a>
-
-            <a href="#faq" className="hover:text-white">
-              FAQ
-            </a>
+          <nav className={styles.desktopNav} aria-label="Navigation principale">
+            <a href="#comment-ca-marche">Comment ça marche</a>
+            <Link href="/exemples">Exemples</Link>
+            <a href="#tarifs">Tarifs</a>
+            <a href="#faq">Questions</a>
           </nav>
-
-          <div className="flex items-center gap-2">
-            <MobileNavigation />
-
-            <Link
-              href="/auth"
-              className="hidden rounded-xl border border-slate-700 px-4 py-2 text-sm font-bold text-slate-200 transition hover:border-blue-500 sm:inline-flex"
-            >
-              Se connecter
-            </Link>
-
-            <Link
-              href="/auth"
-              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black transition hover:bg-blue-500"
-            >
-              Créer mon site
-            </Link>
+          <div className={styles.navActions}>
+            <Link href="/auth" className={styles.login}>Connexion</Link>
+            <Link href="/auth" className={styles.smallButton}>Créer mon site <Arrow /></Link>
           </div>
         </div>
+        <nav className={styles.mobileNav} aria-label="Navigation mobile">
+          <Link href="/exemples">Exemples</Link><a href="#tarifs">Tarifs</a><Link href="/auth">Connexion</Link>
+        </nav>
       </header>
 
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.20),transparent_35%),radial-gradient(circle_at_80%_20%,rgba(124,58,237,0.16),transparent_30%)]" />
-
-        <div className="relative mx-auto grid max-w-7xl gap-14 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-28">
+      <main id="contenu">
+        <section className={`${styles.wrap} ${styles.hero}`}>
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-900 bg-blue-950/40 px-4 py-2 text-sm font-bold text-blue-300">
-              ✨ Création de sites avec l’IA
+            <p className={styles.eyebrow}><span className={styles.statusDot} /> POUR LES INDÉPENDANTS ET PETITES ENTREPRISES</p>
+            <h1>Ton métier mérite<br />un <span>vrai beau site.</span></h1>
+            <p className={styles.lead}>Tu connais ton activité. Lumio t’aide à la présenter en ligne : crée ton site avec l’IA, personnalise-le et publie quand tu es prêt.</p>
+            <div className={styles.actions}>
+              <Link href="/auth" className={styles.primary}>Créer mon aperçu gratuit <Arrow /></Link>
+              <Link href="/exemples" className={styles.secondary}>Voir les exemples <span aria-hidden="true">→</span></Link>
             </div>
+            <p className={styles.reassurance}>Sans carte bancaire · Sans code · Abonnement uniquement pour publier</p>
+            <div className={styles.heroFoot}><span className={styles.squiggle} aria-hidden="true">⌞</span><p><strong>Commence par voir ce que ça donne.</strong><br />Tes textes, tes couleurs, ton entreprise.</p></div>
+          </div>
 
-            <h1 className="mt-7 max-w-4xl text-5xl font-black leading-[1.05] md:text-7xl">
-              Le site de ton entreprise,
-              <span className="block text-blue-500">créé avec l&apos;IA.</span>
-            </h1>
-
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-400 md:text-xl">
-              Lumio aide les indépendants, TPE et PME à créer, personnaliser et
-              publier un site professionnel depuis une seule interface.
-            </p>
-
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/auth"
-                className="rounded-xl bg-blue-600 px-7 py-4 text-center font-black transition hover:bg-blue-500"
-              >
-                Créer mon aperçu gratuit
-              </Link>
-
-              <a
-                href="/exemples"
-                className="rounded-xl border border-slate-700 px-7 py-4 text-center font-black text-slate-200 transition hover:border-blue-500"
-              >
-                Voir des exemples
-              </a>
+          <figure className={styles.showcase}>
+            <div className={styles.browserBar}><span aria-hidden="true">● ● ●</span><span>TON FUTUR SITE COMMENCE ICI</span><span aria-hidden="true">↗</span></div>
+            <div className={styles.preview}>
+              <div className={styles.previewNav}><strong>Atelier du Robinet<span>Plomberie · Montpellier</span></strong><span className={styles.previewPill}>Votre artisan de proximité</span></div>
+              <div className={styles.previewHero}>
+                <span className={styles.miniLabel}>UN SAVOIR-FAIRE, À VOTRE SERVICE</span>
+                <h3>Votre maison.<br />Notre attention<br /><em>au détail.</em></h3>
+                <p>Dépannage, installation et rénovation : parlons de votre projet.</p>
+                <span className={styles.mockButton}>Parlons de votre projet <Arrow /></span>
+              </div>
+              <div className={styles.previewServices}><div><span>01</span><strong>Dépannage</strong></div><div><span>02</span><strong>Installation</strong></div><div><span>03</span><strong>Rénovation</strong></div></div>
             </div>
+            <figcaption><span className={styles.statusDot} /> Exemple illustratif · Entreprise fictive</figcaption>
+          </figure>
+        </section>
 
-            <p className="mt-4 text-sm leading-6 text-slate-300">
-              Sans carte bancaire · Publication dès {plans[0].price}{" "}
-              {priceSuffix}
-            </p>
+        <section className={styles.audience} aria-label="Public concerné">
+          <div className={styles.wrap}><span>PENSÉ POUR TON QUOTIDIEN</span><p>Artisans</p><span>✳</span><p>Commerçants</p><span>✳</span><p>Indépendants</p><span>✳</span><p>Petites entreprises</p></div>
+        </section>
 
-            <div className="mt-6 flex flex-wrap gap-x-7 gap-y-3 text-sm text-slate-400">
-              <span>✓ Pas besoin de coder</span>
+        <section id="comment-ca-marche" className={`${styles.wrap} ${styles.section}`}>
+          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>DE TON IDÉE À TON SITE</p><h2>Tu apportes le savoir-faire.<br /><span>Lumio construit la vitrine.</span></h2></div><p>Trois étapes simples pour passer d’une activité réelle à une présence en ligne qui inspire confiance.</p></div>
+          <div className={styles.steps}>{steps.map(([number, title, text]) => <article key={number}><span className={styles.stepNumber}>{number}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
+        </section>
 
-              <span>✓ Édition simple</span>
-
-              <span>✓ Publication en ligne</span>
-            </div>
+        <section className={`${styles.wrap} ${styles.featureSection}`}>
+          <div className={styles.editorArt} aria-hidden="true">
+            <div className={styles.editorTop}><span>✳</span><strong>Ton style, simplement.</strong><span>APERÇU EN DIRECT</span></div>
+            <div className={styles.editorBody}><div className={styles.colorRow}><span>Couleur principale</span><i /><i /><i /><i /></div><div className={styles.textSample}><span>TITRE PRINCIPAL</span><p>Un site qui ressemble<br /><strong>vraiment à ton métier.</strong></p></div><div className={styles.editorBottom}><span>Textes</span><span>Photos</span><span>Services</span><span>Coordonnées</span></div></div>
+            <p>Chaque modification est visible immédiatement.</p>
           </div>
+          <div><p className={styles.eyebrow}>FAIT POUR RESTER SIMPLE</p><h2>Professionnel devant.<br /><span>Facile à gérer derrière.</span></h2><p className={styles.featureLead}>Un éditeur clair, sans jargon technique, pensé pour t’aider à avancer sans dépendre d’un développeur.</p><ul className={styles.benefits}>{benefits.map(([number, title, text]) => <li key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></li>)}</ul><Link href="/exemples" className={styles.textLink}>Découvrir les possibilités <span>→</span></Link></div>
+        </section>
 
-          <HomeDemo />
-        </div>
-      </section>
+        <section id="exemples" className={`${styles.wrap} ${styles.section}`}>
+          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>DES EXEMPLES CONCRETS</p><h2>Projette-toi dans<br /><span>un vrai résultat.</span></h2></div><Link href="/exemples" className={styles.textLink}>Voir tous les exemples <span>→</span></Link></div>
+          <div className={styles.examples}>{demoSites.slice(0, 3).map((site) => <Link key={site.id} href={`/exemples?metier=${site.id}`} className={styles.exampleCard}><div className={styles.examplePhoto}><Image src={site.image} alt={site.imageAlt} fill sizes="(max-width: 760px) 100vw, 33vw" /></div><div className={styles.exampleInfo}><span>DÉMONSTRATION <Arrow /></span><h3>{site.activity}</h3><p>{site.title}</p></div></Link>)}</div>
+          <p className={styles.caption}>Entreprises fictives · Photographies d’illustration · Contenus entièrement personnalisables</p>
+        </section>
 
-      <section id="exemples" className="mx-auto max-w-7xl px-6 py-16">
-        <p className="text-sm font-bold uppercase tracking-widest text-blue-400">
-          Pour les petites entreprises
-        </p>
-
-        <h2 className="mt-3 text-3xl font-black">
-          Un site concret pour ton métier
-        </h2>
-
-        <p className="mt-3 text-slate-400">
-          Explore nos démonstrations fictives, puis personnalise ton propre
-          site.
-        </p>
-
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {demoSites.map((metier) => (
-            <Link
-              key={metier.id}
-              href={"/exemples?metier=" + metier.id}
-              className="group overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 transition hover:-translate-y-1 hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-950/30"
-            >
-              <div className="relative aspect-[4/3] overflow-hidden bg-slate-800">
-                <Image
-                  src={metier.image}
-                  alt={metier.imageAlt}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
-                  className="object-cover transition duration-500 group-hover:scale-105"
-                />
-              </div>
-              <div className="p-6">
-                <p className="text-xs uppercase tracking-wider text-slate-400">Démonstration fictive</p>
-                <h3 className="mt-2 text-xl font-bold">{metier.activity}</h3>
-                <p className="mt-4 text-sm font-bold text-blue-300">
-                  Explorer ce modèle →
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section
-        id="fonctionnalites"
-        style={{ scrollMarginTop: "6rem" }}
-        className="border-y border-slate-800 bg-slate-900/40"
-      >
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="max-w-3xl">
-            <p className="text-sm font-black uppercase tracking-[0.3em] text-blue-400">
-              Tout au même endroit
-            </p>
-
-            <h2 className="mt-4 text-4xl font-black md:text-5xl">
-              Créer un site ne devrait pas être compliqué.
-            </h2>
-
-            <p className="mt-5 text-lg leading-8 text-slate-400">
-              Lumio regroupe la génération, l&apos;édition, la publication et la
-              gestion de tes sites dans un même espace.
-            </p>
+        <section id="tarifs" className={`${styles.section} ${styles.pricing}`}>
+          <div className={styles.wrap}>
+            <div className={styles.centerHeading}><p className={styles.eyebrow}>DES TARIFS CLAIRS</p><h2>Commence gratuitement.<br /><span>Publie quand tu es convaincu.</span></h2><p>{freePreviewText}</p></div>
+            <div className={styles.plans}>{plans.map((plan) => <article key={plan.name} className={`${styles.plan} ${plan.highlighted ? styles.highlighted : ""}`}>{plan.highlighted && <span className={styles.planBadge}>LE PLUS CHOISI</span>}<h3>{plan.name}</h3><p className={styles.planDescription}>{plan.description}</p><p className={styles.price}>{plan.price}<span>{priceSuffix}</span></p><Link href="/auth" className={styles.primary}>Choisir {plan.name} <Arrow /></Link><ul>{plan.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul></article>)}</div>
+            <p className={styles.tax}>{priceTaxText}</p><div className={styles.pricingLinks}><span>{domainText}</span></div>
           </div>
+        </section>
 
-          <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {features.map((feature) => (
-              <article
-                key={feature.title}
-                className="rounded-3xl border border-slate-800 bg-slate-950 p-7"
-              >
-                <div className="text-3xl">{feature.icon}</div>
+        <section id="faq" className={`${styles.wrap} ${styles.faq}`}>
+          <div><p className={styles.eyebrow}>QUESTIONS FRÉQUENTES</p><h2>Tout ce qu’il faut savoir avant de commencer.</h2><p>Tu peux créer ton aperçu sans carte bancaire et prendre ta décision sur un résultat concret.</p></div>
+          <div>{faqs.map(([question, answer]) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div>
+        </section>
 
-                <h3 className="mt-5 text-xl font-black">{feature.title}</h3>
+        <section className={styles.finalCta}><div className={styles.wrap}><span className={styles.eyebrow}>À TON TOUR</span><h2>Ton activité mérite<br />d’être bien présentée.</h2><p>Réponds à quelques questions et découvre ta première version.</p><Link href="/auth" className={styles.primary}>Créer mon aperçu gratuit <Arrow /></Link><small>Sans carte bancaire. Tu publies uniquement quand tu es prêt.</small></div></section>
+      </main>
 
-                <p className="mt-3 leading-7 text-slate-400">{feature.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="comment-ca-marche"
-        className="scroll-mt-24 mx-auto max-w-7xl px-6 py-20"
-      >
-        <div className="text-center">
-          <p className="text-sm font-black uppercase tracking-[0.3em] text-blue-400">
-            3 étapes
-          </p>
-
-          <h2 className="mt-4 text-4xl font-black md:text-5xl">
-            De l&apos;idée au site publié.
-          </h2>
-        </div>
-
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {steps.map((step) => (
-            <article
-              key={step.number}
-              className="rounded-3xl border border-slate-800 bg-slate-900 p-7"
-            >
-              <div className="text-sm font-black tracking-[0.3em] text-blue-400">
-                {step.number}
-              </div>
-
-              <h3 className="mt-5 text-2xl font-black">{step.title}</h3>
-
-              <p className="mt-3 leading-7 text-slate-400">{step.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section
-        id="tarifs"
-        className="scroll-mt-24 border-y border-slate-800 bg-slate-900/40"
-      >
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-black uppercase tracking-[0.3em] text-blue-400">
-              Tarifs
-            </p>
-
-            <h2 className="mt-4 text-4xl font-black md:text-5xl">
-              Une formule selon tes besoins.
-            </h2>
-
-            <p className="mt-5 text-lg leading-8 text-slate-400">
-              Un aperçu gratuit pour commencer. Essentiel pour ton entreprise,
-              Pro pour davantage d’IA, Agence pour plusieurs clients.
-            </p>
-          </div>
-
-          <div className="mt-7 text-center">
-            <Link
-              href="/auth"
-              className="inline-flex rounded-xl bg-blue-600 px-6 py-3 font-bold hover:bg-blue-500"
-            >
-              Créer mon aperçu gratuit
-            </Link>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-400">
-              {freePreviewText}
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-7 lg:grid-cols-3">
-            {plans.map((plan) => (
-              <article
-                key={plan.name}
-                className={`relative flex flex-col rounded-3xl border p-7 ${
-                  plan.highlighted
-                    ? "border-blue-500 bg-blue-500/10 shadow-2xl shadow-blue-950/30"
-                    : "border-slate-800 bg-slate-950"
-                }`}
-              >
-                {plan.highlighted && (
-                  <span className="absolute right-5 top-5 rounded-full bg-blue-600 px-3 py-1 text-xs font-black uppercase tracking-wider">
-                    Recommandé
-                  </span>
-                )}
-
-                <h3 className="pt-8 text-2xl font-black">{plan.name}</h3>
-
-                <p className="mt-4 min-h-12 text-sm leading-6 text-slate-400">
-                  {plan.description}
-                </p>
-
-                <div className="mt-7 flex items-end gap-2">
-                  <span className="text-4xl font-black">{plan.price}</span>
-
-                  <span className="pb-1 text-slate-300">{priceSuffix}</span>
-                </div>
-
-                <ul className="mt-8 flex-1 space-y-4">
-                  {plan.features.map((feature) => (
-                    <li
-                      key={feature}
-                      className="flex gap-3 text-sm text-slate-300"
-                    >
-                      <span className="font-black text-emerald-400">✓</span>
-
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href="/auth"
-                  className={`mt-9 block rounded-xl px-5 py-4 text-center font-black ${
-                    plan.highlighted
-                      ? "bg-blue-600 hover:bg-blue-500"
-                      : "bg-white text-slate-950 hover:bg-slate-200"
-                  }`}
-                >
-                  Choisir {plan.name}
-                </Link>
-              </article>
-            ))}
-          </div>
-
-          <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-slate-400">
-            {priceTaxText}
-          </p>
-        </div>
-      </section>
-
-      <section
-        aria-label="Ce qui est inclus"
-        className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3"
-      >
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <h2 className="font-bold text-white">Ton domaine, ton adresse</h2>
-
-          <p className="mt-3 text-sm leading-6 text-slate-400">{domainText}</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <h2 className="font-bold text-white">
-            Une IA avec des limites claires
-          </h2>
-
-          <p className="mt-3 text-sm leading-6 text-slate-400">{aiUsageText}</p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <h2 className="font-bold text-white">Si tu résilies</h2>
-
-          <p className="mt-3 text-sm leading-6 text-slate-400">
-            {cancellationText}
-          </p>
-        </div>
-      </section>
-
-      <section id="faq" className="scroll-mt-24 mx-auto max-w-5xl px-6 py-20">
-        <div className="text-center">
-          <p className="text-sm font-black uppercase tracking-[0.3em] text-blue-400">
-            FAQ
-          </p>
-
-          <h2 className="mt-4 text-4xl font-black md:text-5xl">
-            Questions fréquentes
-          </h2>
-        </div>
-
-        <div className="mt-12 grid gap-4">
-          {faqs.map((faq) => (
-            <article
-              key={faq.question}
-              className="rounded-2xl border border-slate-800 bg-slate-900 p-6"
-            >
-              <h3 className="font-black">{faq.question}</h3>
-
-              <p className="mt-3 leading-7 text-slate-400">{faq.answer}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-6 pb-20">
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-blue-800 bg-gradient-to-br from-blue-950 to-slate-900 p-8 text-center md:p-14">
-          <p className="text-sm font-black uppercase tracking-[0.3em] text-blue-300">
-            Prêt à créer ton site ?
-          </p>
-
-          <h2 className="mx-auto mt-4 max-w-3xl text-4xl font-black md:text-5xl">
-            Présente ton entreprise en ligne avec Lumio.
-          </h2>
-
-          <p className="mx-auto mt-5 max-w-2xl leading-7 text-slate-300">
-            Crée ton compte, génère ton premier site et personnalise-le depuis
-            ton espace.
-          </p>
-
-          <Link
-            href="/auth"
-            className="mt-8 inline-flex rounded-xl bg-white px-7 py-4 font-black text-slate-950 hover:bg-slate-200"
-          >
-            Créer mon compte
-          </Link>
-        </div>
-      </section>
-
-      <footer className="border-t border-slate-800">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 px-6 py-8 text-sm text-slate-300 md:flex-row md:items-center">
-          <div>
-            <span className="font-black text-white">
-              Lu<span className="text-blue-500">mio</span>
-            </span>{" "}
-            — Création de sites avec l&apos;IA.
-          </div>
-
-          <div className="flex flex-wrap gap-5">
-            <a href="#fonctionnalites" className="hover:text-white">
-              Fonctionnalités
-            </a>
-
-            <a href="#tarifs" className="hover:text-white">
-              Tarifs
-            </a>
-
-            <Link href="/mentions-legales" className="hover:text-white">
-              Mentions légales
-            </Link>
-
-            <Link href="/confidentialite" className="hover:text-white">
-              Confidentialité
-            </Link>
-
-            <Link href="/cgu" className="hover:text-white">
-              CGU
-            </Link>
-
-            <Link href="/cgv" className="hover:text-white">
-              CGV
-            </Link>
-
-            <Link href="/auth" className="hover:text-white">
-              Connexion
-            </Link>
-          </div>
-        </div>
-      </footer>
-    </main>
+      <footer className={`${styles.wrap} ${styles.footer}`}><div><Link href="/" className={styles.logo}>lumio<span className={styles.logoDot}>.</span></Link><p>Ton activité. Ton style. Ton site.</p></div><nav aria-label="Liens de bas de page"><Link href="/exemples">Exemples</Link><Link href="/pricing">Tarifs</Link><Link href="/auth">Connexion</Link><Link href="/mentions-legales">Mentions légales</Link><Link href="/confidentialite">Confidentialité</Link><Link href="/cgu">CGU</Link><Link href="/cgv">CGV</Link></nav></footer>
+    </div>
   );
 }
