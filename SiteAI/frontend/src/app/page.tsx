@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import MobileNavigation from "@/components/MobileNavigation";
 import { demoSites } from "@/lib/demoSites";
 import {
   aiUsageText,
@@ -61,12 +62,14 @@ export default function HomePage() {
           </nav>
           <div className={styles.navActions}>
             <Link href="/auth" className={styles.login}>Connexion</Link>
-            <Link href="/auth" className={styles.smallButton}>Créer mon site <Arrow /></Link>
+            <Link href="/auth" className={styles.smallButton}>
+              <span className={styles.headerCtaDesktop}>Créer mon aperçu gratuit</span>
+              <span className={styles.headerCtaMobile}>Aperçu gratuit</span>
+              <Arrow />
+            </Link>
           </div>
+          <MobileNavigation />
         </div>
-        <nav className={styles.mobileNav} aria-label="Navigation mobile">
-          <Link href="/exemples">Exemples</Link><a href="#tarifs">Tarifs</a><Link href="/auth">Connexion</Link>
-        </nav>
       </header>
 
       <main id="contenu">
@@ -79,7 +82,7 @@ export default function HomePage() {
               <Link href="/auth" className={styles.primary}>Créer mon aperçu gratuit <Arrow /></Link>
               <Link href="/exemples" className={styles.secondary}>Voir les exemples <span aria-hidden="true">→</span></Link>
             </div>
-            <p className={styles.reassurance}>Sans carte bancaire · Sans code · Abonnement uniquement pour publier</p>
+            <p className={styles.reassurance}>Sans carte bancaire · Sans coder · Un abonnement seulement pour publier</p>
             <div className={styles.heroFoot}><span className={styles.squiggle} aria-hidden="true">⌞</span><p><strong>Commence par voir ce que ça donne.</strong><br />Tes textes, tes couleurs, ton entreprise.</p></div>
           </div>
 
@@ -126,6 +129,7 @@ export default function HomePage() {
         <section id="tarifs" className={`${styles.section} ${styles.pricing}`}>
           <div className={styles.wrap}>
             <div className={styles.centerHeading}><p className={styles.eyebrow}>DES TARIFS CLAIRS</p><h2>Commence gratuitement.<br /><span>Publie quand tu es convaincu.</span></h2><p>{freePreviewText}</p></div>
+            <p className={styles.pricingComparison}><strong>Essentiel</strong> pour publier ton site · <strong>Pro</strong> pour plus d’IA et des statistiques détaillées · <strong>Agence</strong> pour gérer plusieurs clients.</p>
             <div className={styles.plans}>{plans.map((plan) => <article key={plan.name} className={`${styles.plan} ${plan.highlighted ? styles.highlighted : ""}`}>{plan.highlighted && <span className={styles.planBadge}>LE PLUS CHOISI</span>}<h3>{plan.name}</h3><p className={styles.planDescription}>{plan.description}</p><p className={styles.price}>{plan.price}<span>{priceSuffix}</span></p><Link href="/auth" className={styles.primary}>Choisir {plan.name} <Arrow /></Link><ul>{plan.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul></article>)}</div>
             <p className={styles.tax}>{priceTaxText}</p><div className={styles.pricingLinks}><span>{domainText}</span></div>
           </div>
