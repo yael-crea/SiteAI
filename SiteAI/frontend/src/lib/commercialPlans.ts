@@ -36,12 +36,10 @@ export const plans: {
     description: "Pour faire évoluer plus souvent le site principal de ton entreprise.",
     highlighted: false,
     features: [
-      "Toutes les fonctions Essentiel",
+      "Tout Essentiel, avec davantage d’IA et de suivi",
       "200 demandes IA par mois",
       "Création et modification des textes avec l’IA",
       "Statistiques détaillées : visiteurs, appels, e-mails et prospects",
-      "1 site publié et hébergé",
-      "Connexion de ton domaine personnel",
     ],
   },
   {
@@ -51,7 +49,7 @@ export const plans: {
     description: "Pour les freelances et agences qui gèrent les sites de plusieurs clients.",
     highlighted: false,
     features: [
-      "Toutes les fonctions Pro",
+      "Tout Pro, avec un espace multi-clients",
       "Jusqu’à 10 sites publiés et hébergés",
       "1 000 demandes IA par mois pour le compte",
       "Bilan et statistiques par site client",
