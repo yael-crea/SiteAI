@@ -10,3 +10,76 @@
 .exampleCard:hover .examplePhoto img{transform:scale(1.045);filter:saturate(1) contrast(1.04)}
 .exampleInfo h3{margin:14px 0 0;font-size:19px;letter-spacing:-.35px;color:#f5f7ff}
 @media(max-width:760px){.examplePhoto{min-height:215px}}
+
+/* Landing-page refinements: clearer actions, tighter rhythm and accessible mobile navigation. */
+.home button{font:inherit}
+.home button:focus-visible{outline:3px solid #9cbaff;outline-offset:5px}
+.headerCtaMobile,.mobileMenu{display:none}
+.hero{padding-block:72px 64px}
+.section{padding-block:72px}
+.sectionHeading{margin-bottom:34px}
+.featureSection{padding-block:28px 52px}
+.reassurance{font-size:12px;line-height:1.65}
+.heroFoot{font-size:13px}
+.benefits p,.exampleInfo p{font-size:14px}
+.textLink{font-size:14px}
+.caption{font-size:12px;line-height:1.7}
+.centerHeading{margin-bottom:25px}
+.pricingComparison{max-width:850px;margin:0 auto 34px;text-align:center;color:#c6d0e2;font-size:14px;line-height:1.8}
+.pricingComparison strong{color:#f4f6ff;font-weight:700}
+.planDescription{font-size:14px;line-height:1.7}
+.price>span{font-size:12px}
+.plan>a{font-size:13px}
+.plan li{font-size:13px}
+.tax{font-size:12px}
+.pricingLinks{font-size:13px;line-height:1.7}
+.faq{padding-block:76px}
+.faq summary{font-size:15px}
+.faq details>p{font-size:14px}
+.finalCta{padding-block:60px}
+.finalCta small{font-size:12px}
+.footer nav{font-size:12px}
+
+@media(min-width:1500px){.hero{padding-block:88px 76px}}
+
+@media(max-width:980px){
+  .headerCtaDesktop{display:none}
+  .headerCtaMobile{display:inline}
+  .smallButton{gap:12px}
+}
+
+@media(max-width:760px){
+  .navbar{min-height:72px;gap:8px}
+  .logo{font-size:25px;letter-spacing:-1.2px}
+  .logoMark{font-size:25px;margin-right:6px}
+  .navActions{margin-left:auto;gap:0}
+  .headerCtaDesktop{display:none}
+  .headerCtaMobile{display:inline}
+  .smallButton{min-height:44px;padding:10px 12px;font-size:12px;gap:0;white-space:nowrap}
+  .smallButton>span:last-child{display:none}
+  .mobileMenu{display:block}
+  .menuButton{width:44px;height:44px;display:grid;place-items:center;padding:0;border:1px solid #ffffff2e;border-radius:8px;background:#11192a;color:#f4f6ff;cursor:pointer}
+  .menuButton:hover{background:#17233e;border-color:#799ce4}
+  .menuIcon{width:18px;display:grid;gap:4px}
+  .menuIcon i{display:block;width:100%;height:2px;border-radius:2px;background:currentColor;transition:transform .18s,opacity .18s}
+  .menuIconOpen i:first-child{transform:translateY(6px) rotate(45deg)}
+  .menuIconOpen i:nth-child(2){opacity:0}
+  .menuIconOpen i:last-child{transform:translateY(-6px) rotate(-45deg)}
+  .mobileMenuPanel{position:absolute;inset:100% 0 auto;display:grid;max-height:calc(100dvh - 72px);overflow-y:auto;padding:14px 20px 20px;background:#0b1020f7;border-bottom:1px solid #ffffff20;box-shadow:0 24px 45px #0008}
+  .mobileMenuPanel a{min-height:48px;display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid #ffffff12;border-radius:7px;color:#e8edfa;font-size:15px;font-weight:600}
+  .mobileMenuPanel a:hover{background:#ffffff0b;color:#9cbaff}
+  .hero{padding-block:42px 36px}
+  .section{padding-block:48px}
+  .sectionHeading{margin-bottom:25px}
+  .featureSection{padding-block:8px 16px}
+  .reassurance{font-size:11px}
+  .heroFoot{font-size:12px}
+  .primary,.secondary{font-size:13px}
+  .centerHeading{margin-bottom:22px}
+  .pricingComparison{margin-bottom:31px;font-size:13px;text-align:left}
+  .plan li{font-size:13px}
+  .tax{font-size:12px}
+  .faq{padding-block:50px}
+  .faq summary{font-size:14px}
+  .finalCta{padding-block:46px}
+}
