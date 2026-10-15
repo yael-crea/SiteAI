@@ -32,6 +32,7 @@ import (
 	"os"
 
 	"regexp"
+	"reflect"
 
 	"strconv"
 
@@ -6577,6 +6578,26 @@ Retourne le site complet après modification.`,
 
 		result.Site.ContactText = input.Site.ContactText
 
+	}
+
+	// Existing growth metadata is outside the AI-edit schema. Preserve it.
+	result.Site.Testimonials = input.Site.Testimonials
+	result.Site.ServiceArea = input.Site.ServiceArea
+	result.Site.OpeningHours = input.Site.OpeningHours
+	result.Site.ClientName = input.Site.ClientName
+	result.Site.ClientEmail = input.Site.ClientEmail
+	result.Site.SocialLinks = input.Site.SocialLinks
+
+	// Preserve the existing style when the model leaves an optional design
+	// setting blank, but allow explicit valid modifications.
+	previousDesign := input.Site.DesignSettings
+	updatedDesign := &result.Site.DesignSettings
+	previousValue := reflect.ValueOf(previousDesign)
+	updatedValue := reflect.ValueOf(updatedDesign).Elem()
+	for i := 0; i < updatedValue.NumField(); i++ {
+		if updatedValue.Field(i).String() == "" {
+			updatedValue.Field(i).SetString(previousValue.Field(i).String())
+		}
 	}
 
 	// Les médias sont gérés par l'utilisateur dans Supabase Storage.
