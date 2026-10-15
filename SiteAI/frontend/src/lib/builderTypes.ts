@@ -16,6 +16,8 @@ export type LayoutBlock =
   | "contact";
 
 export type SiteSection = {
+  /** Source section index returned by the AI edit response; absent on saved sites. */
+  sourceIndex?: number | null;
   title: string;
   text: string;
   iconMode?: IconMode;
