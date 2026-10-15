@@ -97,6 +97,10 @@ type BusinessInput struct {
 }
 
 type SiteSection struct {
+	// SourceIndex refers to an existing section in the AI edit request only.
+	// New sections use null. It is never required for saved legacy sites.
+	SourceIndex *int `json:"sourceIndex,omitempty"`
+
 	Title string `json:"title"`
 
 	Text string `json:"text"`
@@ -6259,9 +6263,18 @@ func modifySiteWithAI(
 
 ) (ModifySiteOutput, error) {
 
+	// Give each existing section a stable reference for this request, so media
+	// stays attached when the AI reorders or inserts services.
+	annotatedSite := input.Site
+	annotatedSite.Sections = append([]SiteSection(nil), input.Site.Sections...)
+	for index := range annotatedSite.Sections {
+		oldIndex := index
+		annotatedSite.Sections[index].SourceIndex = &oldIndex
+	}
+
 	currentJSON, err := json.MarshalIndent(
 
-		input.Site,
+		annotatedSite,
 
 		"",
 
@@ -6295,6 +6308,13 @@ PRINCIPE :
 - modifie uniquement ce qui est nécessaire pour répondre à la demande
 - conserve toutes les informations et tous les blocs non concernés
 - retourne toujours l'objet complet du site, même si une seule phrase change
+- chaque section de service existante conserve son sourceIndex du SITE ACTUEL, même si son titre ou sa position change
+- pour un nouveau service, définis sourceIndex à null ; ne réutilise jamais un sourceIndex deux fois
+- tu peux changer layoutOrder pour réorganiser les blocs, hiddenBlocks pour les masquer ou les afficher, et designSettings pour modifier l'apparence
+- utilise uniquement ces identifiants de blocs : about, services, process, faq, gallery, contact
+- conserve exactement layoutOrder, hiddenBlocks et designSettings lorsqu'aucun changement n'est demandé
+- ne crée pas de faux témoignages ; laisse la liste des avis vide lorsqu'aucun avis réel n'est fourni
+- une demande impliquant une fonctionnalité non représentée par ces champs ne doit pas être simulée en affirmant qu'elle est réalisée
 
 QUALITÉ :
 - français uniquement
@@ -6397,6 +6417,20 @@ Retourne le site complet après modification.`,
 
 		return ModifySiteOutput{}, err
 
+	}
+
+	// Discard invalid or duplicated AI references before returning the sections.
+	seenSourceIndexes := map[int]bool{}
+	for index := range result.Site.Sections {
+		sourceIndex := result.Site.Sections[index].SourceIndex
+		if sourceIndex == nil {
+			continue
+		}
+		if *sourceIndex < 0 || *sourceIndex >= len(input.Site.Sections) || seenSourceIndexes[*sourceIndex] {
+			result.Site.Sections[index].SourceIndex = nil
+			continue
+		}
+		seenSourceIndexes[*sourceIndex] = true
 	}
 
 	if strings.TrimSpace(
@@ -6971,7 +7005,7 @@ func modifiedSiteSchema() map[string]any {
 
 		"properties": map[string]any{
 
-			"site": siteSchema(),
+			"site": modifiedSiteDataSchema(),
 
 			"designStyle": map[string]any{
 
@@ -7003,6 +7037,52 @@ func modifiedSiteSchema() map[string]any {
 		},
 	}
 
+}
+
+// Keep initial generation's schema unchanged; only AI modifications can edit
+// layout, appearance and source references to existing service cards.
+func modifiedSiteDataSchema() map[string]any {
+	schema := siteSchema()
+	properties := schema["properties"].(map[string]any)
+	blocks := []string{"about", "services", "process", "faq", "gallery", "contact"}
+	properties["layoutOrder"] = map[string]any{"type": "array", "items": map[string]any{"type": "string", "enum": blocks}}
+	properties["hiddenBlocks"] = map[string]any{"type": "array", "items": map[string]any{"type": "string", "enum": blocks}}
+	properties["designSettings"] = modifiedDesignSettingsSchema()
+	properties["sections"] = modifiedSectionsSchema()
+	schema["required"] = append(schema["required"].([]string), "layoutOrder", "hiddenBlocks", "designSettings")
+	return schema
+}
+
+func modifiedSectionsSchema() map[string]any {
+	return map[string]any{
+		"type": "array",
+		"items": map[string]any{
+			"type": "object", "additionalProperties": false,
+			"properties": map[string]any{
+				"title": map[string]any{"type": "string"},
+				"text": map[string]any{"type": "string"},
+				"sourceIndex": map[string]any{"type": []string{"integer", "null"}},
+			},
+			"required": []string{"title", "text", "sourceIndex"},
+		},
+	}
+}
+
+func modifiedDesignSettingsSchema() map[string]any {
+	fields := []string{
+		"font", "buttonStyle", "cardStyle", "logoSize", "heroLayout",
+		"contentWidth", "spacing", "background", "titleScale", "textScale",
+		"titleWeight", "titleCase", "lineHeight", "cardRadius",
+		"shadowStrength", "imageRadius", "imageRatio", "imageFit", "buttonSize",
+	}
+	properties := make(map[string]any, len(fields))
+	for _, field := range fields {
+		properties[field] = map[string]any{"type": "string"}
+	}
+	return map[string]any{
+		"type": "object", "additionalProperties": false,
+		"properties": properties, "required": fields,
+	}
 }
 
 func siteSchema() map[string]any {
