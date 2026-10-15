@@ -1993,26 +1993,35 @@ export default function Home() {
         gallery: data.site.gallery?.length
           ? data.site.gallery
           : (site.gallery ?? []),
-        sections: (data.site.sections ?? []).map((section, index) => ({
-          ...section,
-          iconMode:
-            site.sections[index]?.iconMode ?? section.iconMode ?? "auto",
-          icon: site.sections[index]?.icon ?? section.icon ?? "",
-          imageMode:
-            site.sections[index]?.imageMode ?? section.imageMode ?? "auto",
-          imageUrl: site.sections[index]?.imageUrl ?? section.imageUrl ?? "",
-          hidden: site.sections[index]?.hidden ?? section.hidden ?? false,
-        })),
+        sections: (data.site.sections ?? []).map((section) => {
+          const sourceIndex = section.sourceIndex;
+          const original =
+            typeof sourceIndex === "number" &&
+            Number.isInteger(sourceIndex) &&
+            sourceIndex >= 0 &&
+            sourceIndex < site.sections.length
+              ? site.sections[sourceIndex]
+              : undefined;
+          return {
+            title: section.title,
+            text: section.text,
+            iconMode: original?.iconMode ?? "auto",
+            icon: original?.icon ?? "",
+            imageMode: original?.imageMode ?? "auto",
+            imageUrl: original?.imageUrl ?? "",
+            hidden: original?.hidden ?? false,
+          };
+        }),
         layoutOrder: normalizeLayoutOrder(
-          site.layoutOrder ?? data.site.layoutOrder,
+          data.site.layoutOrder ?? site.layoutOrder,
         ),
         hiddenBlocks: normalizeHiddenBlocks(
-          site.hiddenBlocks ?? data.site.hiddenBlocks,
+          data.site.hiddenBlocks ?? site.hiddenBlocks,
         ),
         designSettings: normalizeDesignSettings(
-          site.designSettings ?? data.site.designSettings,
+          { ...site.designSettings, ...data.site.designSettings },
         ),
-        testimonials: site.testimonials ?? data.site.testimonials ?? [],
+        testimonials: site.testimonials ?? [],
         serviceArea: site.serviceArea ?? data.site.serviceArea ?? city,
         openingHours: site.openingHours ?? data.site.openingHours ?? "",
         clientName: site.clientName ?? data.site.clientName ?? "",
@@ -2036,7 +2045,7 @@ export default function Home() {
         ...messages,
         {
           role: "assistant",
-          text: "Modification effectuée.",
+          text: "Réponse IA appliquée à l’aperçu. Vérifie les changements demandés avant de publier.",
         },
       ]);
     } catch (err) {
