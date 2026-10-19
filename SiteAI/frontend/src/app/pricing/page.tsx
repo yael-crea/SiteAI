@@ -194,6 +194,8 @@ export default function PricingPage() {
           );
         }
 
+        // The billing loader is stable for this one-time authenticated initialization.
+        // eslint-disable-next-line react-hooks/immutability
         await loadBilling();
       } catch (
         err
@@ -417,8 +419,9 @@ export default function PricingPage() {
         );
       }
 
-      window.location.href =
-        data.url;
+      window.location.assign(
+        data.url,
+      );
     } catch (
       err
     ) {
@@ -470,8 +473,9 @@ export default function PricingPage() {
         );
       }
 
-      window.location.href =
-        data.url;
+      window.location.assign(
+        data.url,
+      );
     } catch (
       err
     ) {
