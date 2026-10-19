@@ -134,6 +134,8 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
+    // This effect initializes the remote dashboard state on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadStats();
   }, []);
 
