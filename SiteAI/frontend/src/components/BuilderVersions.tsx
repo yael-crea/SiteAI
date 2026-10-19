@@ -7,6 +7,8 @@ export function useBuilderVersions<T>(storageKey: string | null, validate: (valu
   const [state, setState] = useState<{ key: string | null; entries: BuilderVersion<T>[] }>({key: null, entries: []});
   const [error, setError] = useState("");
   useEffect(() => {
+    // Reset the message whenever the selected local version store changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setError("");
     try { setState({key: storageKey, entries: storageKey ? readVersions(localStorage.getItem(storageKey), validate) : []}); }
     catch { setState({key: storageKey, entries: []}); setError("Les versions locales sont indisponibles sur cet appareil."); }
