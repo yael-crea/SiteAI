@@ -7849,7 +7849,7 @@ func billingEntitlements(status BillingStatus) PlanEntitlements {
 	case "essentiel":
 		return PlanEntitlements{
 			MaxPublishedSites:   1,
-			CustomDomainAllowed: false,
+			CustomDomainAllowed: true,
 		}
 
 	case "pro":
@@ -8727,7 +8727,39 @@ func syncStripeSubscription(
 		subscription.CancelAtPeriodEnd,
 	)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	subscriptionStatus := strings.ToLower(strings.TrimSpace(subscription.Status))
+	shouldUnpublish := subscriptionStatus == "canceled" ||
+		subscriptionStatus == "incomplete_expired" ||
+		subscriptionStatus == "unpaid"
+
+	if shouldUnpublish {
+		isAdmin, adminErr := isAdminUser(ctx, userID)
+		if adminErr != nil {
+			return adminErr
+		}
+
+		if !isAdmin {
+			_, err = db.Exec(
+				ctx,
+				`UPDATE sites
+				 SET published = FALSE,
+				     published_at = NULL,
+				     updated_at = NOW()
+				 WHERE user_id = $1::uuid
+				   AND published = TRUE;`,
+				userID,
+			)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func normalizeGrowthFields(site *GeneratedSite) {
