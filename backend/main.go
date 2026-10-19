@@ -6086,6 +6086,12 @@ Tu es le moteur de création de Lumio, un outil qui crée des sites vitrines pro
 
 Ta mission est de produire un contenu réellement adapté au métier, à la ville et aux services fournis. Deux entreprises de métiers différents ne doivent pas recevoir le même site avec seulement quelques mots remplacés.
 
+MÉTHODE DE TRAVAIL :
+- commence par identifier silencieusement le besoin client principal, les services réellement fournis et les informations factuelles disponibles
+- construis ensuite un angle éditorial propre à cette entreprise ; n'affiche jamais cette analyse
+- écris chaque bloc avec une fonction distincte : comprendre, choisir, être rassuré ou agir
+- termine par une relecture silencieuse de cohérence, de précision et de non-invention avant de produire le JSON
+
 OBJECTIFS :
 - donner immédiatement au visiteur une compréhension claire de l'activité
 - mettre en avant les services de façon concrète
@@ -6109,6 +6115,10 @@ RÈGLES ABSOLUES :
 - éviter les superlatifs non prouvés comme "le meilleur", "numéro 1", "leader"
 - éviter le remplissage générique et les phrases vagues
 - ne pas répéter la même idée dans plusieurs blocs
+- bannir les clichés interchangeables comme "à votre écoute", "solutions sur mesure", "savoir-faire reconnu", "qualité, réactivité et proximité" lorsqu'aucun élément concret ne les justifie
+- ne pas créer de rubrique "Avis clients" si aucun témoignage réel n'est fourni
+- ne pas transformer une rubrique éditoriale comme "Pourquoi nous choisir" en service commercial
+- chaque affirmation factuelle doit être directement issue des informations fournies ; sinon, la formuler comme une possibilité ou l'omettre
 
 PERSONNALISATION :
 - adapte le vocabulaire au secteur d'activité
@@ -6122,6 +6132,8 @@ PERSONNALISATION :
 - le CTA principal doit suivre l'action souhaitée quand elle est compatible avec les fonctionnalités réelles du site
 - si l'action souhaitée suppose une fonctionnalité non disponible, reformule vers une prise de contact cohérente au lieu de promettre cette fonctionnalité
 - les CTA doivent rester courts, naturels et spécifiques au métier
+- privilégier des verbes d'action concrets et un vocabulaire que les clients de ce métier utilisent réellement
+- varier la structure des titres et des phrases ; ne pas commencer plusieurs blocs de la même manière
 
 STRUCTURE À PRODUIRE :
 - metaTitle : titre SEO naturel, idéalement autour de 50 à 60 caractères
@@ -6140,6 +6152,13 @@ STRUCTURE À PRODUIRE :
 - contactText : 1 à 2 phrases pour encourager le contact sans fausse promesse
 
 Le résultat doit être directement publiable sur un site professionnel.
+
+BARRE DE QUALITÉ AVANT RETOUR :
+- le hero doit être impossible à réutiliser tel quel pour une entreprise d'un autre secteur
+- chaque section doit apporter une information nouvelle
+- aucun avantage ne doit ressembler à une preuve inventée
+- aucun texte ne doit mentionner une disponibilité, un délai, un tarif, une garantie ou une qualification absents du brief
+- le ton doit sembler écrit par un bon rédacteur humain, pas par un générateur de texte
 `
 
 	userPrompt := fmt.Sprintf(
@@ -6186,7 +6205,7 @@ Crée une version complète et réellement personnalisée du contenu du site en 
 
 		userPrompt,
 
-		"siteai_generated_site_v2",
+		"siteai_generated_site_v3",
 
 		generatedContentSchema(),
 	)
@@ -6297,6 +6316,8 @@ PRINCIPE :
 - modifie uniquement ce qui est nécessaire pour répondre à la demande
 - conserve toutes les informations et tous les blocs non concernés
 - retourne toujours l'objet complet du site, même si une seule phrase change
+- si la demande est ambiguë, applique la modification la plus petite, la plus sûre et la plus facilement réversible
+- relis silencieusement le résultat complet avant de retourner le JSON afin d'éviter contradictions et répétitions
 
 QUALITÉ :
 - français uniquement
@@ -6304,7 +6325,9 @@ QUALITÉ :
 - vocabulaire spécifique à l'activité lorsque c'est pertinent
 - référencement local naturel lorsque la demande concerne le contenu
 - éviter les répétitions, le jargon inutile et les formulations génériques
+- bannir les clichés interchangeables comme "à votre écoute", "solutions sur mesure" ou "savoir-faire reconnu" sans preuve concrète
 - si l'utilisateur demande une réécriture globale, harmonise hero, à propos, services, avantages, FAQ et contact
+- si l'utilisateur demande un texte plus professionnel, rends-le plus précis et plus crédible, sans le rendre plus long par défaut
 
 SÉCURITÉ DU CONTENU :
 - ne jamais inventer de certification, label ou qualification
@@ -6317,6 +6340,8 @@ SÉCURITÉ DU CONTENU :
 - ne jamais inventer de délai d'intervention
 - ne jamais inventer d'adresse, d'email ou d'information factuelle absente
 - éviter les superlatifs non prouvés
+- ne pas créer de rubrique "Avis clients" sans témoignages réels fournis
+- chaque nouvelle affirmation factuelle doit être traçable à la demande ou au site actuel
 
 DESIGN :
 - designStyle doit être exactement moderne, elegant ou artisan
@@ -6375,7 +6400,7 @@ Retourne le site complet après modification.`,
 
 		userPrompt,
 
-		"siteai_modified_site_v2",
+		"siteai_modified_site_v3",
 
 		modifiedSiteSchema(),
 	)
@@ -6586,12 +6611,23 @@ func calculateOpenAICostUSD(
 	var cacheWritePrice float64
 	var outputPrice float64
 
-	switch strings.ToLower(strings.TrimSpace(model)) {
-	case "gpt-5.6-luna":
+	normalizedModel := strings.ToLower(strings.TrimSpace(model))
+	switch {
+	case strings.HasPrefix(normalizedModel, "gpt-5.6-luna"):
 		inputPrice = 0.20
 		cachedInputPrice = 0.02
 		cacheWritePrice = 0.25
 		outputPrice = 1.20
+	case strings.HasPrefix(normalizedModel, "gpt-6-luna"):
+		inputPrice = 0.10
+		cachedInputPrice = 0.01
+		cacheWritePrice = 0.125
+		outputPrice = 0.50
+	case strings.HasPrefix(normalizedModel, "gpt-6.1-sol"):
+		inputPrice = 2.00
+		cachedInputPrice = 0.10
+		cacheWritePrice = 2.50
+		outputPrice = 10.00
 	default:
 		return 0, false
 	}
@@ -6697,13 +6733,7 @@ func callOpenAI(
 
 ) (string, error) {
 
-	model := os.Getenv("OPENAI_MODEL")
-
-	if model == "" {
-
-		model = "gpt-5.6-luna"
-
-	}
+	model := selectOpenAIModel(schemaName)
 
 	requestBody := map[string]any{
 
@@ -6728,6 +6758,12 @@ func callOpenAI(
 				"schema": schema,
 			},
 		},
+	}
+
+	if strings.HasPrefix(model, "gpt-5.6-") || strings.HasPrefix(model, "gpt-6") {
+		requestBody["reasoning"] = map[string]any{
+			"effort": "medium",
+		}
 	}
 
 	body, err := json.Marshal(requestBody)
@@ -6857,6 +6893,33 @@ func callOpenAI(
 
 }
 
+func selectOpenAIModel(schemaName string) string {
+	if strings.Contains(schemaName, "generated_site") {
+		if model := strings.TrimSpace(os.Getenv("OPENAI_GENERATION_MODEL")); model != "" {
+			return model
+		}
+	} else if model := strings.TrimSpace(os.Getenv("OPENAI_MODIFICATION_MODEL")); model != "" {
+		return model
+	}
+
+	if model := strings.TrimSpace(os.Getenv("OPENAI_MODEL")); model != "" {
+		return model
+	}
+
+	if strings.Contains(schemaName, "generated_site") {
+		return "gpt-6.1-sol"
+	}
+
+	return "gpt-6-luna"
+}
+
+func aiStringSchema(description string) map[string]any {
+	return map[string]any{
+		"type":        "string",
+		"description": description,
+	}
+}
+
 func generatedContentSchema() map[string]any {
 
 	return map[string]any{
@@ -6867,50 +6930,23 @@ func generatedContentSchema() map[string]any {
 
 		"properties": map[string]any{
 
-			"metaTitle": map[string]any{
+			"metaTitle": aiStringSchema("Titre SEO naturel contenant l'activité ou l'entreprise et la ville, sans slogan générique."),
 
-				"type": "string",
-			},
+			"metaDescription": aiStringSchema("Résumé SEO précis de la proposition de valeur et de la zone géographique, sans promesse inventée."),
 
-			"metaDescription": map[string]any{
+			"heroEyebrow": aiStringSchema("Repère très court combinant naturellement activité et localisation."),
 
-				"type": "string",
-			},
+			"heroTitle": aiStringSchema("Titre principal distinctif, concret et orienté vers le besoin prioritaire du client."),
 
-			"heroEyebrow": map[string]any{
+			"heroText": aiStringSchema("Une ou deux phrases expliquant clairement l'offre, le public et l'intérêt de contacter l'entreprise."),
 
-				"type": "string",
-			},
+			"primaryCta": aiStringSchema("Action principale courte, concrète et compatible avec les fonctions réelles du site."),
 
-			"heroTitle": map[string]any{
+			"secondaryCta": aiStringSchema("Action secondaire courte et différente de l'action principale."),
 
-				"type": "string",
-			},
+			"aboutTitle": aiStringSchema("Titre de présentation spécifique à l'entreprise, sans cliché publicitaire."),
 
-			"heroText": map[string]any{
-
-				"type": "string",
-			},
-
-			"primaryCta": map[string]any{
-
-				"type": "string",
-			},
-
-			"secondaryCta": map[string]any{
-
-				"type": "string",
-			},
-
-			"aboutTitle": map[string]any{
-
-				"type": "string",
-			},
-
-			"aboutText": map[string]any{
-
-				"type": "string",
-			},
+			"aboutText": aiStringSchema("Deux ou trois phrases factuelles présentant l'activité et l'approche sans inventer d'historique."),
 
 			"sections": sectionsSchema(),
 
@@ -6918,15 +6954,9 @@ func generatedContentSchema() map[string]any {
 
 			"faq": faqSchema(),
 
-			"contactTitle": map[string]any{
+			"contactTitle": aiStringSchema("Titre de prise de contact naturel et spécifique au projet du visiteur."),
 
-				"type": "string",
-			},
-
-			"contactText": map[string]any{
-
-				"type": "string",
-			},
+			"contactText": aiStringSchema("Une ou deux phrases indiquant clairement quoi communiquer et ce qui se passera ensuite, sans délai inventé."),
 		},
 
 		"required": []string{
@@ -7017,65 +7047,29 @@ func siteSchema() map[string]any {
 
 		"properties": map[string]any{
 
-			"businessName": map[string]any{
+			"businessName": aiStringSchema("Nom de l'entreprise, à conserver sauf demande explicite."),
 
-				"type": "string",
-			},
+			"slug": aiStringSchema("Identifiant d'URL existant, à conserver sauf renommage explicite."),
 
-			"slug": map[string]any{
+			"metaTitle": aiStringSchema("Titre SEO naturel, précis et localisé."),
 
-				"type": "string",
-			},
+			"metaDescription": aiStringSchema("Résumé SEO clair sans affirmation factuelle nouvelle."),
 
-			"metaTitle": map[string]any{
+			"heroEyebrow": aiStringSchema("Repère très court combinant activité et localisation."),
 
-				"type": "string",
-			},
+			"heroTitle": aiStringSchema("Titre principal concret et distinctif."),
 
-			"metaDescription": map[string]any{
+			"heroText": aiStringSchema("Proposition de valeur claire en une ou deux phrases."),
 
-				"type": "string",
-			},
+			"primaryCta": aiStringSchema("Action principale courte et réalisable sur le site."),
 
-			"heroEyebrow": map[string]any{
+			"secondaryCta": aiStringSchema("Action secondaire courte et complémentaire."),
 
-				"type": "string",
-			},
+			"phone": aiStringSchema("Téléphone existant, à conserver sauf demande explicite."),
 
-			"heroTitle": map[string]any{
+			"aboutTitle": aiStringSchema("Titre de présentation spécifique et sans cliché."),
 
-				"type": "string",
-			},
-
-			"heroText": map[string]any{
-
-				"type": "string",
-			},
-
-			"primaryCta": map[string]any{
-
-				"type": "string",
-			},
-
-			"secondaryCta": map[string]any{
-
-				"type": "string",
-			},
-
-			"phone": map[string]any{
-
-				"type": "string",
-			},
-
-			"aboutTitle": map[string]any{
-
-				"type": "string",
-			},
-
-			"aboutText": map[string]any{
-
-				"type": "string",
-			},
+			"aboutText": aiStringSchema("Présentation factuelle de l'activité et de l'approche."),
 
 			"sections": sectionsSchema(),
 
@@ -7083,15 +7077,9 @@ func siteSchema() map[string]any {
 
 			"faq": faqSchema(),
 
-			"contactTitle": map[string]any{
+			"contactTitle": aiStringSchema("Titre de contact adapté au besoin du visiteur."),
 
-				"type": "string",
-			},
-
-			"contactText": map[string]any{
-
-				"type": "string",
-			},
+			"contactText": aiStringSchema("Texte de contact clair, utile et sans promesse inventée."),
 		},
 
 		"required": []string{
@@ -7140,6 +7128,12 @@ func sectionsSchema() map[string]any {
 
 		"type": "array",
 
+		"description": "Quatre à six services ou besoins clients distincts, ordonnés par importance commerciale.",
+
+		"minItems": 4,
+
+		"maxItems": 6,
+
 		"items": map[string]any{
 
 			"type": "object",
@@ -7148,15 +7142,9 @@ func sectionsSchema() map[string]any {
 
 			"properties": map[string]any{
 
-				"title": map[string]any{
+				"title": aiStringSchema("Nom précis d'un service ou d'un besoin client ; jamais un titre générique comme Pourquoi nous choisir."),
 
-					"type": "string",
-				},
-
-				"text": map[string]any{
-
-					"type": "string",
-				},
+				"text": aiStringSchema("Explication concrète, utile et distincte des autres sections, sans modalité inventée."),
 			},
 
 			"required": []string{
@@ -7176,6 +7164,12 @@ func benefitsSchema() map[string]any {
 
 		"type": "array",
 
+		"description": "Exactement trois bénéfices crédibles portant sur la méthode, la clarté ou la simplicité du parcours client.",
+
+		"minItems": 3,
+
+		"maxItems": 3,
+
 		"items": map[string]any{
 
 			"type": "object",
@@ -7184,15 +7178,9 @@ func benefitsSchema() map[string]any {
 
 			"properties": map[string]any{
 
-				"title": map[string]any{
+				"title": aiStringSchema("Bénéfice court, précis et non présenté comme une preuve non fournie."),
 
-					"type": "string",
-				},
-
-				"text": map[string]any{
-
-					"type": "string",
-				},
+				"text": aiStringSchema("Explication concrète de ce bénéfice pour le client."),
 			},
 
 			"required": []string{
@@ -7212,6 +7200,12 @@ func faqSchema() map[string]any {
 
 		"type": "array",
 
+		"description": "Exactement quatre questions fréquentes réellement utiles avant une prise de contact.",
+
+		"minItems": 4,
+
+		"maxItems": 4,
+
 		"items": map[string]any{
 
 			"type": "object",
@@ -7220,15 +7214,9 @@ func faqSchema() map[string]any {
 
 			"properties": map[string]any{
 
-				"question": map[string]any{
+				"question": aiStringSchema("Question naturelle et spécifique qu'un prospect de ce métier peut réellement se poser."),
 
-					"type": "string",
-				},
-
-				"answer": map[string]any{
-
-					"type": "string",
-				},
+				"answer": aiStringSchema("Réponse utile et prudente ; inviter au contact lorsque la réponse dépend de l'entreprise ou du projet."),
 			},
 
 			"required": []string{
@@ -8941,3 +8929,4 @@ func writeJSON(
 	}
 
 }
+
