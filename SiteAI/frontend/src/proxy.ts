@@ -4,6 +4,11 @@ import {
   NextResponse,
 } from "next/server";
 
+const LUMIO_DOMAINS = new Set([
+  "lumio.business",
+  "www.lumio.business",
+]);
+
 function normalizeHost(
   host: string,
 ) {
@@ -20,6 +25,10 @@ function isSiteAIDomain(
     host === "localhost" ||
     host === "127.0.0.1"
   ) {
+    return true;
+  }
+
+  if (LUMIO_DOMAINS.has(host)) {
     return true;
   }
 
@@ -74,3 +83,4 @@ export function proxy(
 export const config = {
   matcher: ["/"],
 };
+
