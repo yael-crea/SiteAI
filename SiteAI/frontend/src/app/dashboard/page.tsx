@@ -139,7 +139,7 @@ function formatBillingDate(value?: string) {
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleDateString("fr-FR", {
     day: "2-digit",
-    month: "long",
+    month: "short",
     year: "numeric",
   });
 }
@@ -1052,7 +1052,7 @@ export default function DashboardPage() {
               {mobileMenuOpen ? "✕" : "☰"}
             </button>
 
-            <div className="hidden items-center gap-3 md:flex">
+            <div className="hidden items-center gap-2 md:flex">
               <div className="hidden text-right xl:block">
                 <p className="text-xs text-slate-500">Connecté avec</p>
                 <p className="text-sm font-medium">{userEmail}</p>
@@ -1062,7 +1062,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/admin")}
-                  className="rounded-xl border border-amber-700 px-4 py-2 text-sm font-bold text-amber-300 transition hover:bg-amber-950"
+                  className="rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-sm font-bold text-slate-200 transition hover:border-amber-500 hover:text-amber-300"
                 >
                   ⚙️ Admin
                 </button>
@@ -1071,7 +1071,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => router.push("/prospects")}
-                className="relative rounded-xl border border-emerald-800 px-4 py-2 text-sm font-bold text-emerald-300 transition hover:bg-emerald-950"
+                className="relative rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-sm font-bold text-slate-200 transition hover:border-emerald-500"
               >
                 📥 Prospects
                 {!leadsLoading && newLeadsCount > 0 && (
@@ -1084,7 +1084,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => router.push("/pricing")}
-                className="rounded-xl border border-violet-700 px-4 py-2 text-sm font-bold text-violet-300 transition hover:bg-violet-950"
+                className="rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-sm font-bold text-slate-200 transition hover:border-violet-500"
               >
                 💳 Abonnement
               </button>
@@ -1100,7 +1100,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-xl border border-red-900 px-4 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-950"
+                className="rounded-xl border border-transparent px-3 py-2 text-sm font-semibold text-slate-400 transition hover:border-red-900 hover:bg-red-950/40 hover:text-red-300"
               >
                 Déconnexion
               </button>
@@ -1165,37 +1165,37 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={createSite}
-            className="rounded-xl bg-blue-600 px-6 py-3 font-bold transition hover:bg-blue-500"
+            className="rounded-xl bg-blue-600 px-6 py-3 font-bold shadow-lg shadow-blue-950/40 transition hover:-translate-y-0.5 hover:bg-blue-500"
           >
             + Créer un nouveau site
           </button>
         </div>
 
-        <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-7 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
           <button
             type="button"
             onClick={() => setFilter("all")}
-            className={`rounded-2xl border p-4 text-left transition ${
+            className={`rounded-2xl border p-3 text-left transition sm:p-4 ${
               filter === "all"
                 ? "border-blue-500 bg-blue-500/10"
                 : "border-slate-800 bg-slate-900 hover:border-slate-700"
             }`}
           >
             <p className="text-sm text-slate-400">Tous les sites</p>
-            <p className="mt-1 text-3xl font-black">{sites.length}</p>
+            <p className="mt-1 text-2xl font-black sm:text-3xl">{sites.length}</p>
           </button>
 
           <button
             type="button"
             onClick={() => setFilter("published")}
-            className={`rounded-2xl border p-4 text-left transition ${
+            className={`rounded-2xl border p-3 text-left transition sm:p-4 ${
               filter === "published"
                 ? "border-emerald-500 bg-emerald-500/10"
                 : "border-slate-800 bg-slate-900 hover:border-slate-700"
             }`}
           >
             <p className="text-sm text-slate-400">Publiés</p>
-            <p className="mt-1 text-3xl font-black text-emerald-400">
+            <p className="mt-1 text-2xl font-black text-emerald-400 sm:text-3xl">
               {publishedSites}
             </p>
           </button>
@@ -1203,14 +1203,14 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => setFilter("draft")}
-            className={`rounded-2xl border p-4 text-left transition ${
+            className={`rounded-2xl border p-3 text-left transition sm:p-4 ${
               filter === "draft"
                 ? "border-amber-500 bg-amber-500/10"
                 : "border-slate-800 bg-slate-900 hover:border-slate-700"
             }`}
           >
             <p className="text-sm text-slate-400">Brouillons</p>
-            <p className="mt-1 text-3xl font-black text-amber-400">
+            <p className="mt-1 text-2xl font-black text-amber-400 sm:text-3xl">
               {draftSites}
             </p>
           </button>
@@ -1218,18 +1218,18 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => router.push("/prospects")}
-            className="rounded-2xl border border-emerald-900 bg-emerald-950/20 p-4 text-left transition hover:border-emerald-500"
+            className="rounded-2xl border border-slate-800 bg-slate-900 p-3 text-left transition hover:border-emerald-500 sm:p-4"
           >
-            <p className="text-sm text-emerald-300">Prospects</p>
+            <p className="text-sm text-slate-400">Prospects</p>
 
             {leadsLoading ? (
               <p className="mt-3 text-sm text-slate-500">Chargement...</p>
             ) : (
               <>
-                <p className="mt-1 text-3xl font-black text-emerald-400">
+                <p className="mt-1 text-2xl font-black text-emerald-400 sm:text-3xl">
                   {newLeadsCount}
                 </p>
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 hidden text-xs text-slate-400 sm:block">
                   {leads.length} demande{leads.length > 1 ? "s" : ""} au total
                 </p>
               </>
@@ -1239,15 +1239,15 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => router.push("/pricing")}
-            className="rounded-2xl border border-violet-800 bg-violet-950/30 p-4 text-left transition hover:border-violet-500"
+            className="col-span-2 rounded-2xl border border-slate-800 bg-slate-900 p-3 text-left transition hover:border-violet-500 sm:col-span-1 sm:p-4"
           >
-            <p className="text-sm text-violet-300">Abonnement</p>
+            <p className="text-sm text-slate-400">Abonnement</p>
 
             {billingLoading ? (
               <p className="mt-3 text-sm text-slate-500">Chargement...</p>
             ) : (
               <>
-                <p className="mt-2 text-2xl font-black">{planName}</p>
+                <p className="mt-1 text-2xl font-black text-violet-300">{planName}</p>
                 <p
                   className={`mt-2 text-sm font-semibold ${
                     subscriptionActive
@@ -1257,55 +1257,16 @@ export default function DashboardPage() {
                 >
                   {billingStatus}
                 </p>
+                {billing?.currentPeriodEnd && (
+                  <p className="mt-1 text-xs text-slate-400">
+                    {billing.cancelAtPeriodEnd ? "Fin le " : "Renouvellement le "}
+                    {formatBillingDate(billing.currentPeriodEnd)}
+                  </p>
+                )}
               </>
             )}
           </button>
         </div>
-
-        {!billingLoading && (
-          <div className="mt-4 rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4">
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                  Formule actuelle
-                </p>
-
-                <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <p className="text-xl font-black">{planName}</p>
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${
-                      subscriptionActive
-                        ? "bg-emerald-500/10 text-emerald-400"
-                        : "bg-slate-800 text-slate-400"
-                    }`}
-                  >
-                    {billingStatus}
-                  </span>
-                </div>
-
-                {billing?.currentPeriodEnd && (
-                  <p className="mt-2 text-sm text-slate-500">
-                    {billing.cancelAtPeriodEnd
-                      ? "Fin de l’abonnement prévue le "
-                      : "Prochain renouvellement : "}
-                    {formatBillingDate(billing.currentPeriodEnd)}
-                  </p>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => router.push("/pricing")}
-                className="rounded-xl border border-violet-700 px-5 py-3 text-sm font-bold text-violet-300 hover:bg-violet-950"
-              >
-                {subscriptionActive
-                  ? "Gérer mon abonnement"
-                  : "Voir les formules"}
-              </button>
-            </div>
-          </div>
-        )}
 
         <section className="mt-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -1313,8 +1274,8 @@ export default function DashboardPage() {
               <p className="text-xs font-black uppercase tracking-[0.25em] text-blue-400">
                 Sites
               </p>
-              <h2 className="mt-2 text-2xl font-black">Tes sites</h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <h2 className="mt-2 text-2xl font-black">Mes sites</h2>
+              <p className="mt-1 text-sm text-slate-400">
                 Accède directement aux sites que tu gères le plus récemment.
               </p>
             </div>
@@ -1322,7 +1283,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => router.push("/sites")}
-              className="rounded-xl border border-blue-800 px-4 py-2 text-sm font-bold text-blue-300 transition hover:bg-blue-950"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-bold text-slate-200 transition hover:border-blue-500"
             >
               Voir tous les sites →
             </button>
@@ -1335,7 +1296,7 @@ export default function DashboardPage() {
           ) : sites.length === 0 ? (
             <div className="mt-5 rounded-2xl border border-dashed border-slate-700 bg-slate-900/60 p-7 text-center">
               <p className="font-black">Aucun site pour le moment</p>
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-slate-400">
                 Crée ton premier site avec Lumio.
               </p>
               <button
@@ -1418,7 +1379,7 @@ export default function DashboardPage() {
                 Pipeline commercial
               </h2>
 
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-slate-400">
                 Prospects créés sur 30 jours, classés selon leur statut actuel.
               </p>
             </div>
@@ -1426,14 +1387,14 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => router.push("/prospects")}
-              className="rounded-xl border border-emerald-800 px-4 py-2 text-sm font-bold text-emerald-300 hover:bg-emerald-950"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-bold text-slate-200 hover:border-emerald-500"
             >
               Ouvrir le CRM →
             </button>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-5">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
               <p className="text-sm text-slate-400">
                 Prospects créés
               </p>
@@ -1445,8 +1406,8 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-4">
-              <p className="text-sm text-blue-300">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+              <p className="text-sm text-slate-400">
                 Devis envoyés
               </p>
               <p className="mt-1 text-2xl font-black text-blue-400">
@@ -1457,8 +1418,8 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-4">
-              <p className="text-sm text-emerald-300">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+              <p className="text-sm text-slate-400">
                 Gagnés
               </p>
               <p className="mt-1 text-2xl font-black text-emerald-400">
@@ -1469,8 +1430,8 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-red-900/70 bg-red-950/20 p-4">
-              <p className="text-sm text-red-300">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+              <p className="text-sm text-slate-400">
                 Perdus
               </p>
               <p className="mt-1 text-2xl font-black text-red-400">
@@ -1481,8 +1442,8 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-4">
-              <p className="text-sm text-violet-300">
+            <div className="col-span-2 rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:col-span-1 sm:p-4">
+              <p className="text-sm text-slate-400">
                 Conversion commerciale
               </p>
               <p className="mt-1 text-2xl font-black text-violet-400">
@@ -1494,9 +1455,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-4">
-              <p className="text-sm text-violet-300">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+              <p className="text-sm text-slate-400">
                 Pipeline ouvert
               </p>
 
@@ -1511,8 +1472,8 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-4">
-              <p className="text-sm text-emerald-300">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+              <p className="text-sm text-slate-400">
                 CA gagné
               </p>
 
@@ -1527,8 +1488,8 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-red-900/70 bg-red-950/20 p-4">
-              <p className="text-sm text-red-300">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+              <p className="text-sm text-slate-400">
                 CA perdu
               </p>
 
@@ -1543,8 +1504,8 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-4">
-              <p className="text-sm text-blue-300">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+              <p className="text-sm text-slate-400">
                 Devis moyen
               </p>
 
@@ -1953,9 +1914,9 @@ export default function DashboardPage() {
             </div>
           ) : analytics ? (
             <>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border border-cyan-900/70 bg-cyan-950/20 p-4">
-                  <p className="text-sm text-cyan-300">
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+                  <p className="text-sm text-slate-400">
                     Visiteurs uniques
                   </p>
 
@@ -1968,8 +1929,8 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-blue-900/70 bg-blue-950/20 p-4">
-                  <p className="text-sm text-blue-300">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+                  <p className="text-sm text-slate-400">
                     Pages vues
                   </p>
 
@@ -1982,8 +1943,8 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-emerald-900/70 bg-emerald-950/20 p-4">
-                  <p className="text-sm text-emerald-300">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+                  <p className="text-sm text-slate-400">
                     Prospects
                   </p>
 
@@ -1996,8 +1957,8 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-violet-900/70 bg-violet-950/20 p-4">
-                  <p className="text-sm text-violet-300">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+                  <p className="text-sm text-slate-400">
                     Conversion
                   </p>
 
@@ -2023,9 +1984,9 @@ export default function DashboardPage() {
                     {analytics.sites.map((siteStats) => (
                       <div
                         key={siteStats.siteId}
-                        className="grid gap-3 px-5 py-4 md:grid-cols-[1.5fr_repeat(4,minmax(90px,1fr))] md:items-center"
+                        className="grid grid-cols-2 gap-3 px-5 py-4 md:grid-cols-[1.5fr_repeat(4,minmax(90px,1fr))] md:items-center"
                       >
-                        <div>
+                        <div className="col-span-2 md:col-span-1">
                           <p className="font-bold">
                             {siteStats.businessName}
                           </p>
@@ -2159,3 +2120,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+
