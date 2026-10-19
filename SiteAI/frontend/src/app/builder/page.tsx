@@ -1721,6 +1721,8 @@ export default function Home() {
 
         setAuthLoading(false);
 
+        // These loaders are stable for this one-time authenticated initialization.
+        // eslint-disable-next-line react-hooks/immutability
         await loadSavedSites();
 
         const selectedTemplate = readExampleTemplate();
@@ -1750,6 +1752,8 @@ export default function Home() {
           const siteID = Number(siteToOpen);
 
           if (Number.isInteger(siteID) && siteID > 0) {
+            // The saved-site loader is stable for this one-time session handoff.
+            // eslint-disable-next-line react-hooks/immutability
             await openSavedSite(siteID);
           }
         }
