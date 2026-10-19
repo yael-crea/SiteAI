@@ -6,7 +6,7 @@ const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || "https://siteai-producti
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (!IS_INDEXABLE) return [];
-  const pages: MetadataRoute.Sitemap = ["", "/pricing", "/exemples", "/cgv", "/cgu", "/mentions-legales", "/confidentialite"]
+  const pages: MetadataRoute.Sitemap = ["", "/exemples", "/cgv", "/cgu", "/mentions-legales", "/confidentialite"]
     .map(path => ({ url: `${SITE_URL}${path}` }));
   try {
     const response = await fetch(`${BACKEND_URL}/public-sitemap-sites`, {
