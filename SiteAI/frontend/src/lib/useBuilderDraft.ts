@@ -146,6 +146,8 @@ export function useBuilderDraft<T>({ storageKey, value, onRestore, enabled, vali
   useEffect(() => {
     if (!enabled || !storageKey) {
       sessionRef.current = null;
+      // Reset the state machine when the draft document is disabled or removed.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus("idle");
       setError(null);
       setSavedAt(null);
@@ -214,6 +216,8 @@ export function useBuilderDraft<T>({ storageKey, value, onRestore, enabled, vali
     if (serialized === null) {
       cancelTimer(session);
       session.pending = null;
+      // Surface serialization failures as part of the draft state machine.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus("error");
       setError("Ce brouillon ne peut pas être enregistré. Enregistrez votre site avec le bouton Enregistrer.");
       return;
