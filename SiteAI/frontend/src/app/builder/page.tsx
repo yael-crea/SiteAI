@@ -1299,6 +1299,8 @@ export default function Home() {
   const [phone, setPhone] = useState("");
 
   const [services, setServices] = useState("");
+  const [showAllServiceSuggestions, setShowAllServiceSuggestions] =
+    useState(false);
 
   const [siteGoal, setSiteGoal] = useState("obtenir des demandes de devis");
 
@@ -3477,13 +3479,13 @@ export default function Home() {
       data-siteai-builder
       className="min-h-screen overflow-x-hidden bg-slate-950 text-white"
     >
-      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
-        <div className="mx-auto max-w-[1800px] px-4 py-4 lg:px-6">
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 backdrop-blur-xl">
+        <div className="mx-auto max-w-[1800px] px-4 py-2.5 lg:px-6">
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={returnToDashboard}
-              className="shrink-0 text-2xl font-black"
+              className="shrink-0 text-xl font-black tracking-tight"
             >
               Lum
               <span className="text-blue-500">io</span>
@@ -3501,7 +3503,7 @@ export default function Home() {
               {builderMobileMenuOpen ? "✕" : "☰"}
             </button>
 
-            <div className="hidden items-center gap-4 md:flex">
+            <div className="hidden items-center gap-2 md:flex">
               <div className="hidden text-right xl:block">
                 <p className="text-xs text-slate-500">Connecté avec</p>
 
@@ -3511,7 +3513,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={returnToDashboard}
-                className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold hover:border-blue-500"
+                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-blue-500"
               >
                 Mes sites
               </button>
@@ -3519,7 +3521,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={createNewSite}
-                className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold hover:border-blue-500"
+                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-950/30 hover:bg-blue-500"
               >
                 + Nouveau site
               </button>
@@ -3527,7 +3529,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-xl border border-red-900 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-950"
+                className="rounded-lg border border-transparent px-3 py-2 text-xs font-semibold text-slate-400 hover:border-red-900 hover:bg-red-950/40 hover:text-red-300"
               >
                 Déconnexion
               </button>
@@ -3584,32 +3586,34 @@ export default function Home() {
         </div>
       </header>
 
-      {site && (
-        <SaveStatus
-          hasUnsavedChanges={hasUnsavedChanges}
-          saving={saving}
-          publishing={publishing}
-          busy={busy}
-          published={Boolean(openedSite?.published)}
-          pendingPublication={Boolean(
-            openedSite?.published &&
-              openedSite.draftRevision !== openedSite.publishedRevision,
-          )}
-          error={Boolean(saveError || saveConflict)}
-          localStatus={draft.status}
-          onSave={saveCurrentSite}
-        />
-      )}
-      <AIUsage ready={Boolean(draftUserId)} busy={busy} />
+      <div className="shrink-0 bg-slate-900/60 md:flex md:items-stretch">
+        {site && (
+          <SaveStatus
+            hasUnsavedChanges={hasUnsavedChanges}
+            saving={saving}
+            publishing={publishing}
+            busy={busy}
+            published={Boolean(openedSite?.published)}
+            pendingPublication={Boolean(
+              openedSite?.published &&
+                openedSite.draftRevision !== openedSite.publishedRevision,
+            )}
+            error={Boolean(saveError || saveConflict)}
+            localStatus={draft.status}
+            onSave={saveCurrentSite}
+          />
+        )}
+        <AIUsage ready={Boolean(draftUserId)} busy={busy} />
+      </div>
       <nav
         aria-label="Outils du builder"
-        className="hidden shrink-0 items-center gap-2 overflow-x-auto border-b border-slate-800 bg-slate-900/60 px-5 py-3 md:flex"
+        className="hidden shrink-0 items-center gap-1.5 overflow-x-auto border-b border-slate-800 bg-slate-950/80 px-4 py-2 md:flex"
       >
         {(
           [
             ["infos", "1 · Informations"],
             ["contenu", "2 · Contenu"],
-            ["apparence", "3 · Design"],
+            ["apparence", "3 · Apparence"],
             ["apercu", "4 · Aperçu"],
             ["publication", "5 · Publier"],
           ] as const
@@ -3623,13 +3627,72 @@ export default function Home() {
               setDesktopPanel(value);
               setEditorCollapsed(false);
             }}
-            className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-30 ${activeDesktopPanel === value ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}
+            className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition disabled:opacity-30 ${activeDesktopPanel === value ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
           >
             {label}
           </button>
         ))}
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 border-l border-slate-800 pl-2">
+          <button
+            type="button"
+            aria-pressed={advancedMode}
+            onClick={() => setAdvancedMode((value) => !value)}
+            className={`rounded-lg border px-2.5 py-2 text-xs font-semibold ${advancedMode ? "border-blue-500 bg-blue-500/10 text-blue-200" : "border-slate-700 text-slate-300"}`}
+          >
+            {advancedMode ? "Mode simple" : "Réglages avancés"}
+          </button>
+          <button
+            type="button"
+            title="Annuler"
+            aria-label="Annuler"
+            disabled={!draft.canUndo || busy}
+            onClick={draft.undo}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-sm font-bold text-slate-300 disabled:opacity-30"
+          >
+            ↶
+          </button>
+          <button
+            type="button"
+            title="Rétablir"
+            aria-label="Rétablir"
+            disabled={!draft.canRedo || busy}
+            onClick={draft.redo}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-sm font-bold text-slate-300 disabled:opacity-30"
+          >
+            ↷
+          </button>
+          {site && (
+            <button
+              type="button"
+              aria-pressed={previewEditing}
+              onClick={() => setPreviewEditing((value) => !value)}
+              className={`rounded-lg border px-2.5 py-2 text-xs font-semibold ${previewEditing ? "border-blue-400 bg-blue-500/10 text-blue-200" : "border-slate-700 text-slate-300"}`}
+            >
+              Édition directe
+            </button>
+          )}
+          {site && (
+            <AccountVersions
+              siteId={savedSiteID}
+              disabled={busy}
+              load={loadAccountVersions}
+              restore={restoreAccountVersion}
+            />
+          )}
+          {site && (
+            <BuilderVersions
+              entries={versions.entries}
+              error={versions.error}
+              disabled={busy || !draftReady}
+              onSave={() =>
+                versions.checkpoint(draftSnapshot, "Version conservée")
+              }
+              onRestore={restoreVersion}
+            />
+          )}
+        </div>
         <select
-          aria-label="Autres outils"
+          aria-label="Outils complémentaires"
           value={
             ["ia", "sites"].includes(activeDesktopPanel)
               ? activeDesktopPanel
@@ -3641,24 +3704,24 @@ export default function Home() {
               setEditorCollapsed(false);
             }
           }}
-          className="ml-auto min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+          className="min-w-0 shrink-0 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200"
         >
-          <option value="">Autres outils</option>
+          <option value="">Outils</option>
           <option value="ia" disabled={!site}>
             Assistant IA
           </option>
           <option value="sites">Mes sites</option>
         </select>
       </nav>
-      <div className="shrink-0 border-b border-slate-800/80 bg-slate-950/80 px-4 py-2 text-slate-300">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="shrink-0 border-b border-slate-800/80 bg-slate-950/80 px-4 py-2 text-slate-300 md:hidden">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&>*]:shrink-0">
           <button
             type="button"
             aria-pressed={advancedMode}
             onClick={() => setAdvancedMode((value) => !value)}
             className="rounded-lg border border-blue-700 px-3 py-2 text-xs font-semibold"
           >
-            {advancedMode ? "Revenir au mode simple" : "Options avancées"}
+            {advancedMode ? "Mode simple" : "Réglages"}
           </button>
           <button
             type="button"
@@ -3683,9 +3746,7 @@ export default function Home() {
               onClick={() => setPreviewEditing((value) => !value)}
               className={`rounded-lg border px-3 py-2 text-xs font-semibold ${previewEditing ? "border-blue-400 bg-blue-500/10 text-blue-200" : "border-slate-700"}`}
             >
-              {previewEditing
-                ? "Modifier en cliquant : actif"
-                : "Modifier en cliquant"}
+              {previewEditing ? "Édition directe : active" : "Édition directe"}
             </button>
           )}
           {site && (
@@ -3764,7 +3825,7 @@ export default function Home() {
           </div>
         )}
       </div>
-      <div className="px-4 pt-5 md:hidden">
+      <div className="px-4 pt-3 md:hidden">
         <nav
           aria-label="Étapes de création du site"
           className="grid grid-cols-5 gap-1"
@@ -3776,7 +3837,7 @@ export default function Home() {
               aria-current={mobileStep === index ? "step" : undefined}
               disabled={index > 0 && !site}
               onClick={() => navigateMobileStep(index)}
-              className={`min-h-14 min-w-0 rounded-xl px-1 py-2 text-[10px] font-bold disabled:opacity-35 ${mobileStep === index ? "bg-blue-600 text-white" : "bg-slate-900 text-slate-300"}`}
+              className={`min-h-12 min-w-0 rounded-xl px-1 py-1.5 text-[10px] font-bold disabled:opacity-35 ${mobileStep === index ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "bg-slate-900 text-slate-300"}`}
             >
               <span className="mb-1 block text-sm">{index + 1}</span>
               {label}
@@ -3786,7 +3847,7 @@ export default function Home() {
         <h1
           ref={mobileHeadingRef}
           tabIndex={-1}
-          className="mt-5 scroll-mt-4 text-2xl font-bold outline-none"
+          className="mt-4 scroll-mt-4 text-2xl font-bold outline-none"
         >
           {mobileSteps[mobileStep]}
         </h1>
@@ -3833,9 +3894,9 @@ export default function Home() {
           [data-siteai-builder] > :not([data-builder-section]) { flex-shrink: 0; }
           [data-siteai-builder] > header { flex-shrink: 0; }
           [data-siteai-builder] > header > div { max-width: none; padding-top: .65rem; padding-bottom: .65rem; }
-          [data-builder-section] { display: flex; flex-direction: column; width: 100%; max-width: none; flex: 1; min-height: 0; overflow: hidden; padding: .75rem; }
+          [data-builder-section] { display: flex; flex-direction: column; width: 100%; max-width: none; flex: 1; min-height: 0; overflow: hidden; padding: .625rem .75rem .75rem; }
           [data-builder-section] > [data-mobile-hide] { display: none; }
-          [data-builder-grid] { flex: 1; width: 100%; height: 100%; min-height: 0; grid-template-columns: minmax(360px, 35%) minmax(0, 65%); gap: 1rem; }
+          [data-builder-grid] { flex: 1; width: 100%; height: 100%; min-height: 0; grid-template-columns: minmax(390px, 38%) minmax(0, 62%); gap: .75rem; }
           [data-builder-editor] { display: block; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: .25rem; }
           [data-builder-editor] > * { display: none; margin: 0; }
           [data-builder-editor] { overflow-x: hidden; }
@@ -3844,7 +3905,7 @@ export default function Home() {
           [data-desktop-panel="ia"] [data-desktop-ai],
           [data-desktop-panel="publication"] [data-mobile-panel="publication"],
           [data-desktop-panel="contenu"] [data-mobile-manual],
-          [data-desktop-panel="apparence"] [data-mobile-manual] { display: block; padding: 1.25rem; border-radius: 1rem; }
+          [data-desktop-panel="apparence"] [data-mobile-manual] { display: block; padding: 1rem; border-radius: 1rem; }
           [data-mobile-manual] > div:first-child { display: none; }
           [data-mobile-fields] { margin-top: 0; }
           [data-desktop-save] { display: none; }
@@ -3853,8 +3914,8 @@ export default function Home() {
           [data-desktop-panel="apparence"] [data-mobile-appearance] { border: 0; padding: 0; margin: 0; }
           [data-desktop-panel="apercu"] [data-builder-grid] { grid-template-columns: minmax(0, 1fr); }
           [data-desktop-panel="apercu"] [data-builder-editor] { display: none; }
-          [data-desktop-preview] { position: static; align-self: stretch; min-height: 0; overflow: auto; border-radius: 1rem; scrollbar-width: thin; }
-          [data-desktop-preview] > div:first-child { position: sticky; top: 0; z-index: 10; background: #0b1222; padding: .75rem 1rem; }
+          [data-desktop-preview] { position: static; align-self: stretch; min-height: 0; overflow: auto; border-radius: 1rem; scrollbar-width: thin; box-shadow: 0 18px 50px rgb(0 0 0 / .22); }
+          [data-desktop-preview] > div:first-child { position: sticky; top: 0; z-index: 10; background: rgb(11 18 34 / .94); backdrop-filter: blur(14px); padding: .55rem .75rem; }
           [data-desktop-preview] > div:first-child > div { flex-direction: row; flex-wrap: wrap; }
           [data-desktop-preview] > div:first-child > div > div:first-child { display: none; }
           [data-desktop-preview] > div:first-child > div > div:last-child > button:first-child { display: none; }
@@ -3873,7 +3934,7 @@ export default function Home() {
           [data-mobile-step="1"] [data-mobile-panel="contenu"],
           [data-mobile-step="4"] [data-mobile-panel="publication"],
           [data-mobile-step="1"] [data-mobile-manual],
-          [data-mobile-step="2"] [data-mobile-manual] { display: block; margin-top: 0; margin-bottom: 1.5rem; padding: 1.25rem; }
+          [data-mobile-step="2"] [data-mobile-manual] { display: block; margin-top: 0; margin-bottom: 1.5rem; padding: 1rem; }
           [data-mobile-manual] > div:first-child { display: none; }
           [data-mobile-fields] { margin-top: 0; }
           [data-mobile-step="1"] [data-mobile-appearance] { display: none; }
@@ -3905,21 +3966,21 @@ export default function Home() {
 
         <div
           data-builder-grid
-          className={`grid gap-6 ${
+          className={`grid gap-3 ${
             editorCollapsed
               ? "grid-cols-1"
-              : "xl:grid-cols-[minmax(360px,35%)_minmax(0,65%)]"
+              : "xl:grid-cols-[minmax(390px,38%)_minmax(0,62%)]"
           }`}
         >
           <fieldset
             disabled={busy}
             data-builder-editor
-            className={editorCollapsed ? "hidden" : "space-y-8"}
+            className={editorCollapsed ? "hidden" : "space-y-4"}
           >
             <form
               data-mobile-panel="infos"
               onSubmit={handleSubmit}
-              className="rounded-3xl border border-slate-800 bg-slate-900 p-5 sm:p-7"
+              className="rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-6"
             >
               <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-950/55 p-4">
                 <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
@@ -4160,7 +4221,7 @@ export default function Home() {
                       </div>
 
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {suggestedServices.map((suggestion) => {
+                        {suggestedServices.map((suggestion, index) => {
                           const added = selectedServices.includes(
                             normalizeActivity(suggestion),
                           );
@@ -4175,7 +4236,7 @@ export default function Home() {
                                   appendService(current, suggestion),
                                 )
                               }
-                              className="rounded-lg border border-slate-600 px-3 py-2 text-left text-xs text-blue-200 transition hover:border-blue-400 hover:bg-blue-500/10 disabled:border-emerald-900 disabled:bg-emerald-950/20 disabled:text-emerald-300"
+                              className={`${!showAllServiceSuggestions && index >= 6 ? "hidden sm:inline-flex" : "inline-flex"} rounded-lg border border-slate-600 px-3 py-2 text-left text-xs text-blue-200 transition hover:border-blue-400 hover:bg-blue-500/10 disabled:border-emerald-900 disabled:bg-emerald-950/20 disabled:text-emerald-300`}
                             >
                               {added ? "✓ " : "+ "}
                               {suggestion}
@@ -4183,6 +4244,19 @@ export default function Home() {
                           );
                         })}
                       </div>
+                      {suggestedServices.length > 6 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowAllServiceSuggestions((value) => !value)
+                          }
+                          className="mt-3 text-xs font-semibold text-blue-300 sm:hidden"
+                        >
+                          {showAllServiceSuggestions
+                            ? "Voir moins"
+                            : `Voir les ${suggestedServices.length - 6} autres suggestions`}
+                        </button>
+                      )}
                     </>
                   )}
                   <p role="status" className="mt-3 text-xs text-slate-400">
@@ -5524,7 +5598,7 @@ export default function Home() {
           <div
             data-desktop-preview
             data-mobile-hide
-            className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 xl:sticky xl:top-6 xl:self-start"
+            className="overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/80 shadow-2xl shadow-black/20 xl:sticky xl:top-6 xl:self-start"
           >
             {!site ? (
               <div className="flex min-h-[700px] items-center justify-center text-center">
@@ -5770,3 +5844,5 @@ export default function Home() {
     </main>
   );
 }
+
+

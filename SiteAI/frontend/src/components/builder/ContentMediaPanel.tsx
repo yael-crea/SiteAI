@@ -41,9 +41,9 @@ export default function ContentMediaPanel({
 }: Props) {
   return (
     <>
-      <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-700 bg-white">
+      <div className="rounded-2xl border border-slate-800 bg-slate-950/75 p-4">
+        <div className="flex items-center gap-4">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-700 bg-white">
             {site.logoUrl ? (
               <img
                 src={site.logoUrl}
@@ -60,15 +60,15 @@ export default function ContentMediaPanel({
           <div className="flex-1">
             <p className="font-bold">Logo de l&apos;entreprise</p>
 
-            <p className="mt-1 text-sm leading-6 text-slate-500">
+            <p className="mt-1 text-xs leading-5 text-slate-400">
               JPG, PNG, WebP ou AVIF • 5 Mo maximum.
             </p>
 
-            <div className="mt-4 flex flex-wrap gap-3">
+            <div className="mt-3 flex flex-wrap gap-2">
               <label
                 data-builder-edit="logoUrl"
                 tabIndex={-1}
-                className="cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500"
+                className="cursor-pointer rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold hover:bg-blue-500"
               >
                 {logoUploading
                   ? "Envoi..."
@@ -90,7 +90,7 @@ export default function ContentMediaPanel({
                   type="button"
                   onClick={removeLogo}
                   disabled={logoUploading}
-                  className="rounded-xl border border-red-900 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-950 disabled:opacity-50"
+                  className="rounded-lg border border-red-900 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-950 disabled:opacity-50"
                 >
                   Retirer le logo
                 </button>
@@ -104,10 +104,10 @@ export default function ContentMediaPanel({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+      <div className="rounded-2xl border border-slate-800 bg-slate-950/75 p-4">
         <p className="font-bold">Image de couverture</p>
 
-        <p className="mt-1 text-sm leading-6 text-slate-500">
+        <p className="mt-1 text-xs leading-5 text-slate-400">
           Grande photo affichée derrière le titre principal du site.
         </p>
 
@@ -115,15 +115,15 @@ export default function ContentMediaPanel({
           <img
             src={site.heroImageUrl}
             alt="Image de couverture"
-            className="mt-4 h-48 w-full rounded-2xl object-cover"
+            className="mt-3 h-40 w-full rounded-xl object-cover"
           />
         )}
 
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-3 flex flex-wrap gap-2">
           <label
             data-builder-edit="heroImageUrl"
             tabIndex={-1}
-            className="cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold hover:bg-blue-500"
+            className="cursor-pointer rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold hover:bg-blue-500"
           >
             {heroImageUploading
               ? "Envoi..."
@@ -145,7 +145,7 @@ export default function ContentMediaPanel({
               type="button"
               onClick={removeHeroImage}
               disabled={heroImageUploading}
-              className="rounded-xl border border-red-900 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-950 disabled:opacity-50"
+              className="rounded-lg border border-red-900 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-950 disabled:opacity-50"
             >
               Retirer l&apos;image
             </button>
@@ -157,12 +157,12 @@ export default function ContentMediaPanel({
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
+      <div className="rounded-2xl border border-slate-800 bg-slate-950/75 p-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="font-bold">Galerie photos</p>
 
-            <p className="mt-1 text-sm leading-6 text-slate-500">
+            <p className="mt-1 text-xs leading-5 text-slate-400">
               Ajoute jusqu&apos;à {MAX_GALLERY_IMAGES} photos. Tu peux ensuite
               changer leur ordre.
             </p>
@@ -174,7 +174,7 @@ export default function ContentMediaPanel({
         </div>
 
         {(site.gallery ?? []).length > 0 && (
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {(site.gallery ?? []).map((imageUrl, index) => (
               <div
                 key={`${imageUrl}-${index}`}
@@ -183,7 +183,7 @@ export default function ContentMediaPanel({
                 <img
                   src={imageUrl}
                   alt={`Photo ${index + 1} de ${site.businessName}`}
-                  className="h-36 w-full object-cover"
+                  className="h-32 w-full object-cover"
                 />
 
                 <div className="flex items-center justify-between gap-2 p-3">
@@ -228,11 +228,11 @@ export default function ContentMediaPanel({
           </div>
         )}
 
-        <div className="mt-5">
+        <div className="mt-4">
           <label
             data-builder-edit="gallery"
             tabIndex={-1}
-            className={`inline-block rounded-xl px-4 py-3 text-sm font-bold ${
+            className={`inline-block rounded-lg px-3 py-2 text-xs font-bold ${
               galleryUploading ||
               (site.gallery ?? []).length >= MAX_GALLERY_IMAGES
                 ? "cursor-not-allowed bg-slate-700 text-slate-400"
@@ -262,3 +262,5 @@ export default function ContentMediaPanel({
     </>
   );
 }
+
+
