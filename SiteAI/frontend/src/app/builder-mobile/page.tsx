@@ -708,6 +708,8 @@ export default function MobileBuilderPage() {
             Number.isInteger(id) &&
             id > 0
           ) {
+            // The saved-site loader is stable for this one-time session handoff.
+            // eslint-disable-next-line react-hooks/immutability
             await openSavedSite(id);
           }
         }
@@ -1688,6 +1690,8 @@ export default function MobileBuilderPage() {
       lastSavedSnapshotRef.current
     ) {
       if (autosaveStatus !== "saved") {
+        // Keep the visible autosave state synchronized with the saved snapshot.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAutosaveStatus("saved");
       }
       return;
