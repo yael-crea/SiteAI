@@ -456,10 +456,13 @@ export default function SitesPage() {
 
 
 
+          // These loaders are stable for this one-time authenticated initialization.
+          // eslint-disable-next-line react-hooks/immutability
           loadSites(),
 
 
 
+          // eslint-disable-next-line react-hooks/immutability
           loadBilling(),
 
 
