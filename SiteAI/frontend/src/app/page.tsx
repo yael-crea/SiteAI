@@ -23,15 +23,15 @@ export const metadata = publicMetadata(
 const Arrow = () => <span aria-hidden="true">↗</span>;
 
 const steps = [
-  ["01", "Parle-nous de ton métier", "Ton activité, tes services, ta ville et ce qui te rend différent."],
-  ["02", "Découvre ta première version", "Lumio transforme tes réponses en un site clair, structuré et crédible."],
-  ["03", "Ajuste puis publie", "Change les textes, les couleurs et les photos, puis partage ton adresse."],
+  ["01", "Ton activité", "Décris ton métier, tes services et ta ville. Quelques réponses suffisent pour poser une base solide."],
+  ["02", "Ton premier site", "Lumio écrit, structure et met en page une première version cohérente avec ton activité."],
+  ["03", "Tes ajustements", "Tu gardes la main sur les textes, les photos, les couleurs et chaque détail avant de publier."],
 ];
 
-const benefits = [
-  ["01", "Une base vraiment adaptée", "Le contenu part de ton activité, pas d’un modèle vide à remplir."],
-  ["02", "Tout reste modifiable", "Textes, images, services, couleurs et appels à l’action évoluent avec toi."],
-  ["03", "Une publication simple", "Ton aperçu reste gratuit. Tu choisis une formule seulement quand il te convient."],
+const editorBenefits = [
+  ["Textes", "Écris toi-même ou demande à l’IA de reformuler."],
+  ["Apparence", "Choisis le style et les couleurs qui te ressemblent."],
+  ["Publication", "Connecte ton domaine dès que ton site est prêt."],
 ];
 
 const faqs = [
@@ -51,8 +51,7 @@ export default function HomePage() {
       <header className={styles.header}>
         <div className={styles.navbar}>
           <Link href="/" className={styles.logo} aria-label="Lumio, accueil">
-            <span className={styles.logoMark} aria-hidden="true">✳︎</span>
-            lumio<span className={styles.logoDot}>.</span>
+            lumio<span>.</span>
           </Link>
           <nav className={styles.desktopNav} aria-label="Navigation principale">
             <a href="#comment-ca-marche">Comment ça marche</a>
@@ -61,10 +60,10 @@ export default function HomePage() {
             <a href="#faq">Questions</a>
           </nav>
           <div className={styles.navActions}>
-            <Link href="/auth" className={styles.login}>Connexion</Link>
-            <Link href="/auth" className={styles.smallButton}>
-              <span className={styles.headerCtaDesktop}>Créer mon aperçu gratuit</span>
-              <span className={styles.headerCtaMobile}>Aperçu gratuit</span>
+            <Link href="/auth" className={styles.login}>Se connecter</Link>
+            <Link href="/auth" className={styles.headerButton}>
+              <span className={styles.headerCtaDesktop}>Créer mon site</span>
+              <span className={styles.headerCtaMobile}>Créer</span>
               <Arrow />
             </Link>
           </div>
@@ -73,77 +72,232 @@ export default function HomePage() {
       </header>
 
       <main id="contenu">
-        <section className={`${styles.wrap} ${styles.hero}`}>
-          <div>
-            <p className={styles.eyebrow}><span className={styles.statusDot} /> POUR LES INDÉPENDANTS ET PETITES ENTREPRISES</p>
-            <h1>Ton métier mérite<br />un <span>vrai beau site.</span></h1>
-            <p className={styles.lead}>Tu connais ton activité. Lumio t’aide à la présenter en ligne : crée ton site avec l’IA, personnalise-le et publie quand tu es prêt.</p>
-            <div className={styles.actions}>
-              <Link href="/auth" className={styles.primary}>Créer mon aperçu gratuit <Arrow /></Link>
-              <Link href="/exemples" className={styles.secondary}>Voir les exemples <span aria-hidden="true">→</span></Link>
-            </div>
-            <p className={styles.reassurance}>Sans carte bancaire · Sans coder · Un abonnement seulement pour publier</p>
-            <div className={styles.heroFoot}><span className={styles.squiggle} aria-hidden="true">⌞</span><p><strong>Commence par voir ce que ça donne.</strong><br />Tes textes, tes couleurs, ton entreprise.</p></div>
-          </div>
-
-          <figure className={styles.showcase}>
-            <div className={styles.browserBar}><span aria-hidden="true">● ● ●</span><span>TON FUTUR SITE COMMENCE ICI</span><span aria-hidden="true">↗</span></div>
-            <div className={styles.preview}>
-              <div className={styles.previewNav}><strong>Atelier du Robinet<span>Plomberie · Montpellier</span></strong><span className={styles.previewPill}>Votre artisan de proximité</span></div>
-              <div className={styles.previewHero}>
-                <span className={styles.miniLabel}>UN SAVOIR-FAIRE, À VOTRE SERVICE</span>
-                <h3>Votre maison.<br />Notre attention<br /><em>au détail.</em></h3>
-                <p>Dépannage, installation et rénovation : parlons de votre projet.</p>
-                <span className={styles.mockButton}>Parlons de votre projet <Arrow /></span>
+        <section className={styles.hero}>
+          <div className={styles.heroGrid}>
+            <div className={styles.heroCopy}>
+              <p className={styles.eyebrow}><i /> LE SITE QUI PART DE TON MÉTIER</p>
+              <h1>Ton activité,<br />bien présentée.<br /><em>Enfin.</em></h1>
+              <p className={styles.heroLead}>
+                Décris ce que tu fais. Lumio crée une première version de ton site,
+                puis te laisse tout modifier avant de publier.
+              </p>
+              <Link href="/auth" className={styles.promptCta}>
+                <span>
+                  <small>Commence ici</small>
+                  <strong>Ex. Plombier à Montpellier</strong>
+                </span>
+                <b>Créer mon aperçu <Arrow /></b>
+              </Link>
+              <div className={styles.heroNotes}>
+                <span>Sans carte bancaire</span>
+                <span>Sans coder</span>
+                <span>Tu publies quand tu veux</span>
               </div>
-              <div className={styles.previewServices}><div><span>01</span><strong>Dépannage</strong></div><div><span>02</span><strong>Installation</strong></div><div><span>03</span><strong>Rénovation</strong></div></div>
             </div>
-            <figcaption><span className={styles.statusDot} /> Exemple illustratif · Entreprise fictive</figcaption>
-          </figure>
+
+            <div className={styles.heroVisual}>
+              <div className={styles.glow} />
+              <div className={`${styles.siteCard} ${styles.siteCardBack}`}>
+                <div className={styles.siteCardBar}><span>Studio Nacre</span><i /></div>
+                <div className={styles.backArt}><b>Des gestes précis.<br />Un style à toi.</b></div>
+              </div>
+              <figure className={styles.siteCard}>
+                <div className={styles.siteCardBar}>
+                  <span>Atelier du Robinet</span>
+                  <div><i /><i /><i /></div>
+                </div>
+                <div className={styles.sitePreview}>
+                  <p>ARTISAN PLOMBIER · MONTPELLIER</p>
+                  <h2>Votre maison.<br /><em>Notre attention</em><br />au détail.</h2>
+                  <span>Dépannage, installation et rénovation.</span>
+                  <b>Parler de mon projet <Arrow /></b>
+                </div>
+                <figcaption><i /> Aperçu généré par Lumio · Exemple fictif</figcaption>
+              </figure>
+              <div className={styles.aiBadge}>
+                <span>✦</span>
+                <div><small>ASSISTANT LUMIO</small><strong>Première version prête</strong></div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className={styles.audience} aria-label="Public concerné">
-          <div className={styles.wrap}><span>PENSÉ POUR TON QUOTIDIEN</span><p>Artisans</p><span>✳</span><p>Commerçants</p><span>✳</span><p>Indépendants</p><span>✳</span><p>Petites entreprises</p></div>
-        </section>
-
-        <section id="comment-ca-marche" className={`${styles.wrap} ${styles.section}`}>
-          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>DE TON IDÉE À TON SITE</p><h2>Tu apportes le savoir-faire.<br /><span>Lumio construit la vitrine.</span></h2></div><p>Trois étapes simples pour passer d’une activité réelle à une présence en ligne qui inspire confiance.</p></div>
-          <div className={styles.steps}>{steps.map(([number, title, text]) => <article key={number}><span className={styles.stepNumber}>{number}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
-        </section>
-
-        <section className={`${styles.wrap} ${styles.featureSection}`}>
-          <div className={styles.editorArt} aria-hidden="true">
-            <div className={styles.editorTop}><span>✳</span><strong>Ton style, simplement.</strong><span>APERÇU EN DIRECT</span></div>
-            <div className={styles.editorBody}><div className={styles.colorRow}><span>Couleur principale</span><i /><i /><i /><i /></div><div className={styles.textSample}><span>TITRE PRINCIPAL</span><p>Un site qui ressemble<br /><strong>vraiment à ton métier.</strong></p></div><div className={styles.editorBottom}><span>Textes</span><span>Photos</span><span>Services</span><span>Coordonnées</span></div></div>
-            <p>Chaque modification est visible immédiatement.</p>
-          </div>
-          <div><p className={styles.eyebrow}>FAIT POUR RESTER SIMPLE</p><h2>Professionnel devant.<br /><span>Facile à gérer derrière.</span></h2><p className={styles.featureLead}>Un éditeur clair, sans jargon technique, pensé pour t’aider à avancer sans dépendre d’un développeur.</p><ul className={styles.benefits}>{benefits.map(([number, title, text]) => <li key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></li>)}</ul><Link href="/exemples" className={styles.textLink}>Découvrir les possibilités <span>→</span></Link></div>
-        </section>
-
-        <section id="exemples" className={`${styles.wrap} ${styles.section}`}>
-          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>DES EXEMPLES CONCRETS</p><h2>Projette-toi dans<br /><span>un vrai résultat.</span></h2></div><Link href="/exemples" className={styles.textLink}>Voir tous les exemples <span>→</span></Link></div>
-          <div className={styles.examples}>{demoSites.slice(0, 3).map((site) => <Link key={site.id} href={`/exemples?metier=${site.id}`} className={styles.exampleCard}><div className={styles.examplePhoto}><Image src={site.image} alt={site.imageAlt} fill sizes="(max-width: 760px) 100vw, 33vw" /></div><div className={styles.exampleInfo}><span>DÉMONSTRATION <Arrow /></span><h3>{site.activity}</h3><p>{site.title}</p></div></Link>)}</div>
-          <p className={styles.caption}>Entreprises fictives · Photographies d’illustration · Contenus entièrement personnalisables</p>
-        </section>
-
-        <section id="tarifs" className={`${styles.section} ${styles.pricing}`}>
-          <div className={styles.wrap}>
-            <div className={styles.centerHeading}><p className={styles.eyebrow}>DES TARIFS CLAIRS</p><h2>Commence gratuitement.<br /><span>Publie quand tu es convaincu.</span></h2><p>{freePreviewText}</p></div>
-            <p className={styles.pricingComparison}><strong>Essentiel</strong> pour publier ton site · <strong>Pro</strong> pour plus d’IA et des statistiques détaillées · <strong>Agence</strong> pour gérer plusieurs clients.</p>
-            <div className={styles.plans}>{plans.map((plan) => <article key={plan.name} className={`${styles.plan} ${plan.highlighted ? styles.highlighted : ""}`}>{plan.highlighted && <span className={styles.planBadge}>LE PLUS CHOISI</span>}<h3>{plan.name}</h3><p className={styles.planDescription}>{plan.description}</p><p className={styles.price}>{plan.price}<span>{priceSuffix}</span></p><Link href="/auth" className={styles.primary}>Choisir {plan.name} <Arrow /></Link><ul>{plan.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul></article>)}</div>
-            <p className={styles.tax}>{priceTaxText}</p><div className={styles.pricingLinks}><span>{domainText}</span></div>
+          <div className={styles.audienceInner}>
+            <span>CONÇU POUR LES PETITES ENTREPRISES</span>
+            <p>Artisans</p><i>✦</i><p>Commerçants</p><i>✦</i>
+            <p>Indépendants</p><i>✦</i><p>Agences</p>
           </div>
         </section>
 
-        <section id="faq" className={`${styles.wrap} ${styles.faq}`}>
-          <div><p className={styles.eyebrow}>QUESTIONS FRÉQUENTES</p><h2>Tout ce qu’il faut savoir avant de commencer.</h2><p>Tu peux créer ton aperçu sans carte bancaire et prendre ta décision sur un résultat concret.</p></div>
-          <div>{faqs.map(([question, answer]) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div>
+        <section id="comment-ca-marche" className={styles.paperSection}>
+          <div className={styles.sectionIntro}>
+            <p className={styles.kicker}>COMMENT ÇA MARCHE</p>
+            <h2>De quelques réponses<br />à un site qui tient debout.</h2>
+            <p>Pas de page blanche ni de modèle vide. Lumio transforme les informations de ton entreprise en une vitrine prête à personnaliser.</p>
+          </div>
+
+          <div className={styles.process}>
+            <div className={styles.stepList}>
+              {steps.map(([number, title, text], index) => (
+                <article key={number} className={index === 1 ? styles.activeStep : ""}>
+                  <span>{number}</span>
+                  <div><h3>{title}</h3><p>{text}</p></div>
+                </article>
+              ))}
+            </div>
+
+            <div className={styles.briefCard}>
+              <div className={styles.briefTop}>
+                <span>Ce que Lumio a compris</span>
+                <b>Prêt à générer</b>
+              </div>
+              <dl>
+                <div><dt>Entreprise</dt><dd>Atelier du Robinet</dd></div>
+                <div><dt>Métier</dt><dd>Plomberie & rénovation</dd></div>
+                <div><dt>Zone</dt><dd>Montpellier et alentours</dd></div>
+                <div><dt>Ton</dt><dd>Clair, rassurant, local</dd></div>
+              </dl>
+              <div className={styles.palette}>
+                <span>Direction visuelle</span>
+                <i /><i /><i /><i />
+              </div>
+              <div className={styles.briefFooter}><span>6 réponses</span><b>Générer mon site <Arrow /></b></div>
+            </div>
+          </div>
         </section>
 
-        <section className={styles.finalCta}><div className={styles.wrap}><span className={styles.eyebrow}>À TON TOUR</span><h2>Ton activité mérite<br />d’être bien présentée.</h2><p>Réponds à quelques questions et découvre ta première version.</p><Link href="/auth" className={styles.primary}>Créer mon aperçu gratuit <Arrow /></Link><small>Sans carte bancaire. Tu publies uniquement quand tu es prêt.</small></div></section>
+        <section className={styles.productSection}>
+          <div className={styles.productHeading}>
+            <p className={styles.eyebrow}><i /> UN ÉDITEUR, PAS UNE BOÎTE NOIRE</p>
+            <h2>Créé avec l’IA.<br /><em>Dirigé par toi.</em></h2>
+            <p>La première version te fait gagner du temps. Ensuite, chaque texte, image et couleur reste sous ton contrôle.</p>
+          </div>
+
+          <div className={styles.editorShell}>
+            <div className={styles.editorHeader}>
+              <Link href="/" className={styles.editorLogo}>lumio.</Link>
+              <span><i /> Enregistré automatiquement</span>
+              <b>Aperçu en direct</b>
+            </div>
+            <div className={styles.editorWorkspace}>
+              <aside>
+                <small>TON SITE</small>
+                <strong>Atelier du Robinet</strong>
+                <nav>
+                  <span className={styles.editorActive}>✦ Assistant IA</span>
+                  <span>Informations</span>
+                  <span>Contenu</span>
+                  <span>Apparence</span>
+                  <span>Publier</span>
+                </nav>
+                <div className={styles.assistantBox}>
+                  <small>MODIFIER AVEC L’IA</small>
+                  <p>« Rends le titre plus chaleureux »</p>
+                  <b>Appliquer ✦</b>
+                </div>
+              </aside>
+              <div className={styles.editorCanvas}>
+                <div className={styles.canvasToolbar}><span>Ordinateur</span><span>Tablette</span><span>Téléphone</span></div>
+                <div className={styles.canvasSite}>
+                  <div className={styles.canvasNav}><strong>Atelier du Robinet</strong><span>Services &nbsp; À propos &nbsp; Contact</span></div>
+                  <div className={styles.canvasHero}>
+                    <small>VOTRE ARTISAN DE PROXIMITÉ</small>
+                    <h3>Une maison saine,<br />un travail bien fait.</h3>
+                    <p>Dépannage, installation et rénovation à Montpellier.</p>
+                    <b>Demander un devis</b>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.editorBenefits}>
+            {editorBenefits.map(([title, text], index) => (
+              <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{text}</p></article>
+            ))}
+          </div>
+        </section>
+
+        <section id="exemples" className={styles.examplesSection}>
+          <div className={styles.examplesHead}>
+            <div><p className={styles.kicker}>EXEMPLES FICTIFS</p><h2>Un métier différent.<br />Une présence différente.</h2></div>
+            <Link href="/exemples">Voir tous les exemples <span>→</span></Link>
+          </div>
+          <div className={styles.examples}>
+            {demoSites.slice(0, 3).map((site, index) => (
+              <Link key={site.id} href={`/exemples?metier=${site.id}`} className={styles.exampleCard}>
+                <div className={styles.exampleImage}>
+                  <Image src={site.image} alt={site.imageAlt} fill sizes="(max-width: 760px) 100vw, 33vw" />
+                  <span>0{index + 1}</span>
+                </div>
+                <div><small>{site.activity.toUpperCase()}</small><h3>{site.title}</h3><span>Explorer ce site <Arrow /></span></div>
+              </Link>
+            ))}
+          </div>
+          <p className={styles.disclaimer}>Entreprises fictives · Photographies d’illustration · Tous les contenus sont personnalisables</p>
+        </section>
+
+        <section id="tarifs" className={styles.pricingSection}>
+          <div className={styles.pricingIntro}>
+            <p className={styles.kicker}>DES TARIFS SANS SURPRISE</p>
+            <h2>Commence gratuitement.<br />Publie quand tu es convaincu.</h2>
+            <p>{freePreviewText}</p>
+          </div>
+          <div className={styles.plans}>
+            {plans.map((plan) => (
+              <article key={plan.name} className={plan.highlighted ? styles.planFeatured : ""}>
+                <div className={styles.planTop}>
+                  <span>{plan.highlighted ? "LE PLUS CHOISI" : "FORMULE"}</span>
+                  <h3>{plan.name}</h3>
+                  <p>{plan.description}</p>
+                </div>
+                <p className={styles.price}>{plan.price}<small>{priceSuffix}</small></p>
+                <Link href="/auth">Choisir {plan.name} <Arrow /></Link>
+                <ul>{plan.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul>
+              </article>
+            ))}
+          </div>
+          <p className={styles.tax}>{priceTaxText}</p>
+          <p className={styles.domainNote}>{domainText}</p>
+        </section>
+
+        <section id="faq" className={styles.faqSection}>
+          <div className={styles.faqIntro}>
+            <p className={styles.eyebrow}><i /> QUESTIONS FRÉQUENTES</p>
+            <h2>Avant de te lancer.</h2>
+            <p>Le premier aperçu est gratuit. Tu décides avec un résultat concret devant les yeux.</p>
+          </div>
+          <div className={styles.faqList}>
+            {faqs.map(([question, answer], index) => (
+              <details key={question}>
+                <summary><span>0{index + 1}</span>{question}<b aria-hidden="true">+</b></summary>
+                <p>{answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.finalCta}>
+          <span className={styles.orbit} aria-hidden="true">✦</span>
+          <p>TON SITE PEUT COMMENCER ICI</p>
+          <h2>Donne à ton activité<br />la vitrine qu’elle mérite.</h2>
+          <Link href="/auth">Créer mon aperçu gratuit <Arrow /></Link>
+          <small>Sans carte bancaire · Sans coder · Sans engagement</small>
+        </section>
       </main>
 
-      <footer className={`${styles.wrap} ${styles.footer}`}><div><Link href="/" className={styles.logo}>lumio<span className={styles.logoDot}>.</span></Link><p>Ton activité. Ton style. Ton site.</p></div><nav aria-label="Liens de bas de page"><Link href="/exemples">Exemples</Link><Link href="/pricing">Tarifs</Link><Link href="/auth">Connexion</Link><Link href="/mentions-legales">Mentions légales</Link><Link href="/confidentialite">Confidentialité</Link><Link href="/cgu">CGU</Link><Link href="/cgv">CGV</Link></nav></footer>
+      <footer className={styles.footer}>
+        <div><Link href="/" className={styles.logo}>lumio<span>.</span></Link><p>Ton activité. Ton style. Ton site.</p></div>
+        <nav aria-label="Liens de bas de page">
+          <Link href="/exemples">Exemples</Link><Link href="/pricing">Tarifs</Link><Link href="/auth">Connexion</Link>
+          <Link href="/mentions-legales">Mentions légales</Link><Link href="/confidentialite">Confidentialité</Link>
+          <Link href="/cgu">CGU</Link><Link href="/cgv">CGV</Link>
+        </nav>
+        <span>© 2026 Lumio</span>
+      </footer>
     </div>
   );
 }
+
+
