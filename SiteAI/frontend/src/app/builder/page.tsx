@@ -1,6 +1,8 @@
 "use client";
 
 import SaveStatus from "@/components/builder/SaveStatus";
+import BuilderToolsMenu from "@/components/builder/BuilderToolsMenu";
+import FirstSiteGuide from "@/components/builder/FirstSiteGuide";
 import { sameContent } from "@/lib/builderSaveState";
 
 import PublicationPanel from "@/components/builder/PublicationPanel";
@@ -3606,8 +3608,8 @@ export default function Home() {
         <AIUsage ready={Boolean(draftUserId)} busy={busy} />
       </div>
       <nav
-        aria-label="Outils du builder"
-        className="hidden shrink-0 items-center gap-1.5 overflow-x-auto border-b border-slate-800 bg-slate-950/80 px-4 py-2 md:flex"
+        aria-label="Étapes et outils du builder"
+        className="hidden shrink-0 items-center gap-1.5 border-b border-slate-800 bg-slate-950/80 px-4 py-2 md:flex"
       >
         {(
           [
@@ -3621,7 +3623,7 @@ export default function Home() {
           <button
             key={value}
             type="button"
-            disabled={!site && !["infos", "sites"].includes(value)}
+            disabled={!site && value !== "infos"}
             aria-pressed={activeDesktopPanel === value}
             onClick={() => {
               setDesktopPanel(value);
@@ -3632,143 +3634,89 @@ export default function Home() {
             {label}
           </button>
         ))}
-        <div className="ml-auto flex shrink-0 items-center gap-1.5 border-l border-slate-800 pl-2">
-          <button
-            type="button"
-            aria-pressed={advancedMode}
-            onClick={() => setAdvancedMode((value) => !value)}
-            className={`rounded-lg border px-2.5 py-2 text-xs font-semibold ${advancedMode ? "border-blue-500 bg-blue-500/10 text-blue-200" : "border-slate-700 text-slate-300"}`}
-          >
-            {advancedMode ? "Mode simple" : "Réglages avancés"}
-          </button>
-          <button
-            type="button"
-            title="Annuler"
-            aria-label="Annuler"
-            disabled={!draft.canUndo || busy}
-            onClick={draft.undo}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-sm font-bold text-slate-300 disabled:opacity-30"
-          >
-            ↶
-          </button>
-          <button
-            type="button"
-            title="Rétablir"
-            aria-label="Rétablir"
-            disabled={!draft.canRedo || busy}
-            onClick={draft.redo}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-sm font-bold text-slate-300 disabled:opacity-30"
-          >
-            ↷
-          </button>
-          {site && (
-            <button
-              type="button"
-              aria-pressed={previewEditing}
-              onClick={() => setPreviewEditing((value) => !value)}
-              className={`rounded-lg border px-2.5 py-2 text-xs font-semibold ${previewEditing ? "border-blue-400 bg-blue-500/10 text-blue-200" : "border-slate-700 text-slate-300"}`}
-            >
-              Édition directe
-            </button>
-          )}
-          {site && (
-            <AccountVersions
-              siteId={savedSiteID}
-              disabled={busy}
-              load={loadAccountVersions}
-              restore={restoreAccountVersion}
-            />
-          )}
-          {site && (
-            <BuilderVersions
-              entries={versions.entries}
-              error={versions.error}
-              disabled={busy || !draftReady}
-              onSave={() =>
-                versions.checkpoint(draftSnapshot, "Version conservée")
-              }
-              onRestore={restoreVersion}
-            />
-          )}
-        </div>
-        <select
-          aria-label="Outils complémentaires"
-          value={
-            ["ia", "sites"].includes(activeDesktopPanel)
-              ? activeDesktopPanel
-              : ""
-          }
-          onChange={(event) => {
-            if (event.target.value === "ia" || event.target.value === "sites") {
-              setDesktopPanel(event.target.value);
-              setEditorCollapsed(false);
-            }
+        <button
+          type="button"
+          disabled={!site}
+          aria-pressed={activeDesktopPanel === "ia"}
+          onClick={() => {
+            setDesktopPanel("ia");
+            setEditorCollapsed(false);
           }}
-          className="min-w-0 shrink-0 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-200"
+          className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-black transition disabled:opacity-30 ${activeDesktopPanel === "ia" ? "border-violet-400 bg-violet-500 text-white" : "border-violet-700 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20"}`}
         >
-          <option value="">Outils</option>
-          <option value="ia" disabled={!site}>
-            Assistant IA
-          </option>
-          <option value="sites">Mes sites</option>
-        </select>
+          ✨ Assistant IA
+        </button>
+        <div className="ml-auto shrink-0">
+          <BuilderToolsMenu
+            advancedMode={advancedMode}
+            hasSite={Boolean(site)}
+            previewEditing={previewEditing}
+            canUndo={draft.canUndo}
+            canRedo={draft.canRedo}
+            busy={busy}
+            onToggleAdvanced={() => setAdvancedMode((value) => !value)}
+            onUndo={draft.undo}
+            onRedo={draft.redo}
+            onTogglePreviewEditing={() => setPreviewEditing((value) => !value)}
+            align="right"
+          >
+            {site && (
+              <>
+                <AccountVersions
+                  siteId={savedSiteID}
+                  disabled={busy}
+                  load={loadAccountVersions}
+                  restore={restoreAccountVersion}
+                />
+                <BuilderVersions
+                  entries={versions.entries}
+                  error={versions.error}
+                  disabled={busy || !draftReady}
+                  onSave={() =>
+                    versions.checkpoint(draftSnapshot, "Version conservée")
+                  }
+                  onRestore={restoreVersion}
+                />
+              </>
+            )}
+          </BuilderToolsMenu>
+        </div>
       </nav>
       <div className="shrink-0 border-b border-slate-800/80 bg-slate-950/80 px-4 py-2 text-slate-300 md:hidden">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&>*]:shrink-0">
-          <button
-            type="button"
-            aria-pressed={advancedMode}
-            onClick={() => setAdvancedMode((value) => !value)}
-            className="rounded-lg border border-blue-700 px-3 py-2 text-xs font-semibold"
-          >
-            {advancedMode ? "Mode simple" : "Réglages"}
-          </button>
-          <button
-            type="button"
-            disabled={!draft.canUndo || busy}
-            onClick={draft.undo}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30"
-          >
-            ↶ Annuler
-          </button>
-          <button
-            type="button"
-            disabled={!draft.canRedo || busy}
-            onClick={draft.redo}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold disabled:opacity-30"
-          >
-            ↷ Rétablir
-          </button>
+        <BuilderToolsMenu
+          advancedMode={advancedMode}
+          hasSite={Boolean(site)}
+          previewEditing={previewEditing}
+          canUndo={draft.canUndo}
+          canRedo={draft.canRedo}
+          busy={busy}
+          onToggleAdvanced={() => setAdvancedMode((value) => !value)}
+          onUndo={draft.undo}
+          onRedo={draft.redo}
+          onTogglePreviewEditing={() => setPreviewEditing((value) => !value)}
+          align="left"
+          label="Outils d’édition"
+        >
           {site && (
-            <button
-              type="button"
-              aria-pressed={previewEditing}
-              onClick={() => setPreviewEditing((value) => !value)}
-              className={`rounded-lg border px-3 py-2 text-xs font-semibold ${previewEditing ? "border-blue-400 bg-blue-500/10 text-blue-200" : "border-slate-700"}`}
-            >
-              {previewEditing ? "Édition directe : active" : "Édition directe"}
-            </button>
+            <>
+              <AccountVersions
+                siteId={savedSiteID}
+                disabled={busy}
+                load={loadAccountVersions}
+                restore={restoreAccountVersion}
+              />
+              <BuilderVersions
+                entries={versions.entries}
+                error={versions.error}
+                disabled={busy || !draftReady}
+                onSave={() =>
+                  versions.checkpoint(draftSnapshot, "Version conservée")
+                }
+                onRestore={restoreVersion}
+              />
+            </>
           )}
-          {site && (
-            <AccountVersions
-              siteId={savedSiteID}
-              disabled={busy}
-              load={loadAccountVersions}
-              restore={restoreAccountVersion}
-            />
-          )}
-          {site && (
-            <BuilderVersions
-              entries={versions.entries}
-              error={versions.error}
-              disabled={busy || !draftReady}
-              onSave={() =>
-                versions.checkpoint(draftSnapshot, "Version conservée")
-              }
-              onRestore={restoreVersion}
-            />
-          )}
-        </div>
+        </BuilderToolsMenu>
         {saveConflict && (
           <p role="alert" className="mt-2 text-sm text-amber-300">
             Une version plus récente existe. Utilise Versions appareil pour
@@ -3863,6 +3811,19 @@ export default function Home() {
             ][mobileStep]
           }
         </p>
+        {site && mobileStep === 1 && (
+          <button
+            type="button"
+            onClick={() =>
+              document
+                .getElementById("builder-ai-instruction")
+                ?.scrollIntoView({ behavior: "smooth", block: "center" })
+            }
+            className="mt-3 w-full rounded-xl border border-violet-700 bg-violet-500/10 px-4 py-3 text-sm font-black text-violet-200"
+          >
+            ✨ Ouvrir l&apos;assistant IA
+          </button>
+        )}
       </div>
       <style>{`
         [data-simple-mode="true"] [data-advanced-option] { display: none; }
@@ -3963,6 +3924,8 @@ export default function Home() {
             préparer une première version.
           </p>
         </div>
+
+        {!site && <FirstSiteGuide />}
 
         <div
           data-builder-grid
@@ -5844,5 +5807,7 @@ export default function Home() {
     </main>
   );
 }
+
+
 
 
