@@ -3479,15 +3479,15 @@ export default function Home() {
       data-desktop-panel={activeDesktopPanel}
       data-mobile-step={mobileStep}
       data-siteai-builder
-      className="min-h-screen overflow-x-hidden bg-slate-950 text-white"
+      className="min-h-screen overflow-x-hidden bg-[#070809] text-[#f5f0e8]"
     >
-      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-[#262629] bg-[#090a0c]/90 backdrop-blur-xl">
         <div className="mx-auto max-w-[1800px] px-4 py-2.5 lg:px-6">
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={returnToDashboard}
-              className="shrink-0 text-xl font-black tracking-tight"
+              className="shrink-0 font-serif text-2xl font-semibold tracking-tight"
             >
               Lum
               <span className="text-blue-500">io</span>
@@ -3588,7 +3588,10 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="shrink-0 bg-slate-900/60 md:flex md:items-stretch">
+      <div
+        data-builder-statusbar
+        className="shrink-0 bg-[#111214]/80 md:flex md:items-stretch"
+      >
         {site && (
           <SaveStatus
             hasUnsavedChanges={hasUnsavedChanges}
@@ -3609,7 +3612,7 @@ export default function Home() {
       </div>
       <nav
         aria-label="Étapes et outils du builder"
-        className="hidden shrink-0 items-center gap-1.5 border-b border-slate-800 bg-slate-950/80 px-4 py-2 md:flex"
+        className="lumio-workflow-nav hidden shrink-0 items-center gap-1.5 border-b border-[#262629] bg-[#090a0c]/85 px-4 py-2.5 md:flex"
       >
         {(
           [
@@ -3629,7 +3632,7 @@ export default function Home() {
               setDesktopPanel(value);
               setEditorCollapsed(false);
             }}
-            className={`shrink-0 rounded-lg px-3 py-2 text-xs font-semibold transition disabled:opacity-30 ${activeDesktopPanel === value ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "text-slate-400 hover:bg-slate-800 hover:text-white"}`}
+            className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition disabled:opacity-30 ${activeDesktopPanel === value ? "border-[#f0eadf] bg-[#f0eadf] text-[#121214]" : "border-transparent text-slate-400 hover:border-[#35353a] hover:bg-[#17181b] hover:text-white"}`}
           >
             {label}
           </button>
@@ -3642,7 +3645,7 @@ export default function Home() {
             setDesktopPanel("ia");
             setEditorCollapsed(false);
           }}
-          className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-black transition disabled:opacity-30 ${activeDesktopPanel === "ia" ? "border-violet-400 bg-violet-500 text-white" : "border-violet-700 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20"}`}
+          className={`lumio-ai-trigger shrink-0 rounded-full border px-4 py-2 text-xs font-black transition disabled:opacity-30 ${activeDesktopPanel === "ia" ? "border-violet-300 bg-violet-500 text-white shadow-lg shadow-violet-950/40" : "border-violet-700/80 bg-violet-500/10 text-violet-200 hover:border-violet-500 hover:bg-violet-500/20"}`}
         >
           ✨ Assistant IA
         </button>
@@ -3826,6 +3829,69 @@ export default function Home() {
         )}
       </div>
       <style>{`
+        [data-siteai-builder] {
+          --lumio-paper: #f3eee4;
+          --lumio-panel: #111214;
+          --lumio-panel-soft: #15161a;
+          --lumio-line: #2b2c31;
+          --lumio-violet: #9f87ff;
+          background:
+            radial-gradient(circle at 78% -10%, rgb(116 88 255 / .16), transparent 30rem),
+            repeating-linear-gradient(90deg, transparent 0 63px, rgb(255 255 255 / .012) 64px),
+            #070809;
+        }
+        [data-siteai-builder] > header {
+          box-shadow: 0 16px 40px rgb(0 0 0 / .18);
+        }
+        [data-builder-statusbar] {
+          border-bottom: 1px solid var(--lumio-line);
+        }
+        [data-builder-section] {
+          background: linear-gradient(180deg, rgb(255 255 255 / .018), transparent 14rem);
+        }
+        [data-builder-section] > [data-mobile-hide] h1,
+        [data-builder-editor] h2,
+        [data-builder-editor] h3 {
+          font-family: Georgia, "Times New Roman", serif;
+          letter-spacing: -.025em;
+        }
+        [data-builder-editor] > * {
+          border-color: var(--lumio-line) !important;
+          background: rgb(17 18 20 / .96) !important;
+          box-shadow: 0 20px 55px rgb(0 0 0 / .22);
+        }
+        [data-builder-editor] input,
+        [data-builder-editor] textarea,
+        [data-builder-editor] select {
+          border-color: #35363c !important;
+          background: #090a0c !important;
+          color: #f5f0e8 !important;
+        }
+        [data-builder-editor] input::placeholder,
+        [data-builder-editor] textarea::placeholder {
+          color: #777982;
+        }
+        [data-builder-editor] input:focus,
+        [data-builder-editor] textarea:focus,
+        [data-builder-editor] select:focus {
+          border-color: var(--lumio-violet) !important;
+          box-shadow: 0 0 0 3px rgb(159 135 255 / .12);
+        }
+        [data-desktop-preview] {
+          border-color: #313238 !important;
+          background: #101114 !important;
+          box-shadow: 0 28px 80px rgb(0 0 0 / .38) !important;
+        }
+        [data-desktop-preview] > div:first-child {
+          border-bottom: 1px solid var(--lumio-line);
+          background: rgb(12 13 15 / .94) !important;
+        }
+        .lumio-workflow-nav > button[aria-pressed="true"]:not(.lumio-ai-trigger) {
+          border-color: var(--lumio-paper) !important;
+          background: var(--lumio-paper) !important;
+          color: #121214 !important;
+          box-shadow: 0 8px 24px rgb(0 0 0 / .28);
+        }
         [data-simple-mode="true"] [data-advanced-option] { display: none; }
         [data-builder-editor] { container: siteai-editor / inline-size; min-width: 0; }
         [data-builder-editor] input,
@@ -3912,10 +3978,10 @@ export default function Home() {
           className="mb-4 flex items-end justify-between gap-4"
         >
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-blue-400">
-              Créateur de site
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-violet-300">
+              Atelier Lumio
             </p>
-            <h1 className="mt-1 text-2xl font-black text-white">
+            <h1 className="mt-2 font-serif text-3xl font-semibold text-[#f5f0e8]">
               Construis ton site simplement
             </h1>
           </div>
