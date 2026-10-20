@@ -66,12 +66,12 @@ export default function BuilderToolsMenu({
   }
 
   return (
-    <details ref={detailsRef} className="group">
-      <summary className="cursor-pointer list-none rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-blue-500">
+    <details ref={detailsRef} className="group relative">
+      <summary className="cursor-pointer list-none rounded-full border border-[#35353a] bg-[#15161a] px-3.5 py-2 text-xs font-semibold text-slate-200 transition hover:border-violet-500">
         {label} <span aria-hidden="true">▾</span>
       </summary>
       <div
-        className={`fixed top-28 z-[70] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-slate-700 bg-slate-900 p-3 shadow-2xl shadow-black/50 ${align === "right" ? "right-4" : "left-4"}`}
+        className={`absolute top-full z-[70] mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-[#34353a] bg-[#111214]/95 p-3 shadow-2xl shadow-black/60 backdrop-blur-xl ${align === "right" ? "right-0" : "left-0"}`}
       >
         <div className="flex items-center justify-between gap-3 px-1 pb-2">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
@@ -80,7 +80,7 @@ export default function BuilderToolsMenu({
           <button
             type="button"
             onClick={closeMenu}
-            className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:border-blue-500 hover:text-white"
+            className="rounded-full border border-slate-700 px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:border-violet-500 hover:text-white"
             aria-label="Fermer les outils d’édition"
           >
             × Fermer
@@ -91,7 +91,7 @@ export default function BuilderToolsMenu({
             type="button"
             aria-pressed={advancedMode}
             onClick={onToggleAdvanced}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-left text-xs font-semibold text-slate-200 hover:border-blue-500"
+            className="rounded-xl border border-slate-700 px-3 py-2 text-left text-xs font-semibold text-slate-200 hover:border-violet-500"
           >
             {advancedMode ? "✓ Réglages avancés actifs" : "Réglages avancés"}
           </button>
