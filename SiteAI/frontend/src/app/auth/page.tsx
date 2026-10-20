@@ -11,6 +11,8 @@ import {
 
 type AuthMode = "login" | "signup" | "forgot";
 
+const TERMS_VERSION = "2026-10-20";
+
 export default function AuthPage() {
   const router = useRouter();
 
@@ -18,6 +20,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -67,6 +70,7 @@ export default function AuthPage() {
     setMessage("");
     setPassword("");
     setPasswordConfirm("");
+    setAcceptedTerms(false);
   }
 
   async function handleForgotPassword(
@@ -157,6 +161,13 @@ export default function AuthPage() {
       return;
     }
 
+    if (mode === "signup" && !acceptedTerms) {
+      setError(
+        "Tu dois accepter les CGU et prendre connaissance de la politique de confidentialité.",
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -189,6 +200,10 @@ export default function AuthPage() {
         password,
         options: {
           emailRedirectTo,
+          data: {
+            terms_version: TERMS_VERSION,
+            terms_accepted_at: new Date().toISOString(),
+          },
         },
       });
 
@@ -440,6 +455,48 @@ export default function AuthPage() {
                 </div>
               )}
 
+              {mode === "signup" && (
+                <label className="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-sm leading-6 text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(event) => setAcceptedTerms(event.target.checked)}
+                    required
+                    className="mt-1 h-4 w-4 shrink-0 accent-blue-500"
+                  />
+                  <span>
+                    J&apos;accepte les{" "}
+                    <Link
+                      href="/cgu"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-blue-300 underline hover:text-blue-200"
+                    >
+                      CGU
+                    </Link>{" "}
+                    et je reconnais avoir pris connaissance de la{" "}
+                    <Link
+                      href="/confidentialite"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-blue-300 underline hover:text-blue-200"
+                    >
+                      politique de confidentialité
+                    </Link>
+                    . Les{" "}
+                    <Link
+                      href="/cgv"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-blue-300 underline hover:text-blue-200"
+                    >
+                      CGV
+                    </Link>{" "}
+                    s&apos;appliqueront lors de la souscription d&apos;un abonnement.
+                  </span>
+                </label>
+              )}
+
               {mode === "login" && (
                 <div className="text-right">
                   <button
@@ -494,8 +551,29 @@ export default function AuthPage() {
             </form>
 
             <p className="mt-6 text-center text-xs leading-5 text-slate-500">
-              En continuant, tu accèdes à ton espace
-              Lumio.
+              En utilisant Lumio, tu peux consulter nos{" "}
+              <Link href="/cgu" className="underline hover:text-slate-300">
+                CGU
+              </Link>
+              , nos{" "}
+              <Link href="/cgv" className="underline hover:text-slate-300">
+                CGV
+              </Link>
+              , notre{" "}
+              <Link
+                href="/confidentialite"
+                className="underline hover:text-slate-300"
+              >
+                politique de confidentialité
+              </Link>{" "}
+              et nos{" "}
+              <Link
+                href="/mentions-legales"
+                className="underline hover:text-slate-300"
+              >
+                mentions légales
+              </Link>
+              .
             </p>
           </div>
         </div>
@@ -503,3 +581,4 @@ export default function AuthPage() {
     </main>
   );
 }
+
