@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
+import { Newsreader, Schibsted_Grotesk } from "next/font/google";
 import { SITE_URL, publicRobots } from "@/lib/seo";
 import "./globals.css";
+
+const sans = Schibsted_Grotesk({ subsets: ["latin"], variable: "--font-lumio", display: "swap" });
+const serif = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  style: ["normal", "italic"],
+  axes: ["opsz"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -11,5 +21,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="fr"><body>{children}</body></html>;
+  return <html lang="fr" className={`${sans.variable} ${serif.variable}`}><body>{children}</body></html>;
 }

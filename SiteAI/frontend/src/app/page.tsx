@@ -75,7 +75,7 @@ export default function HomePage() {
         <section className={styles.hero}>
           <div className={styles.heroGrid}>
             <div className={styles.heroCopy}>
-              <p className={styles.eyebrow}><i /> LE SITE QUI PART DE TON MÉTIER</p>
+              <p className={styles.eyebrow}><i /> Le site qui part de ton métier</p>
               <h1>Ton activité,<br />bien présentée.<br /><em>Enfin.</em></h1>
               <p className={styles.heroLead}>
                 Décris ce que tu fais. Lumio crée une première version de ton site,
@@ -116,7 +116,7 @@ export default function HomePage() {
               </figure>
               <div className={styles.aiBadge}>
                 <span>✦</span>
-                <div><small>ASSISTANT LUMIO</small><strong>Première version prête</strong></div>
+                <div><small>Assistant Lumio</small><strong>Première version prête</strong></div>
               </div>
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function HomePage() {
 
         <section className={styles.audience} aria-label="Public concerné">
           <div className={styles.audienceInner}>
-            <span>CONÇU POUR LES PETITES ENTREPRISES</span>
+            <span>Conçu pour les petites entreprises</span>
             <p>Artisans</p><i>✦</i><p>Commerçants</p><i>✦</i>
             <p>Indépendants</p><i>✦</i><p>Agences</p>
           </div>
@@ -132,7 +132,7 @@ export default function HomePage() {
 
         <section id="comment-ca-marche" className={styles.paperSection}>
           <div className={styles.sectionIntro}>
-            <p className={styles.kicker}>COMMENT ÇA MARCHE</p>
+            <p className={styles.kicker}>Comment ça marche</p>
             <h2>De quelques réponses<br />à un site qui tient debout.</h2>
             <p>Pas de page blanche ni de modèle vide. Lumio transforme les informations de ton entreprise en une vitrine prête à personnaliser.</p>
           </div>
@@ -169,7 +169,7 @@ export default function HomePage() {
 
         <section className={styles.productSection}>
           <div className={styles.productHeading}>
-            <p className={styles.eyebrow}><i /> UN ÉDITEUR, PAS UNE BOÎTE NOIRE</p>
+            <p className={styles.eyebrow}><i /> Un éditeur, pas une boîte noire</p>
             <h2>Créé avec l’IA.<br /><em>Dirigé par toi.</em></h2>
             <p>La première version te fait gagner du temps. Ensuite, chaque texte, image et couleur reste sous ton contrôle.</p>
           </div>
@@ -182,7 +182,7 @@ export default function HomePage() {
             </div>
             <div className={styles.editorWorkspace}>
               <aside>
-                <small>TON SITE</small>
+                <small>Ton site</small>
                 <strong>Atelier du Robinet</strong>
                 <nav>
                   <span className={styles.editorActive}>✦ Assistant IA</span>
@@ -192,7 +192,7 @@ export default function HomePage() {
                   <span>Publier</span>
                 </nav>
                 <div className={styles.assistantBox}>
-                  <small>MODIFIER AVEC L’IA</small>
+                  <small>Modifier avec l’IA</small>
                   <p>« Rends le titre plus chaleureux »</p>
                   <b>Appliquer ✦</b>
                 </div>
@@ -221,7 +221,7 @@ export default function HomePage() {
 
         <section id="exemples" className={styles.examplesSection}>
           <div className={styles.examplesHead}>
-            <div><p className={styles.kicker}>EXEMPLES FICTIFS</p><h2>Un métier différent.<br />Une présence différente.</h2></div>
+            <div><p className={styles.kicker}>Exemples fictifs</p><h2>Un métier différent.<br />Une présence différente.</h2></div>
             <Link href="/exemples">Voir tous les exemples <span>→</span></Link>
           </div>
           <div className={styles.examples}>
@@ -231,7 +231,7 @@ export default function HomePage() {
                   <Image src={site.image} alt={site.imageAlt} fill sizes="(max-width: 760px) 100vw, 33vw" />
                   <span>0{index + 1}</span>
                 </div>
-                <div><small>{site.activity.toUpperCase()}</small><h3>{site.title}</h3><span>Explorer ce site <Arrow /></span></div>
+                <div><small>{site.activity}</small><h3>{site.title}</h3><span>Explorer ce site <Arrow /></span></div>
               </Link>
             ))}
           </div>
@@ -240,7 +240,7 @@ export default function HomePage() {
 
         <section id="tarifs" className={styles.pricingSection}>
           <div className={styles.pricingIntro}>
-            <p className={styles.kicker}>DES TARIFS SANS SURPRISE</p>
+            <p className={styles.kicker}>Des tarifs sans surprise</p>
             <h2>Commence gratuitement.<br />Publie quand tu es convaincu.</h2>
             <p>{freePreviewText}</p>
           </div>
@@ -248,7 +248,7 @@ export default function HomePage() {
             {plans.map((plan) => (
               <article key={plan.name} className={plan.highlighted ? styles.planFeatured : ""}>
                 <div className={styles.planTop}>
-                  <span>{plan.highlighted ? "LE PLUS CHOISI" : "FORMULE"}</span>
+                  <span>{plan.highlighted ? "Le plus choisi" : "Formule"}</span>
                   <h3>{plan.name}</h3>
                   <p>{plan.description}</p>
                 </div>
@@ -264,7 +264,7 @@ export default function HomePage() {
 
         <section id="faq" className={styles.faqSection}>
           <div className={styles.faqIntro}>
-            <p className={styles.eyebrow}><i /> QUESTIONS FRÉQUENTES</p>
+            <p className={styles.eyebrow}><i /> Questions fréquentes</p>
             <h2>Avant de te lancer.</h2>
             <p>Le premier aperçu est gratuit. Tu décides avec un résultat concret devant les yeux.</p>
           </div>
@@ -280,7 +280,7 @@ export default function HomePage() {
 
         <section className={styles.finalCta}>
           <span className={styles.orbit} aria-hidden="true">✦</span>
-          <p>TON SITE PEUT COMMENCER ICI</p>
+          <p>Ton site peut commencer ici</p>
           <h2>Donne à ton activité<br />la vitrine qu’elle mérite.</h2>
           <Link href="/auth">Créer mon aperçu gratuit <Arrow /></Link>
           <small>Sans carte bancaire · Sans coder · Sans engagement</small>
