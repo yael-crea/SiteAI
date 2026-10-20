@@ -21,18 +21,18 @@ export default function FirstSiteGuide() {
   return (
     <section
       aria-labelledby="first-site-guide-title"
-      className="mb-4 rounded-2xl border border-blue-900/70 bg-gradient-to-r from-blue-950/45 to-violet-950/30 p-4 sm:p-5"
+      className="mb-4 rounded-3xl border border-[#343238] bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.2),transparent_45%),#111214] p-5 shadow-2xl shadow-black/20 sm:p-6"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-300">
-            Premier site
+          <p className="text-xs font-black uppercase tracking-[0.26em] text-violet-300">
+            Premier atelier
           </p>
-          <h2 id="first-site-guide-title" className="mt-1 text-lg font-black">
+          <h2 id="first-site-guide-title" className="mt-2 font-serif text-2xl font-semibold text-[#f5f0e8]">
             Ton site en quatre étapes
           </h2>
         </div>
-        <span className="rounded-full bg-blue-500/15 px-3 py-1.5 text-xs font-bold text-blue-200">
+        <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1.5 text-xs font-bold text-violet-200">
           Environ 5 minutes
         </span>
       </div>
@@ -40,19 +40,19 @@ export default function FirstSiteGuide() {
         {steps.map((step, index) => (
           <li
             key={step.title}
-            className="rounded-xl border border-slate-700/80 bg-slate-950/55 p-3"
+            className="rounded-2xl border border-[#303137] bg-[#0a0b0d]/75 p-4"
           >
             <div className="flex items-center gap-2">
-              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${index === 0 ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300"}`}>
+              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${index === 0 ? "bg-[#f2ede3] text-[#111214]" : "bg-[#222328] text-slate-300"}`}>
                 {index + 1}
               </span>
-              <h3 className="text-sm font-bold text-slate-100">{step.title}</h3>
+              <h3 className="text-sm font-bold text-[#f5f0e8]">{step.title}</h3>
             </div>
             <p className="mt-2 text-xs leading-5 text-slate-400">{step.text}</p>
           </li>
         ))}
       </ol>
-      <p className="mt-4 text-sm font-semibold text-blue-200">
+      <p className="mt-5 text-sm font-semibold text-violet-200">
         Commence ci-dessous par les informations de ton entreprise.
       </p>
     </section>
