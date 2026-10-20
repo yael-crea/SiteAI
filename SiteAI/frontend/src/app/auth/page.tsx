@@ -12,6 +12,21 @@ import {
 type AuthMode = "login" | "signup" | "forgot";
 
 const TERMS_VERSION = "2026-10-20";
+const PRODUCTION_AUTH_ORIGIN = "https://lumio.business";
+
+function getAuthRedirectUrl(path: string) {
+  const currentOrigin =
+    typeof window !== "undefined" ? window.location.origin : "";
+  const currentHostname =
+    typeof window !== "undefined" ? window.location.hostname : "";
+  const isLocalDevelopment =
+    currentHostname === "localhost" || currentHostname === "127.0.0.1";
+  const origin = isLocalDevelopment
+    ? currentOrigin
+    : PRODUCTION_AUTH_ORIGIN;
+
+  return new URL(path, `${origin}/`).toString();
+}
 
 export default function AuthPage() {
   const router = useRouter();
@@ -91,10 +106,7 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      const redirectTo =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/reset-password`
-          : undefined;
+      const redirectTo = getAuthRedirectUrl("/reset-password");
 
       const { error: resetError } =
         await supabase.auth.resetPasswordForEmail(
@@ -187,10 +199,7 @@ export default function AuthPage() {
         return;
       }
 
-      const emailRedirectTo =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/onboarding`
-          : undefined;
+      const emailRedirectTo = getAuthRedirectUrl("/onboarding");
 
       const {
         data,
