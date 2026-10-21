@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import Link from "next/link";
+import "../app-theme.css";
 import { plans, CGV_VERSION, freePreviewText, domainText, aiUsageText, cancellationText, priceSuffix, priceTaxText, type PlanName } from "@/lib/commercialPlans";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -519,22 +520,17 @@ export default function PricingPage() {
 
   if (authLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <div className="text-center">
-          <div className="text-5xl">
-            ✨
-          </div>
-
-          <p className="mt-4 text-slate-400">
-            Chargement...
-          </p>
+      <main className="lumio-app flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        <div className="lumio-loading">
+          <strong>lumio<span>.</span></strong>
+          <p>Chargement des formules…</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="lumio-app min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-6 py-5">
           <button
@@ -544,12 +540,10 @@ export default function PricingPage() {
                 "/dashboard",
               )
             }
-            className="text-2xl font-black"
+            className="lumio-logo"
+            aria-label="Lumio, tableau de bord"
           >
-            Lum
-            <span className="text-blue-500">
-              io
-            </span>
+            lumio<span>.</span>
           </button>
 
           <div className="flex items-center gap-3">
@@ -595,8 +589,7 @@ export default function PricingPage() {
           </p>
 
           <h1 className="mt-5 text-4xl font-black md:text-6xl">
-            Choisis la formule
-            adaptée à ton activité
+            Choisis la formule <em>adaptée à ton activité.</em>
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-400">
@@ -745,7 +738,7 @@ export default function PricingPage() {
                   }`}
                 >
                   {plan.highlighted && (
-                    <span className="absolute right-5 top-5 rounded-full bg-blue-600 px-3 py-1 text-xs font-black uppercase tracking-wider">
+                    <span className="absolute right-5 top-5 rounded-full bg-blue-500 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-950">
                       Recommandé
                     </span>
                   )}
@@ -854,15 +847,15 @@ export default function PricingPage() {
         <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-slate-400">{priceTaxText}</p>
         <section aria-label="Ce qui est inclus" className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-            <h2 className="font-bold text-white">Ton domaine, ton adresse</h2>
+            <h2 className="text-xl text-white">Ton domaine, ton adresse</h2>
             <p className="mt-3 text-sm leading-6 text-slate-400">{domainText}</p>
           </div>
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-            <h2 className="font-bold text-white">Une IA avec des limites claires</h2>
+            <h2 className="text-xl text-white">Une IA avec des limites claires</h2>
             <p className="mt-3 text-sm leading-6 text-slate-400">{aiUsageText}</p>
           </div>
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-            <h2 className="font-bold text-white">Si tu résilies</h2>
+            <h2 className="text-xl text-white">Si tu résilies</h2>
             <p className="mt-3 text-sm leading-6 text-slate-400">{cancellationText}</p>
           </div>
         </section>
