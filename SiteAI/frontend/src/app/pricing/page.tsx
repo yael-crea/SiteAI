@@ -602,7 +602,7 @@ export default function PricingPage() {
         <div className="mx-auto mt-8 max-w-3xl rounded-3xl border border-blue-800 bg-blue-950/30 p-6 text-center">
           <h2 className="text-xl font-black">Découvre ton site avant de payer</h2>
           <p className="mt-3 text-sm leading-7 text-slate-300">{freePreviewText}</p>
-          <Link href="/builder" className="mt-5 inline-flex rounded-xl bg-blue-600 px-6 py-3 font-bold hover:bg-blue-500">Créer mon aperçu gratuit</Link>
+          <Link href="/creer" className="mt-5 inline-flex rounded-xl bg-blue-600 px-6 py-3 font-bold hover:bg-blue-500">Créer mon aperçu gratuit</Link>
         </div>
 
         {message && (
