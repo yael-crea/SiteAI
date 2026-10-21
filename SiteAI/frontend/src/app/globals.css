@@ -15,6 +15,10 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-lumio), "Segoe UI", Arial, sans-serif;
   --font-mono: "SFMono-Regular", Consolas, monospace;
+}
+
+/* Couleurs exposées en variables CSS pour pouvoir être redéfinies localement (voir app-theme.css). */
+@theme {
   --color-slate-950: #080d1b;
   --color-slate-900: #11182b;
   --color-slate-800: #202b43;

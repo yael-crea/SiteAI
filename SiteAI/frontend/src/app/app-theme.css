@@ -1,0 +1,315 @@
+/*
+ * Thème « espace client » Lumio — même direction artistique que l'accueil
+ * et la page de connexion : encre presque noire, papier chaud, accent violet,
+ * titres serif éditoriaux.
+ *
+ * Tout est limité à `.lumio-app` : on redéfinit les variables de couleur,
+ * d'arrondi et de graisse utilisées par Tailwind, puis on affine quelques
+ * éléments (en-tête, titres, boutons, cartes). La logique des pages n'est pas
+ * touchée.
+ */
+
+.lumio-app {
+  --ink: #070707;
+  --ink-soft: #0e0e0d;
+  --paper: #f3f1ed;
+  --paper-deep: #e8e4dc;
+  --muted: #a6a39d;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --violet: #a99cff;
+  --violet-light: #cfc8ff;
+  --display: var(--font-serif), Georgia, "Times New Roman", serif;
+
+  /* Neutres : du bleu nuit vers l'encre chaude de la vitrine */
+  --color-white: #f3f1ed;
+  --color-slate-950: #070707;
+  --color-slate-900: #0e0e0d;
+  --color-slate-800: #1f1e1c;
+  --color-slate-700: #2f2e2b;
+  --color-slate-600: #57554f;
+  --color-slate-500: #85827b;
+  --color-slate-400: #a6a39d;
+  --color-slate-300: #c9c6bf;
+  --color-slate-200: #e3e0d9;
+  --color-slate-100: #f3f1ed;
+
+  /* Accent principal : le bleu devient le violet Lumio */
+  --color-blue-950: #14112a;
+  --color-blue-900: #211c45;
+  --color-blue-800: #352e6e;
+  --color-blue-700: #6a5fd0;
+  --color-blue-600: #8f83ff;
+  --color-blue-500: #a99cff;
+  --color-blue-400: #cfc8ff;
+  --color-blue-300: #e2ddff;
+
+  --color-violet-950: #17132c;
+  --color-violet-900: #251f4b;
+  --color-violet-800: #3a3275;
+  --color-violet-500: #a99cff;
+  --color-violet-400: #bdb3ff;
+  --color-violet-300: #d6d0ff;
+
+  /* Couleurs d'état, adoucies pour rester dans la palette */
+  --color-emerald-950: #0d1813;
+  --color-emerald-900: #15301f;
+  --color-emerald-800: #1e4630;
+  --color-emerald-700: #2c6145;
+  --color-emerald-600: #3f8a63;
+  --color-emerald-500: #7cc79c;
+  --color-emerald-400: #9ad8b3;
+  --color-emerald-300: #bfe8cf;
+
+  --color-amber-950: #1c150a;
+  --color-amber-900: #33260f;
+  --color-amber-800: #4f3a15;
+  --color-amber-700: #6e5220;
+  --color-amber-500: #e3b866;
+  --color-amber-400: #ecc985;
+  --color-amber-300: #f3dcac;
+
+  --color-red-950: #1e0e0c;
+  --color-red-900: #3d1c17;
+  --color-red-500: #e0786a;
+  --color-red-400: #ec9587;
+  --color-red-300: #f3b8ad;
+
+  --color-cyan-950: #0b1719;
+  --color-cyan-900: #143034;
+  --color-cyan-500: #7fc8cf;
+  --color-cyan-400: #a2d9de;
+
+  /* Formes plus nettes, graisses plus éditoriales */
+  --radius-lg: 6px;
+  --radius-xl: 7px;
+  --radius-2xl: 10px;
+  --radius-3xl: 14px;
+  --font-weight-black: 650;
+  --font-weight-bold: 600;
+
+  min-height: 100svh;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-lumio), "Segoe UI", Arial, sans-serif;
+}
+
+.lumio-app ::selection {
+  background: rgba(169, 156, 255, 0.35);
+  color: #fff;
+}
+
+.lumio-app :focus-visible {
+  outline: 2px solid var(--violet-light);
+  outline-offset: 3px;
+}
+
+/* Fond : halo violet + fines lignes verticales, comme la vitrine */
+main.lumio-app {
+  background:
+    radial-gradient(48rem 30rem at 12% -6%, rgba(143, 131, 255, 0.13), transparent 70%),
+    radial-gradient(36rem 26rem at 100% 18%, rgba(143, 131, 255, 0.06), transparent 72%),
+    repeating-linear-gradient(90deg, transparent 0, transparent 79px, rgba(255, 255, 255, 0.015) 80px),
+    var(--ink) !important;
+  color: var(--paper);
+}
+
+/* ---------- En-tête ---------- */
+
+.lumio-app header {
+  border-color: var(--line) !important;
+  background: rgba(7, 7, 7, 0.78) !important;
+  backdrop-filter: blur(18px);
+}
+
+.lumio-app .lumio-logo {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: var(--paper);
+}
+
+.lumio-app .lumio-logo span {
+  color: var(--violet);
+}
+
+.lumio-app header button,
+.lumio-app header a {
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* ---------- Titres ---------- */
+
+.lumio-app h1 {
+  font-family: var(--display);
+  font-size: clamp(44px, 5.6vw, 76px) !important;
+  font-weight: 400 !important;
+  line-height: 0.96;
+  letter-spacing: -0.05em;
+  color: var(--paper);
+}
+
+.lumio-app h2 {
+  font-family: var(--display);
+  font-weight: 400 !important;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.lumio-app h2.text-2xl {
+  font-size: clamp(28px, 2.8vw, 36px);
+}
+
+.lumio-app h2.text-xl {
+  font-size: 23px;
+}
+
+.lumio-app h1 em,
+.lumio-app h2 em {
+  font-style: italic;
+  color: var(--violet-light);
+}
+
+.lumio-app h3 {
+  letter-spacing: -0.01em;
+}
+
+/* Sur-titres en capitales : petit trait + violet clair */
+.lumio-app p.uppercase[class*="tracking-"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.18em !important;
+  color: var(--violet-light) !important;
+}
+
+.lumio-app p.uppercase[class*="tracking-"]::before {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+/* Les grands chiffres passent en serif */
+.lumio-app :is(p, span):is(.text-xl, .text-2xl, .text-3xl, .text-4xl, .text-5xl).font-black {
+  font-family: var(--display);
+  font-weight: 400 !important;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+/* ---------- Cartes ---------- */
+
+.lumio-app .bg-slate-900 {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+    #0b0b0a !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.lumio-app .border-slate-800 {
+  border-color: var(--line) !important;
+}
+
+.lumio-app .border-slate-700 {
+  border-color: var(--line-strong) !important;
+}
+
+.lumio-app :is(article, div).border:is(.bg-slate-900, [class*="bg-blue-950"], [class*="bg-violet-950"], [class*="bg-emerald-950"], [class*="bg-amber-950"], [class*="bg-red-950"]) {
+  transition: border-color 160ms ease, transform 160ms ease, background-color 160ms ease;
+}
+
+/* ---------- Boutons ---------- */
+
+/* Bouton principal : papier clair, comme « Créer mon aperçu » sur l'accueil */
+.lumio-app :is(button, a).bg-blue-600,
+.lumio-app :is(button, a).bg-blue-500 {
+  background: var(--paper) !important;
+  color: #0d0d0c !important;
+  box-shadow: none !important;
+  font-weight: 650;
+}
+
+.lumio-app :is(button, a).bg-blue-600:hover:not(:disabled),
+.lumio-app :is(button, a).bg-blue-500:hover:not(:disabled) {
+  background: var(--violet) !important;
+  color: #0d0d0c !important;
+}
+
+/* Boutons secondaires (bordure) */
+.lumio-app :is(button, a).border:not(.bg-blue-600):not(.bg-blue-500) {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.lumio-app :is(button, a).border:not(.bg-blue-600):not(.bg-blue-500):hover:not(:disabled) {
+  border-color: var(--violet) !important;
+  color: var(--paper);
+}
+
+/* Pastilles pleines (badges, onglets actifs) en texte sombre */
+.lumio-app :is(.bg-emerald-500, .bg-emerald-600, .bg-amber-500, .bg-violet-500, .bg-cyan-500, .bg-red-500) {
+  color: #0d0d0c !important;
+}
+
+/* ---------- Champs ---------- */
+
+.lumio-app :is(input, textarea, select) {
+  border-color: var(--line-strong);
+  background-color: #0b0b0a;
+  color: var(--paper);
+}
+
+.lumio-app :is(input, textarea, select):focus {
+  border-color: var(--violet) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(169, 156, 255, 0.16);
+}
+
+.lumio-app :is(input, textarea)::placeholder {
+  color: #6f6c66;
+}
+
+.lumio-app input[type="checkbox"],
+.lumio-app input[type="radio"] {
+  accent-color: var(--violet);
+}
+
+/* ---------- Écran de chargement ---------- */
+
+.lumio-app .lumio-loading {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.lumio-app .lumio-loading strong {
+  font-family: var(--display);
+  font-size: 40px;
+  font-weight: 400;
+  letter-spacing: -0.06em;
+}
+
+.lumio-app .lumio-loading strong span {
+  color: var(--violet);
+}
+
+.lumio-app .lumio-loading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .lumio-app h1 {
+    font-size: clamp(40px, 12vw, 52px) !important;
+  }
+}
