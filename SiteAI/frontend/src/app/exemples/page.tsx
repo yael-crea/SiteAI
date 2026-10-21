@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import SitePreview from "@/components/SitePreview";
+import MobileNavigation from "@/components/MobileNavigation";
 import type { DesignStyle } from "@/lib/designStyles";
 import { rememberExampleTemplate } from "@/lib/exampleTemplates";
 import home from "../home.module.css";
@@ -165,18 +166,32 @@ export default function ExamplesPage() {
       <a href="#contenu" className={home.skip}>Aller au contenu</a>
       <header className={home.header}>
         <div className={home.navbar}>
-          <Link className={home.logo} href="/" aria-label="Lumio, accueil"><span className={home.logoMark} aria-hidden="true">✳</span> lumio<span className={home.logoDot}>.</span></Link>
-          <nav className={home.desktopNav} aria-label="Navigation principale"><Link href="/#comment-ca-marche">Comment ça marche</Link><Link href="/exemples" aria-current="page">Exemples</Link><Link href="/#tarifs">Tarifs</Link><Link href="/#faq">Questions</Link></nav>
-          <div className={home.navActions}><Link className={home.login} href="/auth">Connexion</Link><Link className={home.smallButton} href="/auth">Créer mon site <Arrow /></Link></div>
+          <Link className={home.logo} href="/" aria-label="Lumio, accueil">
+            lumio<span>.</span>
+          </Link>
+          <nav className={home.desktopNav} aria-label="Navigation principale">
+            <Link href="/#comment-ca-marche">Comment ça marche</Link>
+            <Link href="/exemples" aria-current="page">Exemples</Link>
+            <Link href="/#tarifs">Tarifs</Link>
+            <Link href="/#faq">Questions</Link>
+          </nav>
+          <div className={home.navActions}>
+            <Link className={home.login} href="/auth">Se connecter</Link>
+            <Link className={home.headerButton} href="/auth">
+              <span className={home.headerCtaDesktop}>Créer mon site</span>
+              <span className={home.headerCtaMobile}>Créer</span>
+              <Arrow />
+            </Link>
+          </div>
+          <MobileNavigation />
         </div>
-        <nav className={home.mobileNav} aria-label="Navigation mobile"><Link href="/">Accueil</Link><Link href="/exemples" aria-current="page">Exemples</Link><Link href="/#tarifs">Tarifs</Link><Link href="/auth">Connexion</Link></nav>
       </header>
 
       <main id="contenu">
-        <section className={`${home.wrap} ${styles.intro}`} aria-labelledby="examples-title">
+        <section className={`${styles.wrap} ${styles.intro}`} aria-labelledby="examples-title">
           <div>
-            <p className={home.eyebrow}><span className={home.statusDot} /> UNE IDÉE DU RÉSULTAT</p>
-            <h1 id="examples-title">Des exemples concrets.<br /><span>Ton activité ensuite.</span></h1>
+            <p className={styles.eyebrow}>Une idée du résultat</p>
+            <h1 id="examples-title">Des exemples concrets.<br /><em>Ton activité ensuite.</em></h1>
           </div>
           <div className={styles.introCopy}>
             <p>Explore quatre démonstrations créées avec Lumio. Change de métier, observe le rendu et imagine ton propre contenu à la place.</p>
@@ -185,7 +200,7 @@ export default function ExamplesPage() {
         </section>
 
         <div className={styles.audience}>
-          <div className={home.wrap} role="tablist" aria-label="Choisir une démonstration">
+          <div className={styles.wrap} role="tablist" aria-label="Choisir une démonstration">
             {examples.map((item, index) => (
               <button key={item.id} type="button" role="tab" aria-selected={selected === item.id} onClick={() => selectExample(item.id)} className={selected === item.id ? styles.activeTab : undefined}>
                 <span>0{index + 1}</span>{item.activity}<Arrow />
@@ -194,9 +209,9 @@ export default function ExamplesPage() {
           </div>
         </div>
 
-        <section className={`${home.wrap} ${styles.demoSection}`} aria-live="polite">
+        <section className={`${styles.wrap} ${styles.demoSection}`} aria-live="polite">
           <div className={styles.demoHeading}>
-            <div><p className={home.eyebrow}>APERÇU INTERACTIF</p><h2>{example.name}</h2></div>
+            <div><p className={styles.eyebrow}>Aperçu interactif</p><h2>{example.name}</h2></div>
             <div className={styles.demoActions}>
               <p>{example.activity} · {example.city}<br /><span>Fais défiler le site dans la fenêtre.</span></p>
               <Link
@@ -226,14 +241,14 @@ export default function ExamplesPage() {
                 openingHours: "Sur rendez-vous",
               }} />
             </div>
-            <p className={styles.demoCaption}><span className={home.statusDot} /> Démonstration Lumio · Aucun message ne sera envoyé</p>
+            <p className={styles.demoCaption}>Démonstration Lumio · Aucun message ne sera envoyé</p>
           </div>
         </section>
 
-        <section className={`${home.wrap} ${styles.trustSection}`} aria-labelledby="trust-title">
+        <section className={`${styles.wrap} ${styles.trustSection}`} aria-labelledby="trust-title">
           <div>
-            <p className={home.eyebrow}>DES EXEMPLES, PAS DES PROMESSES FLOUES</p>
-            <h2 id="trust-title">Tu vois le rendu avant de commencer.</h2>
+            <p className={styles.eyebrow}>Des exemples, pas des promesses floues</p>
+            <h2 id="trust-title">Tu vois le rendu <em>avant de commencer.</em></h2>
           </div>
           <div className={styles.trustGrid}>
             <article><strong>01</strong><h3>Contenu modifiable</h3><p>Textes, couleurs, services et photos restent entièrement personnalisables.</p></article>
@@ -244,19 +259,22 @@ export default function ExamplesPage() {
         </section>
 
         <section className={home.finalCta}>
-          <div className={home.wrap}>
-            <span className={home.eyebrow}>À TON TOUR</span>
-            <h2>Maintenant, imagine<br />ton activité ici.</h2>
-            <p>Donne quelques informations à Lumio et obtiens ta première version.</p>
-            <Link href="/auth" className={home.primary}>Créer mon aperçu gratuit <Arrow /></Link>
-            <small>Sans carte bancaire. Tu publies uniquement quand tu es prêt.</small>
-          </div>
+          <span className={home.orbit} aria-hidden="true">✦</span>
+          <p>À ton tour</p>
+          <h2>Maintenant, imagine<br />ton activité ici.</h2>
+          <Link href="/auth">Créer mon aperçu gratuit <Arrow /></Link>
+          <small>Sans carte bancaire · Tu publies uniquement quand tu es prêt</small>
         </section>
       </main>
 
-      <footer className={`${home.wrap} ${home.footer}`}>
-        <div><Link href="/" className={home.logo}>lumio<span className={home.logoDot}>.</span></Link><p>Ton activité. Ton style. Ton site.</p></div>
-        <nav aria-label="Liens de bas de page"><Link href="/exemples">Exemples</Link><Link href="/pricing">Tarifs</Link><Link href="/auth">Connexion</Link><Link href="/mentions-legales">Mentions légales</Link><Link href="/confidentialite">Confidentialité</Link><Link href="/cgu">CGU</Link><Link href="/cgv">CGV</Link></nav>
+      <footer className={home.footer}>
+        <div><Link href="/" className={home.logo}>lumio<span>.</span></Link><p>Ton activité. Ton style. Ton site.</p></div>
+        <nav aria-label="Liens de bas de page">
+          <Link href="/exemples">Exemples</Link><Link href="/pricing">Tarifs</Link><Link href="/auth">Connexion</Link>
+          <Link href="/mentions-legales">Mentions légales</Link><Link href="/confidentialite">Confidentialité</Link>
+          <Link href="/cgu">CGU</Link><Link href="/cgv">CGV</Link>
+        </nav>
+        <span>© 2026 Lumio</span>
       </footer>
     </div>
   );
