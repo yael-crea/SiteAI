@@ -4,6 +4,7 @@ import { goalAction } from "@/lib/siteGoal";
 import { createContext, useContext, useState } from "react";
 import { normalizeDesignExtras, type DesignExtras } from "@/lib/appearanceSettings";
 import { designExtrasCSS } from "@/lib/designExtrasCSS";
+import { siteQualityCSS } from "@/lib/siteQualityCSS";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { getQuoteOptions, type Testimonial } from "@/lib/siteGrowth";
 
@@ -316,15 +317,15 @@ function DesignShell({
 }) {
   const fontFamily = {
     system:
-      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      'var(--font-site-sans), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     modern:
-      '"Trebuchet MS", "Segoe UI", Arial, sans-serif',
+      'var(--font-site-modern), "Trebuchet MS", "Segoe UI", Arial, sans-serif',
     classic:
-      'Georgia, "Times New Roman", serif',
+      'var(--font-serif), Georgia, "Times New Roman", serif',
     editorial:
-      '"Times New Roman", Times, serif',
+      'var(--font-site-editorial), Georgia, "Times New Roman", serif',
     mono:
-      '"Courier New", Courier, monospace',
+      'var(--font-site-mono), "Courier New", Courier, monospace',
   }[settings.font];
 
   const buttonRadius = {
@@ -379,6 +380,7 @@ function DesignShell({
       data-title-scale={settings.titleScale}
       data-text-scale={settings.textScale}
       data-title-weight={settings.titleWeight}
+      data-font={settings.font}
       data-title-case={settings.titleCase}
       data-line-height={settings.lineHeight}
       data-card-radius={settings.cardRadius}
@@ -1258,6 +1260,7 @@ function DesignShell({
         }
       `}</style>
 
+      <style>{siteQualityCSS}</style>
       <style>{designExtrasCSS}</style>
       {children}
     </div>
@@ -1892,14 +1895,9 @@ function siteSafeActivity(activity: string) {
   return clean || "l’entreprise";
 }
 
-function getSectorServiceIcon(activity: string, index: number) {
-  const theme = getSectorVisualTheme(activity, "");
-  return theme.serviceIcons[index % theme.serviceIcons.length];
-}
-
 function getSectionIcon(
   section: SiteSection,
-  activity: string,
+  _activity: string,
   index: number,
 ) {
   const mode = section.iconMode?.trim().toLowerCase();
@@ -1912,7 +1910,8 @@ function getSectionIcon(
     return section.icon?.trim() || "✨";
   }
 
-  return getSectorServiceIcon(activity, index);
+  // Par défaut, une numérotation sobre plutôt qu'un emoji : rendu plus haut de gamme.
+  return String(index + 1).padStart(2, "0");
 }
 
 
@@ -2426,13 +2425,12 @@ function ModernTemplate({
                   className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-black uppercase tracking-[0.2em]"
                   style={{ color: accentColor }}
                 >
-                  <span className="mr-2" aria-hidden="true">{sector.icon}</span>
-                  {textOr(site.heroEyebrow, sector.heroFallback)}
+                                    {textOr(site.heroEyebrow, sector.heroFallback)}
                 </span>
 
                 {city && (
                   <span className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-slate-300">
-                    📍 {city}
+                    {city}
                   </span>
                 )}
               </div>
@@ -3197,8 +3195,7 @@ function ElegantTemplate({
                 style={{ color: accentColor }}
                 className="text-xs font-semibold uppercase tracking-[0.4em]"
               >
-                <span className="mr-2" aria-hidden="true">{sector.icon}</span>
-                {textOr(site.heroEyebrow, sector.heroFallback)} · {city}
+                                {textOr(site.heroEyebrow, sector.heroFallback)} · {city}
               </p>
             </div>
 
@@ -3918,13 +3915,12 @@ function ArtisanTemplate({
                   style={{ backgroundColor: accentColor }}
                   className="inline-block rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.2em]"
                 >
-                  <span className="mr-2" aria-hidden="true">{sector.icon}</span>
-                  {textOr(site.heroEyebrow, sector.heroFallback)}
+                                    {textOr(site.heroEyebrow, sector.heroFallback)}
                 </span>
 
                 {city && (
                   <span className="rounded-full border border-stone-600 px-4 py-2 text-xs font-bold text-stone-300">
-                    📍 {city}
+                    {city}
                   </span>
                 )}
               </div>
@@ -3979,7 +3975,7 @@ function ArtisanTemplate({
             ) : (
               <div className="flex h-full min-h-[280px] items-center justify-center bg-stone-800 sm:min-h-[380px] lg:min-h-[620px]">
                 <div className="text-center">
-                  <p className="text-6xl" aria-hidden="true">{sector.icon}</p>
+                  <p className="font-serif text-7xl font-normal text-stone-400" aria-hidden="true">{cleanActivityLabel(activity).charAt(0).toUpperCase()}</p>
                   <p className="mt-4 text-sm font-bold uppercase tracking-[0.25em] text-stone-500">
                     {activity}
                   </p>
@@ -4645,7 +4641,7 @@ function AboutSection({
               style={{ backgroundColor: `${accentColor}18` }}
               aria-hidden="true"
             >
-              {sector.icon}
+              <span className="block h-[2px] w-6 rounded-full" style={{ backgroundColor: accentColor }} />
             </div>
             <p
               className="mt-6 text-sm font-black uppercase tracking-[0.24em]"
@@ -4668,7 +4664,7 @@ function AboutSection({
                 {activity}
               </span>
               <span className="rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-500">
-                📍 {city}
+                {city}
               </span>
             </div>
             <a
