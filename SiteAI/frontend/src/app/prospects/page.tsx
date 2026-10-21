@@ -1,5 +1,6 @@
 "use client";
 import "../app-theme.css";
+import LumioAssistant from "@/components/LumioAssistant";
 import { notificationLabel } from "@/lib/actionErrors";
 
 
@@ -2013,6 +2014,7 @@ export default function ProspectsPage() {
 
 
   return (
+    <>
 
     <main className="lumio-app min-h-screen bg-slate-950 text-white">
 
@@ -3492,6 +3494,8 @@ export default function ProspectsPage() {
       </section>
 
     </main>
+      <LumioAssistant page="Prospects" mobileOffset={24} />
+    </>
 
   );
 

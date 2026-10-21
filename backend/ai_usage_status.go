@@ -49,7 +49,7 @@ func aiUsageHandler(w http.ResponseWriter, r *http.Request) {
 	err = db.QueryRow(r.Context(), `
    WITH month AS (SELECT date_trunc('month', NOW() AT TIME ZONE 'UTC') AS start)
    SELECT (SELECT COUNT(*) FROM ai_usage WHERE user_id = $1::uuid
-     AND created_at >= (month.start AT TIME ZONE 'UTC')),
+     AND action <> 'assistant' AND created_at >= (month.start AT TIME ZONE 'UTC')),
      (month.start + INTERVAL '1 month') AT TIME ZONE 'UTC' FROM month;
  `, user.ID).Scan(&used, &resetsAt)
 	if err != nil {
