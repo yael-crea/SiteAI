@@ -24,6 +24,10 @@ import BuilderVersions, {
 } from "@/components/BuilderVersions";
 import { useBuilderDraft } from "@/lib/useBuilderDraft";
 import AIUsage from "@/components/AIUsage";
+import LumioAssistant, {
+  openLumioAssistant,
+  type AssistantModification,
+} from "@/components/LumioAssistant";
 import SiteGoalPicker from "@/components/SiteGoalPicker";
 import { type SiteGoal } from "@/lib/siteGoal";
 import { normalizeDesignExtras } from "@/lib/appearanceSettings";
@@ -44,9 +48,7 @@ import type {
   DesignSettings,
   GeneratedSite,
   PreviewDevice,
-  ModifyResponse,
   SavedSite,
-  ChatMessage,
 } from "@/lib/builderTypes";
 
 const socialLinkFields = [
@@ -1418,13 +1420,7 @@ export default function Home() {
 
   const [error, setError] = useState("");
 
-  const [editPrompt, setEditPrompt] = useState("");
-
   const [editLoading, setEditLoading] = useState(false);
-
-  const [editError, setEditError] = useState("");
-
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const [savedSites, setSavedSites] = useState<SavedSite[]>([]);
 
@@ -1664,16 +1660,7 @@ export default function Home() {
   }
 
   function prepareQuickPrompt(instruction: string) {
-    setEditPrompt(instruction);
-    setDesktopPanel("ia");
-    setMobileStep(1);
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        const field = document.getElementById("builder-ai-instruction");
-        field?.focus({ preventScroll: true });
-        field?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }),
-    );
+    openLumioAssistant(instruction);
   }
 
   useEffect(() => {
@@ -1863,7 +1850,6 @@ export default function Home() {
     setError("");
     setSaveMessage("");
     setSaveError("");
-    setChatMessages([]);
     setManualEditorOpen(false);
 
     const serviceList = parseServices(services);
@@ -1942,120 +1928,77 @@ export default function Home() {
     }
   }
 
-  async function handleModification(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  /**
+   * Fusionne un site renvoyé par l'IA avec le site ouvert : l'IA réécrit les
+   * textes, mais les médias, la mise en page et les réglages restent ceux de
+   * l'utilisateur.
+   */
+  function mergeAIModifiedSite(
+    base: GeneratedSite,
+    incoming: GeneratedSite,
+  ): GeneratedSite {
+    const site = base;
+    return {
+      ...incoming,
+      siteGoal: site.siteGoal,
+      bookingUrl: site.bookingUrl,
+      logoUrl: incoming.logoUrl || site.logoUrl || "",
+      heroImageUrl: incoming.heroImageUrl || site.heroImageUrl || "",
+      gallery: incoming.gallery?.length
+        ? incoming.gallery
+        : (site.gallery ?? []),
+      sections: (incoming.sections ?? []).map((section, index) => ({
+        ...section,
+        iconMode:
+          site.sections[index]?.iconMode ?? section.iconMode ?? "auto",
+        icon: site.sections[index]?.icon ?? section.icon ?? "",
+        imageMode:
+          site.sections[index]?.imageMode ?? section.imageMode ?? "auto",
+        imageUrl: site.sections[index]?.imageUrl ?? section.imageUrl ?? "",
+        hidden: site.sections[index]?.hidden ?? section.hidden ?? false,
+      })),
+      layoutOrder: normalizeLayoutOrder(
+        site.layoutOrder ?? incoming.layoutOrder,
+      ),
+      hiddenBlocks: normalizeHiddenBlocks(
+        site.hiddenBlocks ?? incoming.hiddenBlocks,
+      ),
+      designSettings: normalizeDesignSettings(
+        site.designSettings ?? incoming.designSettings,
+      ),
+      testimonials: site.testimonials ?? incoming.testimonials ?? [],
+      serviceArea: site.serviceArea ?? incoming.serviceArea ?? city,
+      openingHours: site.openingHours ?? incoming.openingHours ?? "",
+      clientName: site.clientName ?? incoming.clientName ?? "",
+      clientEmail: site.clientEmail ?? incoming.clientEmail ?? "",
+      socialLinks: normalizeSocialLinks(
+        site.socialLinks ?? incoming.socialLinks,
+      ),
+    };
+  }
 
-    if (!site) {
-      return;
+  function getAssistantContext() {
+    if (!site) return null;
+    return { site, designStyle, accentColor, activity, city };
+  }
+
+  function applyAssistantModification(modification: AssistantModification) {
+    if (!site) return;
+    const before = draftSnapshot;
+    versions.checkpoint(before, "Avant modification par l’assistant");
+    const modifiedSite = mergeAIModifiedSite(site, modification.site);
+    setSite(modifiedSite);
+    setBusinessName(modifiedSite.businessName);
+    setPhone(modifiedSite.phone);
+    const nextStyle = getDesignStyle(modification.designStyle);
+    if (nextStyle.id === modification.designStyle) {
+      setDesignStyle(nextStyle.id);
     }
-
-    const instruction = editPrompt.trim();
-
-    if (instruction === "") {
-      return;
+    if (modification.accentColor) {
+      setAccentColor(modification.accentColor);
     }
-
-    versions.checkpoint(draftSnapshot, "Avant modification IA");
-    setEditLoading(true);
-    setEditError("");
-    setSaveMessage("");
-
-    setChatMessages((messages) => [
-      ...messages,
-      {
-        role: "user",
-        text: instruction,
-      },
-    ]);
-
-    setEditPrompt("");
-
-    try {
-      const response = await authenticatedFetch("/modify", {
-        method: "POST",
-
-        body: JSON.stringify({
-          site,
-          instruction,
-          designStyle,
-          accentColor,
-          activity,
-          city,
-        }),
-      });
-
-      if (!response.ok) {
-        const message = (await response.text()).trim();
-
-        throw new Error(message || "Impossible de modifier le site.");
-      }
-
-      const data: ModifyResponse = await response.json();
-
-      const modifiedSite: GeneratedSite = {
-        ...data.site,
-        siteGoal: site.siteGoal,
-        bookingUrl: site.bookingUrl,
-        logoUrl: data.site.logoUrl || site.logoUrl || "",
-        heroImageUrl: data.site.heroImageUrl || site.heroImageUrl || "",
-        gallery: data.site.gallery?.length
-          ? data.site.gallery
-          : (site.gallery ?? []),
-        sections: (data.site.sections ?? []).map((section, index) => ({
-          ...section,
-          iconMode:
-            site.sections[index]?.iconMode ?? section.iconMode ?? "auto",
-          icon: site.sections[index]?.icon ?? section.icon ?? "",
-          imageMode:
-            site.sections[index]?.imageMode ?? section.imageMode ?? "auto",
-          imageUrl: site.sections[index]?.imageUrl ?? section.imageUrl ?? "",
-          hidden: site.sections[index]?.hidden ?? section.hidden ?? false,
-        })),
-        layoutOrder: normalizeLayoutOrder(
-          site.layoutOrder ?? data.site.layoutOrder,
-        ),
-        hiddenBlocks: normalizeHiddenBlocks(
-          site.hiddenBlocks ?? data.site.hiddenBlocks,
-        ),
-        designSettings: normalizeDesignSettings(
-          site.designSettings ?? data.site.designSettings,
-        ),
-        testimonials: site.testimonials ?? data.site.testimonials ?? [],
-        serviceArea: site.serviceArea ?? data.site.serviceArea ?? city,
-        openingHours: site.openingHours ?? data.site.openingHours ?? "",
-        clientName: site.clientName ?? data.site.clientName ?? "",
-        clientEmail: site.clientEmail ?? data.site.clientEmail ?? "",
-        socialLinks: normalizeSocialLinks(
-          site.socialLinks ?? data.site.socialLinks,
-        ),
-      };
-
-      setSite(modifiedSite);
-
-      setBusinessName(modifiedSite.businessName);
-
-      setPhone(modifiedSite.phone);
-
-      setDesignStyle(data.designStyle);
-
-      setAccentColor(data.accentColor);
-
-      setChatMessages((messages) => [
-        ...messages,
-        {
-          role: "assistant",
-          text: "Modification effectuée.",
-        },
-      ]);
-    } catch (err) {
-      console.error(err);
-
-      setEditError(
-        err instanceof Error ? err.message : "Impossible de modifier le site.",
-      );
-    } finally {
-      setEditLoading(false);
-    }
+    setSaveMessage("Modification de l’assistant appliquée. Pense à enregistrer.");
+    return () => restoreSnapshot(before);
   }
 
   async function saveCurrentSite(): Promise<SavedSite | null> {
@@ -2373,7 +2316,6 @@ export default function Home() {
         saved.site.sections.map((section) => section.title).join(", "),
       );
 
-      setChatMessages([]);
       setManualEditorOpen(true);
 
       setSaveMessage(`Site "${saved.businessName}" ouvert.`);
@@ -2466,13 +2408,9 @@ export default function Home() {
 
     setAccentColor("#2563eb");
 
-    setChatMessages([]);
-
     setSaveMessage("");
     setSaveError("");
 
-    setEditPrompt("");
-    setEditError("");
     setError("");
 
     setManualEditorOpen(false);
@@ -3644,10 +3582,11 @@ export default function Home() {
           onClick={() => {
             setDesktopPanel("ia");
             setEditorCollapsed(false);
+            openLumioAssistant();
           }}
           className={`lumio-ai-trigger shrink-0 rounded-full border px-4 py-2 text-xs font-black transition disabled:opacity-30 ${activeDesktopPanel === "ia" ? "border-violet-300 bg-violet-500 text-white shadow-lg shadow-violet-950/40" : "border-violet-700/80 bg-violet-500/10 text-violet-200 hover:border-violet-500 hover:bg-violet-500/20"}`}
         >
-          ✨ Assistant IA
+          Assistant IA
         </button>
         <div className="ml-auto shrink-0">
           <BuilderToolsMenu
@@ -3817,14 +3756,10 @@ export default function Home() {
         {site && mobileStep === 1 && (
           <button
             type="button"
-            onClick={() =>
-              document
-                .getElementById("builder-ai-instruction")
-                ?.scrollIntoView({ behavior: "smooth", block: "center" })
-            }
+            onClick={() => openLumioAssistant()}
             className="mt-3 w-full rounded-xl border border-violet-700 bg-violet-500/10 px-4 py-3 text-sm font-black text-violet-200"
           >
-            ✨ Ouvrir l&apos;assistant IA
+            Ouvrir l&apos;assistant IA
           </button>
         )}
       </div>
@@ -5437,28 +5372,29 @@ export default function Home() {
                 className="rounded-3xl border border-slate-800 bg-slate-900 p-7"
               >
                 <h2 className="text-xl font-bold">
-                  ✨ Modifier avec l&apos;IA
+                  Assistant <em>Lumio</em>
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Exemple : « rends le titre plus professionnel », « ajoute un
-                  service dépannage » ou « passe le site en vert ».
+                  Écris ou dicte ce que tu veux changer, comme à une personne :
+                  « ajoute mes horaires », « passe le site en vert »… Il répond
+                  aussi à tes questions, et chaque modification s’annule en un
+                  clic.
                 </p>
 
-                <div className="mt-5 space-y-3">
-                  {chatMessages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`rounded-xl p-3 text-sm ${
-                        message.role === "user" ? "bg-blue-600" : "bg-slate-800"
-                      }`}
-                    >
-                      {message.text}
-                    </div>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => openLumioAssistant()}
+                  className="mt-5 w-full rounded-xl bg-blue-600 px-6 py-4 font-bold hover:bg-blue-500 disabled:opacity-50"
+                >
+                  Discuter avec l’assistant
+                </button>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Idées rapides
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
                   {[
                     [
                       "Raccourcir",
@@ -5500,36 +5436,6 @@ export default function Home() {
                     </button>
                   ))}
                 </div>
-                <p className="mt-2 text-xs leading-5 text-slate-400">
-                  Choisis une suggestion, ajuste la demande si besoin, puis
-                  lance la modification.
-                </p>
-                <form onSubmit={handleModification} className="mt-5">
-                  <textarea
-                    id="builder-ai-instruction"
-                    value={editPrompt}
-                    onChange={(event) => setEditPrompt(event.target.value)}
-                    placeholder="Mets le site en vert..."
-                    rows={4}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-4 outline-none focus:border-blue-500"
-                  />
-
-                  <button
-                    type="submit"
-                    disabled={editLoading}
-                    style={{
-                      backgroundColor: accentColor,
-                      color: getReadableTextColor(accentColor),
-                    }}
-                    className="mt-3 w-full rounded-xl px-6 py-4 font-bold disabled:opacity-50"
-                  >
-                    {editLoading ? "Modification..." : "Modifier avec l'IA"}
-                  </button>
-
-                  {editError && (
-                    <p className="mt-3 text-sm text-red-400">{editError}</p>
-                  )}
-                </form>
               </div>
             )}
 
@@ -5870,6 +5776,14 @@ export default function Home() {
           </div>
         </div>
       )}
+      <LumioAssistant
+        page="Éditeur"
+        getSiteContext={getAssistantContext}
+        onSiteModified={applyAssistantModification}
+        onBusyChange={setEditLoading}
+        busy={busy && !editLoading}
+        mobileOffset={96}
+      />
     </main>
   );
 }
