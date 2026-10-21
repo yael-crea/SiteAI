@@ -7,6 +7,7 @@ import {
 
 import Link from "next/link";
 import "../app-theme.css";
+import LumioAssistant from "@/components/LumioAssistant";
 import { plans, CGV_VERSION, freePreviewText, domainText, aiUsageText, cancellationText, priceSuffix, priceTaxText, type PlanName } from "@/lib/commercialPlans";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -530,6 +531,7 @@ export default function PricingPage() {
   }
 
   return (
+    <>
     <main className="lumio-app min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-6 py-5">
@@ -862,5 +864,7 @@ export default function PricingPage() {
 
       </section>
     </main>
+      <LumioAssistant page="Abonnement" mobileOffset={24} />
+    </>
   );
 }
