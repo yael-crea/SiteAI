@@ -6,6 +6,8 @@
 
 
 
+import "../app-theme.css";
+import LumioAssistant from "@/components/LumioAssistant";
 import { useEffect, useMemo, useState } from "react";
 
 
@@ -2651,35 +2653,12 @@ export default function SitesPage() {
 
 
 
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-
-
-
-        <div className="text-center">
-
-
-
-          <div className="text-4xl">✨</div>
-
-
-
-          <p className="mt-4 text-sm text-slate-400">
-
-
-
-            Chargement de tes sites...
-
-
-
-          </p>
-
-
-
-        </div>
-
-
-
-      </main>
+      <main className="lumio-app flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        <div className="lumio-loading">
+          <strong>lumio<span>.</span></strong>
+          <p>Chargement de tes sites…</p>
+        </div>
+      </main>
 
 
 
@@ -2696,15 +2675,17 @@ export default function SitesPage() {
 
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-28 text-white md:pb-12">
+    <>
+    <main className="lumio-app min-h-screen bg-slate-950 pb-28 text-white md:pb-12">
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => router.push("/dashboard")}
-            className="text-xl font-black"
+            className="lumio-logo"
+            aria-label="Lumio, tableau de bord"
           >
-            Lu<span className="text-blue-500">mio</span>
+            lumio<span>.</span>
           </button>
 
           <div className="flex items-center gap-2">
@@ -2735,7 +2716,7 @@ export default function SitesPage() {
             </p>
 
             <h1 className="mt-2 text-3xl font-black sm:text-4xl">
-              Gère tous tes sites
+              Tous tes sites, <em>au même endroit.</em>
             </h1>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
@@ -2856,7 +2837,7 @@ export default function SitesPage() {
           </div>
         ) : filteredSites.length === 0 ? (
           <div className="mt-5 rounded-3xl border border-dashed border-slate-700 bg-slate-900/70 p-10 text-center">
-            <div className="text-4xl">🌐</div>
+            <p className="font-[family-name:var(--font-serif)] text-4xl italic text-slate-500">Rien ici.</p>
             <p className="mt-3 font-black">Aucun site trouvé</p>
             <p className="mt-2 text-sm text-slate-500">
               Modifie ta recherche ou crée un nouveau site.
@@ -2897,7 +2878,7 @@ export default function SitesPage() {
                             className="h-16 w-16 rounded-2xl bg-white object-contain p-2.5"
                           />
                         ) : (
-                          <div className="text-4xl">✨</div>
+                          <div className="font-[family-name:var(--font-serif)] text-5xl tracking-tight text-slate-500">lumio<span className="text-blue-500">.</span></div>
                         )}
                       </div>
                     )}
@@ -2964,7 +2945,7 @@ export default function SitesPage() {
                         >
                           {duplicatingID === savedSite.id
                             ? "Duplication..."
-                            : "📋 Dupliquer"}
+                            : "Dupliquer"}
                         </button>
 
                         {savedSite.published && savedSite.publicSlug && (
@@ -2980,7 +2961,7 @@ export default function SitesPage() {
                                 }
                                 className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-bold text-slate-200 transition hover:border-blue-500 hover:bg-slate-800"
                               >
-                                🔗 Copier
+                                Copier
                               </button>
 
                               <button
@@ -2994,7 +2975,7 @@ export default function SitesPage() {
                                 }
                                 className="rounded-xl border border-slate-700 px-3 py-3 text-sm font-bold text-slate-200 transition hover:border-blue-500 hover:bg-slate-800"
                               >
-                                📤 Partager
+                                Partager
                               </button>
                             </div>
 
@@ -3029,8 +3010,8 @@ export default function SitesPage() {
                               }`}
                             >
                               {domainPanelOpen
-                                ? "✕ Fermer le domaine"
-                                : "🌐 Gérer le domaine"}
+                                ? "Fermer le domaine"
+                                : "Gérer le domaine"}
                             </button>
 
                             {domainPanelOpen && (
@@ -3218,7 +3199,7 @@ export default function SitesPage() {
                                         >
                                           {domainActionLoading
                                             ? "Vérification..."
-                                            : "🔄 Vérifier le domaine"}
+                                            : "Vérifier le domaine"}
                                         </button>
 
                                         {domainStatus.verified &&
@@ -3228,7 +3209,7 @@ export default function SitesPage() {
                                               onClick={openCustomDomain}
                                               className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold hover:bg-emerald-500"
                                             >
-                                              🌍 Ouvrir le domaine
+                                              Ouvrir le domaine
                                             </button>
                                           )}
 
@@ -3261,7 +3242,7 @@ export default function SitesPage() {
                             onClick={() => router.push("/pricing")}
                             className="w-full rounded-xl border border-violet-800 px-4 py-3 text-sm font-bold text-violet-300 transition hover:bg-violet-950"
                           >
-                            🔒 Domaine personnalisé · Pro
+                            Domaine personnalisé · Pro
                           </button>
                         ) : (
                           <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-xs text-slate-500">
@@ -3279,7 +3260,7 @@ export default function SitesPage() {
                         >
                           {deletingID === savedSite.id
                             ? "Suppression..."
-                            : "🗑️ Supprimer"}
+                            : "Supprimer"}
                         </button>
                       </div>
                     </details>
@@ -3345,5 +3326,7 @@ export default function SitesPage() {
         </div>
       </nav>
     </main>
+      <LumioAssistant page="Mes sites" mobileOffset={96} />
+    </>
   );
 }
