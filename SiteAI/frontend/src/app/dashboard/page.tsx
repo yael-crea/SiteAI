@@ -1,5 +1,6 @@
 "use client";
 
+import "../app-theme.css";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -1020,26 +1021,27 @@ export default function DashboardPage() {
 
   if (authLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <div className="text-center">
-          <div className="text-5xl">✨</div>
-          <p className="mt-4 text-slate-400">Chargement de ton espace...</p>
+      <main className="lumio-app flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        <div className="lumio-loading">
+          <strong>lumio<span>.</span></strong>
+          <p>Chargement de ton espace…</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-slate-950 text-white">
+    <main className="lumio-app min-h-screen overflow-x-hidden bg-slate-950 text-white">
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={() => router.push("/dashboard")}
-              className="shrink-0 text-2xl font-black"
+              className="lumio-logo shrink-0"
+              aria-label="Lumio, tableau de bord"
             >
-              Lu<span className="text-blue-500">mio</span>
+              lumio<span>.</span>
             </button>
 
             <button
@@ -1064,7 +1066,7 @@ export default function DashboardPage() {
                   onClick={() => router.push("/admin")}
                   className="rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-sm font-bold text-slate-200 transition hover:border-amber-500 hover:text-amber-300"
                 >
-                  ⚙️ Admin
+                  Admin
                 </button>
               )}
 
@@ -1073,7 +1075,7 @@ export default function DashboardPage() {
                 onClick={() => router.push("/prospects")}
                 className="relative rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-sm font-bold text-slate-200 transition hover:border-emerald-500"
               >
-                📥 Prospects
+                Prospects
                 {!leadsLoading && newLeadsCount > 0 && (
                   <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950">
                     {newLeadsCount}
@@ -1086,7 +1088,7 @@ export default function DashboardPage() {
                 onClick={() => router.push("/pricing")}
                 className="rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-sm font-bold text-slate-200 transition hover:border-violet-500"
               >
-                💳 Abonnement
+                Abonnement
               </button>
 
               <button
@@ -1127,7 +1129,7 @@ export default function DashboardPage() {
                   }}
                   className="mb-2 w-full rounded-xl border border-amber-700 px-4 py-3 text-left text-sm font-bold text-amber-300 transition hover:bg-amber-950"
                 >
-                  ⚙️ Administration
+                  Administration
                 </button>
               )}
 
@@ -1150,11 +1152,11 @@ export default function DashboardPage() {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.3em] text-blue-400">
-              Dashboard
+              Tableau de bord
             </p>
 
             <h1 className="mt-3 text-4xl font-black md:text-5xl">
-              Mes sites
+              Ton espace, <em>en un coup d&apos;œil.</em>
             </h1>
 
             <p className="mt-3 max-w-2xl text-slate-400">
