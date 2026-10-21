@@ -391,6 +391,63 @@
   line-height: 1.65;
 }
 
+.googleButton {
+  width: 100%;
+  min-height: 54px;
+  padding: 0 17px;
+  border: 1px solid #b8b3a9;
+  border-radius: 10px;
+  display: grid;
+  grid-template-columns: 22px 1fr 20px;
+  align-items: center;
+  gap: 12px;
+  background: #fffefa;
+  color: #171715;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.googleButton svg {
+  width: 21px;
+  height: 21px;
+}
+
+.googleButton b {
+  color: #6b56de;
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.googleButton:hover:not(:disabled) {
+  border-color: #6b56de;
+  box-shadow: 0 9px 22px rgba(82, 64, 170, 0.12);
+  transform: translateY(-1px);
+}
+
+.googleButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.divider {
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: #8b867e;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: #d2cdc3;
+}
+
 .form {
   display: grid;
   gap: 17px;
