@@ -648,6 +648,8 @@ func main() {
 
 	http.HandleFunc("/modify", modifyHandler)
 
+	http.HandleFunc("/assistant", assistantHandler)
+
 	http.HandleFunc("/sites", sitesHandler)
 
 	http.HandleFunc("/sites/", siteByIDHandler)
@@ -2973,7 +2975,7 @@ func consumeAIUsage(
 		`
         SELECT
           COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '1 hour'),
-          COUNT(*) FILTER (WHERE created_at >= (date_trunc('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'))
+          COUNT(*) FILTER (WHERE action <> 'assistant' AND created_at >= (date_trunc('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'))
         FROM ai_usage
         WHERE user_id = $1::uuid
           AND created_at >= LEAST(NOW() - INTERVAL '1 hour', (date_trunc('month', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'));
@@ -2984,7 +2986,9 @@ func consumeAIUsage(
 		return 0, 0, false, err
 	}
 
-	if monthlyLimit >= 0 && monthlyUsed >= monthlyLimit {
+	// Les questions posées à l'assistant ne consomment pas le quota mensuel :
+	// elles restent seulement soumises à la limite horaire.
+	if action != "assistant" && monthlyLimit >= 0 && monthlyUsed >= monthlyLimit {
 		return 0, 0, false, errMonthlyAIQuota
 	}
 
