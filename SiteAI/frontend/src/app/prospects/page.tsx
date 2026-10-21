@@ -1,4 +1,5 @@
 "use client";
+import "../app-theme.css";
 import { notificationLabel } from "@/lib/actionErrors";
 
 
@@ -1998,26 +1999,11 @@ export default function ProspectsPage() {
 
     return (
 
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-
-        <div className="text-center">
-
-          <div className="text-5xl">
-
-            📥
-
-          </div>
-
-
-
-          <p className="mt-4 text-slate-400">
-
-            Chargement...
-
-          </p>
-
+      <main className="lumio-app flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        <div className="lumio-loading">
+          <strong>lumio<span>.</span></strong>
+          <p>Chargement de tes prospects…</p>
         </div>
-
       </main>
 
     );
@@ -2028,7 +2014,7 @@ export default function ProspectsPage() {
 
   return (
 
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="lumio-app min-h-screen bg-slate-950 text-white">
 
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
 
@@ -2048,17 +2034,10 @@ export default function ProspectsPage() {
 
             }
 
-            className="text-2xl font-black"
-
+            className="lumio-logo"
+            aria-label="Lumio, tableau de bord"
           >
-
-            Lum
-
-            <span className="text-blue-500">
-
-              io
-
-            </span>
+            lumio<span>.</span>
 
           </button>
 
@@ -2152,7 +2131,7 @@ export default function ProspectsPage() {
 
             <h1 className="mt-3 text-4xl font-black md:text-5xl">
 
-              Suivi commercial
+              Suivi <em>commercial.</em>
 
             </h1>
 
@@ -2194,7 +2173,7 @@ export default function ProspectsPage() {
 
             >
 
-              📥 Export CSV
+              Exporter en CSV
 
             </button>
 
@@ -2762,11 +2741,7 @@ export default function ProspectsPage() {
 
           <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-900 p-12 text-center">
 
-            <div className="text-5xl">
-
-              📭
-
-            </div>
+            <p className="font-[family-name:var(--font-serif)] text-4xl italic text-slate-500">Rien ici.</p>
 
 
 
@@ -3010,7 +2985,7 @@ export default function ProspectsPage() {
 
                         >
 
-                          ✉️ Email
+                          E-mail
 
                         </a>
 
@@ -3028,7 +3003,7 @@ export default function ProspectsPage() {
 
                         >
 
-                          📞 Appeler
+                          Appeler
 
                         </a>
 
@@ -3060,7 +3035,7 @@ export default function ProspectsPage() {
 
                         >
 
-                          🌍 Site
+                          Voir le site
 
                         </button>
 
@@ -3106,9 +3081,9 @@ export default function ProspectsPage() {
 
                         {lead.archived
 
-                          ? "↩️ Restaurer"
+                          ? "Restaurer"
 
-                          : "📦 Archiver"}
+                          : "Archiver"}
 
                       </button>
 
@@ -3480,7 +3455,7 @@ export default function ProspectsPage() {
 
                           ? "Enregistrement..."
 
-                          : "💾 Enregistrer le suivi"}
+                          : "Enregistrer le suivi"}
 
                       </button>
 
