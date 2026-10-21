@@ -1,6 +1,7 @@
 "use client";
 
 import "../app-theme.css";
+import LumioAssistant from "@/components/LumioAssistant";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -1031,6 +1032,7 @@ export default function DashboardPage() {
   }
 
   return (
+    <>
     <main className="lumio-app min-h-screen overflow-x-hidden bg-slate-950 text-white">
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
@@ -2120,6 +2122,8 @@ export default function DashboardPage() {
         </div>
       </nav>
     </main>
+      <LumioAssistant page="Tableau de bord" mobileOffset={96} />
+    </>
   );
 }
 
