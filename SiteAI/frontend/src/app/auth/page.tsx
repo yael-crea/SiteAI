@@ -8,6 +8,7 @@ import {
   readExampleTemplate,
   rememberExampleTemplate,
 } from "@/lib/exampleTemplates";
+import styles from "./auth.module.css";
 
 type AuthMode = "login" | "signup" | "forgot";
 
@@ -36,10 +37,8 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
-
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -55,24 +54,20 @@ export default function AuthPage() {
       try {
         const { data } = await supabase.auth.getSession();
 
-        if (!active) {
-          return;
-        }
+        if (!active) return;
 
         if (data.session) {
           router.replace(readExampleTemplate() ? "/builder" : "/dashboard");
           return;
         }
-      } catch (err) {
-        console.error(err);
+      } catch (sessionError) {
+        console.error(sessionError);
       } finally {
-        if (active) {
-          setCheckingSession(false);
-        }
+        if (active) setCheckingSession(false);
       }
     }
 
-    checkSession();
+    void checkSession();
 
     return () => {
       active = false;
@@ -88,11 +83,8 @@ export default function AuthPage() {
     setAcceptedTerms(false);
   }
 
-  async function handleForgotPassword(
-    event: FormEvent<HTMLFormElement>,
-  ) {
+  async function handleForgotPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     const cleanEmail = email.trim().toLowerCase();
 
     setError("");
@@ -107,28 +99,21 @@ export default function AuthPage() {
 
     try {
       const redirectTo = getAuthRedirectUrl("/reset-password");
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        cleanEmail,
+        { redirectTo },
+      );
 
-      const { error: resetError } =
-        await supabase.auth.resetPasswordForEmail(
-          cleanEmail,
-          {
-            redirectTo,
-          },
-        );
-
-      if (resetError) {
-        throw resetError;
-      }
+      if (resetError) throw resetError;
 
       setMessage(
         "E-mail envoyé. Ouvre le message reçu puis clique sur le lien pour choisir un nouveau mot de passe.",
       );
-    } catch (err) {
-      console.error(err);
-
+    } catch (resetError) {
+      console.error(resetError);
       setError(
-        err instanceof Error
-          ? err.message
+        resetError instanceof Error
+          ? resetError.message
           : "Impossible d'envoyer l'e-mail de réinitialisation.",
       );
     } finally {
@@ -136,9 +121,7 @@ export default function AuthPage() {
     }
   }
 
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
-  ) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (mode === "forgot") {
@@ -157,19 +140,12 @@ export default function AuthPage() {
     }
 
     if (password.length < 6) {
-      setError(
-        "Le mot de passe doit contenir au moins 6 caractères.",
-      );
+      setError("Le mot de passe doit contenir au moins 6 caractères.");
       return;
     }
 
-    if (
-      mode === "signup" &&
-      password !== passwordConfirm
-    ) {
-      setError(
-        "Les deux mots de passe ne correspondent pas.",
-      );
+    if (mode === "signup" && password !== passwordConfirm) {
+      setError("Les deux mots de passe ne correspondent pas.");
       return;
     }
 
@@ -184,15 +160,12 @@ export default function AuthPage() {
 
     try {
       if (mode === "login") {
-        const { error: loginError } =
-          await supabase.auth.signInWithPassword({
-            email: cleanEmail,
-            password,
-          });
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
 
-        if (loginError) {
-          throw loginError;
-        }
+        if (loginError) throw loginError;
 
         router.replace(readExampleTemplate() ? "/builder" : "/dashboard");
         router.refresh();
@@ -200,11 +173,7 @@ export default function AuthPage() {
       }
 
       const emailRedirectTo = getAuthRedirectUrl("/onboarding");
-
-      const {
-        data,
-        error: signupError,
-      } = await supabase.auth.signUp({
+      const { data, error: signupError } = await supabase.auth.signUp({
         email: cleanEmail,
         password,
         options: {
@@ -216,9 +185,7 @@ export default function AuthPage() {
         },
       });
 
-      if (signupError) {
-        throw signupError;
-      }
+      if (signupError) throw signupError;
 
       if (data.session) {
         router.replace("/onboarding");
@@ -229,37 +196,24 @@ export default function AuthPage() {
       setMessage(
         "Compte créé. Vérifie ta boîte mail puis clique sur le lien de confirmation. Tu seras ensuite dirigé vers la création de ton premier site.",
       );
-    } catch (err) {
-      console.error(err);
+    } catch (submitError) {
+      console.error(submitError);
 
-      if (err instanceof Error) {
-        const lowerMessage =
-          err.message.toLowerCase();
+      if (submitError instanceof Error) {
+        const lowerMessage = submitError.message.toLowerCase();
 
         if (
-          lowerMessage.includes(
-            "invalid login credentials",
-          ) ||
-          lowerMessage.includes(
-            "invalid credentials",
-          )
+          lowerMessage.includes("invalid login credentials") ||
+          lowerMessage.includes("invalid credentials")
         ) {
-          setError(
-            "E-mail ou mot de passe incorrect.",
-          );
+          setError("E-mail ou mot de passe incorrect.");
         } else if (
-          lowerMessage.includes(
-            "user already registered",
-          ) ||
-          lowerMessage.includes(
-            "already registered",
-          )
+          lowerMessage.includes("user already registered") ||
+          lowerMessage.includes("already registered")
         ) {
-          setError(
-            "Un compte existe déjà avec cette adresse e-mail.",
-          );
+          setError("Un compte existe déjà avec cette adresse e-mail.");
         } else {
-          setError(err.message);
+          setError(submitError.message);
         }
       } else {
         setError("Une erreur est survenue.");
@@ -271,318 +225,254 @@ export default function AuthPage() {
 
   if (checkingSession) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <div className="text-center">
-          <div className="text-5xl">
-            ✨
-          </div>
-
-          <p className="mt-4 text-slate-400">
-            Chargement...
-          </p>
+      <main className={styles.loadingScreen}>
+        <div className={styles.loadingLogo}>
+          lumio<span>.</span>
         </div>
+        <p>Ouverture de ton espace…</p>
       </main>
     );
   }
 
+  const modeTitle =
+    mode === "login"
+      ? "Heureux de te revoir."
+      : mode === "signup"
+        ? "Ton site commence ici."
+        : "Retrouve ton accès.";
+
+  const modeDescription =
+    mode === "login"
+      ? "Connecte-toi pour reprendre tes sites là où tu les as laissés."
+      : mode === "signup"
+        ? "Crée ton espace gratuitement et prépare une première version de ton site."
+        : "Indique ton adresse e-mail. Nous t’enverrons un lien sécurisé.";
+
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-slate-800">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <Link
-            href="/"
-            className="text-2xl font-black"
-          >
-            Lum
-            <span className="text-blue-500">
-              io
-            </span>
+    <main className={styles.authPage}>
+      <header className={styles.header}>
+        <div className={styles.navbar}>
+          <Link href="/" className={styles.logo} aria-label="Lumio, accueil">
+            lumio<span>.</span>
           </Link>
 
-          <Link
-            href="/"
-            className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-blue-500 hover:text-white"
-          >
-            ← Accueil
+          <Link href="/" className={styles.backLink}>
+            <span>Accueil</span>
+            <b aria-hidden="true">→</b>
           </Link>
         </div>
       </header>
 
-      <section className="mx-auto grid min-h-[calc(100vh-81px)] max-w-7xl items-center gap-12 px-6 py-12 lg:grid-cols-2">
-        <div className="hidden lg:block">
-          <p className="text-sm font-black uppercase tracking-[0.3em] text-blue-400">
-            Lumio
+      <section className={styles.layout}>
+        <div className={styles.story}>
+          <p className={styles.eyebrow}>
+            <i aria-hidden="true" />
+            L’espace où ton site prend forme
           </p>
 
-          <h1 className="mt-5 max-w-xl text-5xl font-black leading-tight">
-            Crée le site de ton entreprise avec l&apos;IA.
+          <h1>
+            Ton activité,
+            <br />
+            bien présentée.
+            <br />
+            <em>À ton tour.</em>
           </h1>
 
-          <p className="mt-6 max-w-xl text-lg leading-8 text-slate-400">
-            Connecte-toi à ton espace ou crée ton
-            compte pour générer, personnaliser et
-            publier ton site.
+          <p className={styles.storyLead}>
+            Connecte-toi ou crée ton espace. Lumio garde tes contenus,
+            tes réglages et chaque version de ton site au même endroit.
           </p>
 
-          <div className="mt-9 grid max-w-xl gap-4">
-            {[
-              "✨ Génération de site avec l’IA",
-              "✍️ Modification depuis un éditeur simple",
-              "🚀 Publication et gestion depuis ton dashboard",
-            ].map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-slate-800 bg-slate-900 p-5 font-semibold text-slate-300"
-              >
-                {item}
+          <div className={styles.sitePreview} aria-hidden="true">
+            <div className={styles.previewBar}>
+              <span>Atelier du Robinet</span>
+              <div>
+                <i />
+                <i />
+                <i />
               </div>
-            ))}
+            </div>
+
+            <div className={styles.previewContent}>
+              <small>ARTISAN PLOMBIER · MONTPELLIER</small>
+              <h2>
+                Votre maison.
+                <br />
+                <em>Notre attention</em>
+                <br />
+                au détail.
+              </h2>
+              <p>Dépannage, installation et rénovation.</p>
+              <div>
+                <span>✦ Première version prête</span>
+                <b>Continuer <i>→</i></b>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.reassurance}>
+            <span>Sans carte bancaire</span>
+            <span>Sans coder</span>
+            <span>Tu gardes la main</span>
           </div>
         </div>
 
-        <div className="mx-auto w-full max-w-md">
-          <div className="rounded-3xl border border-slate-800 bg-slate-900 p-7 shadow-2xl shadow-black/20 sm:p-9">
+        <div className={styles.formColumn}>
+          <div className={styles.formCard}>
             {mode !== "forgot" && (
-              <div className="grid grid-cols-2 rounded-xl bg-slate-950 p-1">
+              <div className={styles.tabs} aria-label="Accès à Lumio">
                 <button
                   type="button"
-                  onClick={() =>
-                    changeMode("login")
-                  }
-                  className={`rounded-lg px-4 py-3 text-sm font-black transition ${
-                    mode === "login"
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-400 hover:text-white"
-                  }`}
+                  onClick={() => changeMode("login")}
+                  className={mode === "login" ? styles.activeTab : ""}
+                  aria-pressed={mode === "login"}
                 >
                   Connexion
                 </button>
-
                 <button
                   type="button"
-                  onClick={() =>
-                    changeMode("signup")
-                  }
-                  className={`rounded-lg px-4 py-3 text-sm font-black transition ${
-                    mode === "signup"
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-400 hover:text-white"
-                  }`}
+                  onClick={() => changeMode("signup")}
+                  className={mode === "signup" ? styles.activeTab : ""}
+                  aria-pressed={mode === "signup"}
                 >
                   Créer un compte
                 </button>
               </div>
             )}
 
-            <div className="mt-8">
-              <h2 className="text-3xl font-black">
-                {mode === "login"
-                  ? "Bon retour 👋"
-                  : mode === "signup"
-                    ? "Bienvenue sur Lumio ✨"
-                    : "Mot de passe oublié 🔐"}
-              </h2>
-
-              <p className="mt-3 leading-7 text-slate-400">
-                {mode === "login"
-                  ? "Connecte-toi pour retrouver tes sites."
-                  : mode === "signup"
-                    ? "Crée ton compte puis configure ton premier site."
-                    : "Entre ton adresse e-mail. Nous t'enverrons un lien pour choisir un nouveau mot de passe."}
-              </p>
+            <div className={styles.formIntro}>
+              <p>{mode === "forgot" ? "RÉCUPÉRER TON ACCÈS" : "TON ESPACE LUMIO"}</p>
+              <h2>{modeTitle}</h2>
+              <span>{modeDescription}</span>
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="mt-8 space-y-5"
-            >
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-400">
-                  Adresse e-mail
-                </label>
-
+            <form onSubmit={handleSubmit} className={styles.form}>
+              <label htmlFor="auth-email">
+                <span>Adresse e-mail</span>
                 <input
+                  id="auth-email"
                   type="email"
                   value={email}
-                  onChange={(event) =>
-                    setEmail(
-                      event.target.value,
-                    )
-                  }
+                  onChange={(event) => setEmail(event.target.value)}
                   placeholder="toi@entreprise.fr"
                   autoComplete="email"
                   required
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500"
                 />
-              </div>
+              </label>
 
               {mode !== "forgot" && (
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-400">
-                    Mot de passe
-                  </label>
-
+                <label htmlFor="auth-password">
+                  <span>Mot de passe</span>
                   <input
+                    id="auth-password"
                     type="password"
                     value={password}
-                    onChange={(event) =>
-                      setPassword(
-                        event.target.value,
-                      )
-                    }
-                    placeholder="••••••••"
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="6 caractères minimum"
                     autoComplete={
-                      mode === "login"
-                        ? "current-password"
-                        : "new-password"
+                      mode === "login" ? "current-password" : "new-password"
                     }
                     required
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500"
                   />
-                </div>
+                </label>
               )}
 
               {mode === "signup" && (
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-400">
-                    Confirmer le mot de passe
-                  </label>
-
+                <label htmlFor="auth-password-confirm">
+                  <span>Confirmer le mot de passe</span>
                   <input
+                    id="auth-password-confirm"
                     type="password"
                     value={passwordConfirm}
-                    onChange={(event) =>
-                      setPasswordConfirm(
-                        event.target.value,
-                      )
-                    }
-                    placeholder="••••••••"
+                    onChange={(event) => setPasswordConfirm(event.target.value)}
+                    placeholder="Répète ton mot de passe"
                     autoComplete="new-password"
                     required
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-blue-500"
                   />
-                </div>
+                </label>
               )}
 
               {mode === "signup" && (
-                <label className="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-sm leading-6 text-slate-300">
+                <label className={styles.consent}>
                   <input
                     type="checkbox"
                     checked={acceptedTerms}
                     onChange={(event) => setAcceptedTerms(event.target.checked)}
                     required
-                    className="mt-1 h-4 w-4 shrink-0 accent-blue-500"
                   />
                   <span>
-                    J&apos;accepte les{" "}
-                    <Link
-                      href="/cgu"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-blue-300 underline hover:text-blue-200"
-                    >
+                    J’accepte les{" "}
+                    <Link href="/cgu" target="_blank" rel="noopener noreferrer">
                       CGU
                     </Link>{" "}
-                    et je reconnais avoir pris connaissance de la{" "}
+                    et j’ai pris connaissance de la{" "}
                     <Link
                       href="/confidentialite"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-semibold text-blue-300 underline hover:text-blue-200"
                     >
                       politique de confidentialité
                     </Link>
                     . Les{" "}
-                    <Link
-                      href="/cgv"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-blue-300 underline hover:text-blue-200"
-                    >
+                    <Link href="/cgv" target="_blank" rel="noopener noreferrer">
                       CGV
                     </Link>{" "}
-                    s&apos;appliqueront lors de la souscription d&apos;un abonnement.
+                    s’appliqueront lors de la souscription d’un abonnement.
                   </span>
                 </label>
               )}
 
               {mode === "login" && (
-                <div className="text-right">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      changeMode("forgot")
-                    }
-                    className="text-sm font-semibold text-blue-400 hover:text-blue-300"
-                  >
-                    Mot de passe oublié ?
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => changeMode("forgot")}
+                  className={styles.forgotButton}
+                >
+                  Mot de passe oublié ?
+                </button>
               )}
 
               {error && (
-                <div className="rounded-xl border border-red-900 bg-red-950/30 p-4 text-sm leading-6 text-red-300">
+                <div className={styles.error} role="alert">
                   {error}
                 </div>
               )}
 
               {message && (
-                <div className="rounded-xl border border-emerald-900 bg-emerald-950/30 p-4 text-sm leading-6 text-emerald-300">
+                <div className={styles.success} role="status">
                   {message}
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-xl bg-blue-600 px-5 py-4 font-black transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading
-                  ? "Chargement..."
-                  : mode === "login"
-                    ? "Se connecter"
-                    : mode === "signup"
-                      ? "Créer mon compte"
-                      : "Envoyer le lien"}
+              <button type="submit" disabled={loading} className={styles.submitButton}>
+                <span>
+                  {loading
+                    ? "Chargement…"
+                    : mode === "login"
+                      ? "Se connecter"
+                      : mode === "signup"
+                        ? "Créer mon espace"
+                        : "Envoyer le lien"}
+                </span>
+                <b aria-hidden="true">→</b>
               </button>
 
               {mode === "forgot" && (
                 <button
                   type="button"
-                  onClick={() =>
-                    changeMode("login")
-                  }
-                  className="w-full rounded-xl border border-slate-700 px-5 py-4 text-sm font-bold text-slate-300 transition hover:border-blue-500"
+                  onClick={() => changeMode("login")}
+                  className={styles.secondaryButton}
                 >
                   ← Retour à la connexion
                 </button>
               )}
             </form>
 
-            <p className="mt-6 text-center text-xs leading-5 text-slate-500">
-              En utilisant Lumio, tu peux consulter nos{" "}
-              <Link href="/cgu" className="underline hover:text-slate-300">
-                CGU
-              </Link>
-              , nos{" "}
-              <Link href="/cgv" className="underline hover:text-slate-300">
-                CGV
-              </Link>
-              , notre{" "}
-              <Link
-                href="/confidentialite"
-                className="underline hover:text-slate-300"
-              >
-                politique de confidentialité
-              </Link>{" "}
-              et nos{" "}
-              <Link
-                href="/mentions-legales"
-                className="underline hover:text-slate-300"
-              >
-                mentions légales
-              </Link>
-              .
+            <p className={styles.legal}>
+              En utilisant Lumio, tu peux consulter nos <Link href="/cgu">CGU</Link>,
+              nos <Link href="/cgv">CGV</Link>, notre{" "}
+              <Link href="/confidentialite">politique de confidentialité</Link> et nos{" "}
+              <Link href="/mentions-legales">mentions légales</Link>.
             </p>
           </div>
         </div>
