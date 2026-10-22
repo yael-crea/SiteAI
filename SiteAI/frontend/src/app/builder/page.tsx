@@ -1274,9 +1274,9 @@ export default function Home() {
   }
 
   /**
-   * Fusionne un site renvoyé par l'IA avec le site ouvert : l'IA réécrit les
-   * textes, mais les médias, la mise en page et les réglages restent ceux de
-   * l'utilisateur.
+   * Fusionne un site renvoyé par l'IA avec le site ouvert. Les changements de
+   * mise en page et de design sont appliqués, tandis que les médias et les
+   * métadonnées client restent rattachés à leur section d'origine.
    */
   function mergeAIModifiedSite(
     base: GeneratedSite,
@@ -1292,26 +1292,34 @@ export default function Home() {
       gallery: incoming.gallery?.length
         ? incoming.gallery
         : (site.gallery ?? []),
-      sections: (incoming.sections ?? []).map((section, index) => ({
-        ...section,
-        iconMode:
-          site.sections[index]?.iconMode ?? section.iconMode ?? "auto",
-        icon: site.sections[index]?.icon ?? section.icon ?? "",
-        imageMode:
-          site.sections[index]?.imageMode ?? section.imageMode ?? "auto",
-        imageUrl: site.sections[index]?.imageUrl ?? section.imageUrl ?? "",
-        hidden: site.sections[index]?.hidden ?? section.hidden ?? false,
-      })),
+      sections: (incoming.sections ?? []).map((section) => {
+        const sourceIndex = section.sourceIndex;
+        const original =
+          typeof sourceIndex === "number" &&
+          Number.isInteger(sourceIndex) &&
+          sourceIndex >= 0 &&
+          sourceIndex < site.sections.length
+            ? site.sections[sourceIndex]
+            : undefined;
+        return {
+          ...section,
+          iconMode: original?.iconMode ?? section.iconMode ?? "auto",
+          icon: original?.icon ?? section.icon ?? "",
+          imageMode: original?.imageMode ?? section.imageMode ?? "auto",
+          imageUrl: original?.imageUrl ?? section.imageUrl ?? "",
+          hidden: original?.hidden ?? section.hidden ?? false,
+        };
+      }),
       layoutOrder: normalizeLayoutOrder(
-        site.layoutOrder ?? incoming.layoutOrder,
+        incoming.layoutOrder ?? site.layoutOrder,
       ),
       hiddenBlocks: normalizeHiddenBlocks(
-        site.hiddenBlocks ?? incoming.hiddenBlocks,
+        incoming.hiddenBlocks ?? site.hiddenBlocks,
       ),
       designSettings: normalizeDesignSettings(
-        site.designSettings ?? incoming.designSettings,
+        { ...site.designSettings, ...incoming.designSettings },
       ),
-      testimonials: site.testimonials ?? incoming.testimonials ?? [],
+      testimonials: site.testimonials ?? [],
       serviceArea: site.serviceArea ?? incoming.serviceArea ?? city,
       openingHours: site.openingHours ?? incoming.openingHours ?? "",
       clientName: site.clientName ?? incoming.clientName ?? "",
