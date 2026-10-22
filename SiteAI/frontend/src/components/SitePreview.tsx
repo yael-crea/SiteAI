@@ -7,6 +7,7 @@ import { designExtrasCSS } from "@/lib/designExtrasCSS";
 import { siteQualityCSS } from "@/lib/siteQualityCSS";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { getQuoteOptions, type Testimonial } from "@/lib/siteGrowth";
+import signature from "./signature/Signature.module.css";
 
 
 
@@ -71,6 +72,8 @@ type DesignSettings = DesignExtras & {
   contentWidth?: "normal" | "wide";
   spacing?: "compact" | "normal" | "airy";
   background?: "auto" | "light" | "dark";
+  /** Rendu des sites : « signature » par défaut, « classic » pour l'ancien rendu. */
+  template?: "signature" | "classic";
 };
 
 type GeneratedSite = {
@@ -2214,6 +2217,30 @@ function SitePreviewContent({
   const designSettings = normalizeDesignSettings(
     {...style.settings, ...normalizedSite.designSettings},
   );
+
+  if (site.designSettings?.template !== "classic") {
+    // La police des titres suit le style, sauf si l'utilisateur en a choisi une autre.
+    const chosenFont = site.designSettings?.font;
+    const displayFont = chosenFont && chosenFont !== style.settings.font ? designSettings.font : "theme";
+    return (
+      <SignatureShell
+        onEdit={onEdit}
+        settings={designSettings}
+        theme={style.id}
+        displayFont={displayFont}
+        accentColor={accentColor}
+      >
+        <SignatureTemplate
+          onEdit={onEdit}
+          site={normalizedSite}
+          accentColor={accentColor}
+          activity={activity}
+          city={city}
+          heroLayout={designSettings.heroLayout}
+        />
+      </SignatureShell>
+    );
+  }
 
   if (style.family === "elegant") {
 
@@ -4683,6 +4710,29 @@ function AboutSection({
 }
 
 
+function getProcessSteps(site: GeneratedSite, activity: string, city: string) {
+  const mainService = textOr(
+    site.sections?.[0]?.title,
+    getActivityTheme(activity).noun,
+  );
+  const activityNoun = getActivityTheme(activity).noun;
+
+  return [
+    {
+      title: "Présentez votre besoin",
+      text: `Expliquez simplement votre besoin en ${activityNoun}, par exemple autour de « ${mainService} ».`,
+    },
+    {
+      title: `Échangez avec ${site.businessName}`,
+      text: "Précisez ensemble la situation, vos attentes et les éléments utiles pour préparer la suite du projet.",
+    },
+    {
+      title: "Définissez les prochaines étapes",
+      text: `Une fois le besoin clarifié, convenez de la suite adaptée à votre projet à ${city}.`,
+    },
+  ];
+}
+
 function ProcessSection({
   site,
   activity,
@@ -4697,27 +4747,7 @@ function ProcessSection({
   variant: "modern" | "elegant" | "artisan";
 }) {
   const sector = getSectorVisualTheme(activity, city);
-  const mainService = textOr(
-    site.sections?.[0]?.title,
-    getActivityTheme(activity).noun,
-  );
-  const activityNoun = getActivityTheme(activity).noun;
-  const projectPhrase = activityProjectPhrase(activity);
-
-  const steps = [
-    {
-      title: "Présentez votre besoin",
-      text: `Expliquez simplement votre besoin en ${activityNoun}, par exemple autour de « ${mainService} ».`,
-    },
-    {
-      title: `Échangez avec ${site.businessName}`,
-      text: "Précisez ensemble la situation, vos attentes et les éléments utiles pour préparer la suite du projet.",
-    },
-    {
-      title: "Définissez les prochaines étapes",
-      text: `Une fois le besoin clarifié, convenez de la suite adaptée à votre projet à ${city}.`,
-    },
-  ];
+  const steps = getProcessSteps(site, activity, city);
 
   if (variant === "elegant") {
     return (
@@ -4856,19 +4886,7 @@ function ProcessSection({
 }
 
 
-function FaqSection({
-  site,
-  activity,
-  city,
-  accentColor,
-  variant,
-}: {
-  site: GeneratedSite;
-  activity: string;
-  city: string;
-  accentColor: string;
-  variant: "modern" | "elegant" | "artisan";
-}) {
+function getFaqItems(site: GeneratedSite, activity: string, city: string): FAQItem[] {
   const generatedQuestions = (site.faq ?? []).filter(
     (item) => item?.question?.trim() && item?.answer?.trim(),
   );
@@ -4896,10 +4914,25 @@ function FaqSection({
     },
   ];
 
-  const questions =
-    generatedQuestions.length > 0
+  return generatedQuestions.length > 0
       ? generatedQuestions.slice(0, 6)
       : fallbackQuestions;
+}
+
+function FaqSection({
+  site,
+  activity,
+  city,
+  accentColor,
+  variant,
+}: {
+  site: GeneratedSite;
+  activity: string;
+  city: string;
+  accentColor: string;
+  variant: "modern" | "elegant" | "artisan";
+}) {
+  const questions = getFaqItems(site, activity, city);
 
   if (variant === "elegant") {
     return (
@@ -5651,4 +5684,549 @@ function ContactSection({
     </section>
   );
 
+}
+
+
+/* -------------------------------------------------------------------------
+ * Rendu « Signature » : mise en page éditoriale commune à tous les styles.
+ * Les données, l'édition au clic, l'ordre des blocs et le formulaire de
+ * contact restent ceux des anciens modèles ; seul l'habillage change.
+ * ---------------------------------------------------------------------- */
+
+function SignatureShell({
+  settings,
+  theme,
+  displayFont,
+  accentColor,
+  onEdit,
+  children,
+}: {
+  settings: ReturnType<typeof normalizeDesignSettings>;
+  theme: DesignStyle;
+  displayFont: string;
+  accentColor: string;
+  onEdit?: SitePreviewProps["onEdit"];
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`siteai-design-root ${signature.root}`}
+      data-template="signature"
+      data-editable-preview={onEdit ? "true" : undefined}
+      onClickCapture={onEdit ? (event) => {
+        const target = getPreviewEditTarget(event.currentTarget, event.target);
+        if (!target) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onEdit(target);
+      } : undefined}
+      onKeyDownCapture={onEdit ? (event) => {
+        if (event.repeat || (event.key !== "Enter" && event.key !== " ")) return;
+        const target = getPreviewEditTarget(event.currentTarget, event.target);
+        if (!target) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onEdit(target);
+      } : undefined}
+      data-theme={theme}
+      data-font={settings.font}
+      data-display-font={displayFont}
+      data-button={settings.buttonStyle}
+      data-logo-size={settings.logoSize}
+      data-width={settings.contentWidth}
+      data-spacing={settings.spacing}
+      data-background={settings.background}
+      data-title-scale={settings.titleScale}
+      data-text-scale={settings.textScale}
+      data-title-weight={settings.titleWeight}
+      data-title-case={settings.titleCase}
+      data-line-height={settings.lineHeight}
+      data-card-radius={settings.cardRadius}
+      data-shadow-strength={settings.shadowStrength}
+      data-image-radius={settings.imageRadius}
+      data-image-ratio={settings.imageRatio}
+      data-image-fit={settings.imageFit}
+      data-button-size={settings.buttonSize}
+      style={{
+        "--sg-accent": accentColor,
+        "--sg-on-accent": getContrastTextColor(accentColor),
+      } as React.CSSProperties}
+    >
+      {children}
+    </div>
+  );
+}
+
+function signatureServiceImage(section: SiteSection) {
+  const mode = section.imageMode?.trim().toLowerCase();
+  if (mode === "none") return "";
+  if (mode === "custom") return section.imageUrl?.trim() || "";
+  if (section.imageUrl?.trim() && !section.imageMode) return section.imageUrl.trim();
+  // En automatique, les photos restent dans « Réalisations » : pas de doublons.
+  return "";
+}
+
+function SignatureArrow() {
+  return <span aria-hidden="true" className={signature.arrow}>→</span>;
+}
+
+function SignatureTemplate({
+  site,
+  accentColor,
+  activity,
+  city,
+  onEdit,
+  heroLayout,
+}: Omit<SitePreviewProps, "designStyle"> & { heroLayout: "auto" | "left" | "center" }) {
+  const edit = (target: PreviewEditTarget) => previewEditProps(target, Boolean(onEdit));
+  const sector = getSectorVisualTheme(activity, city);
+  const action = goalAction(site);
+  const hasPhone = Boolean(site.phone?.trim());
+  const primaryHref = action?.href ?? (hasPhone ? `tel:${phoneHref(site.phone)}` : "#contact");
+  const primaryLabel = action?.label ?? textOr(site.primaryCta, hasPhone ? "Appeler maintenant" : "Demander un devis");
+  const primaryIsContact = primaryHref === "#contact";
+  const secondaryHref = primaryIsContact ? "#services" : "#contact";
+  const secondaryLabel = primaryIsContact
+    ? "Voir nos prestations"
+    : textOr(site.secondaryCta, "Demander un devis");
+
+  const services = site.sections
+    .map((section, sourceIndex) => ({ section, sourceIndex }))
+    .filter(({ section }) => !section.hidden);
+  const serviceImages = services.map(({ section }) => signatureServiceImage(section));
+  const showServiceImages = serviceImages.filter(Boolean).length >= Math.min(2, services.length) && serviceImages.some(Boolean);
+  const gallery = (site.gallery ?? []).filter((url) => url?.trim());
+  const testimonials = (site.testimonials ?? []).filter((item) => item.name?.trim() && item.text?.trim());
+  const steps = getProcessSteps(site, activity, city);
+  const faq = getFaqItems(site, activity, city);
+  const benefits = getBenefits(site, city, activity);
+  const hasOwnBenefits = (site.benefits ?? []).some((item) => item?.title?.trim() && item?.text?.trim());
+  const aboutTitle = textOr(site.aboutTitle, `À propos de ${site.businessName}`);
+  const aboutText = textOr(
+    site.aboutText,
+    `${site.businessName} présente son savoir-faire en ${getActivityTheme(activity).noun} à ${city}, avec une approche claire et adaptée à chaque besoin.`,
+  );
+  const initial = site.businessName.trim().charAt(0).toUpperCase() || "L";
+  const layout = heroLayout === "center" ? "center" : "left";
+  const showGallery = isLayoutBlockVisible(site, "gallery") && gallery.length > 0;
+  const year = new Date().getFullYear();
+
+  const facts = [
+    { label: "Activité", value: activity },
+    { label: "Secteur", value: textOr(site.serviceArea, city) },
+    ...(site.openingHours?.trim() ? [{ label: "Horaires", value: site.openingHours.trim() }] : []),
+    ...(hasPhone ? [{ label: "Téléphone", value: formatPhoneNumber(site.phone) }] : []),
+  ].filter((item) => item.value?.trim());
+
+  const navLinks = [
+    { href: "#services", label: sector.serviceLabel },
+    ...(isLayoutBlockVisible(site, "about") ? [{ href: "#a-propos", label: "À propos" }] : []),
+    ...(showGallery ? [{ href: "#realisations", label: "Réalisations" }] : []),
+    ...(isLayoutBlockVisible(site, "faq") ? [{ href: "#faq", label: "Questions" }] : []),
+    { href: "#contact", label: "Contact" },
+  ];
+
+  return (
+    <>
+      <MobileContactBar site={site} accentColor={accentColor} />
+
+      <div className={signature.page}>
+        <header className={signature.header}>
+          <div className={`${signature.wrap} ${signature.headerInner}`}>
+            <a href={onEdit ? undefined : "#top"} className={signature.brand}>
+              {site.logoUrl ? (
+                <img
+                  {...edit({ kind: "field", field: "logoUrl" })}
+                  src={site.logoUrl}
+                  alt={`Logo ${site.businessName}`}
+                  className={signature.logo}
+                />
+              ) : (
+                <span {...edit({ kind: "field", field: "logoUrl" })} className={signature.monogram}>
+                  {initial}
+                </span>
+              )}
+              <span className={signature.brandText}>
+                <span {...edit({ kind: "field", field: "businessName" })} className={signature.brandName}>
+                  {site.businessName}
+                </span>
+                <span className={signature.brandMeta}>
+                  {activity}{city ? ` · ${city}` : ""}
+                </span>
+              </span>
+            </a>
+
+            <nav className={signature.nav} aria-label="Navigation principale">
+              {navLinks.map((link) => (
+                <a key={link.href} href={link.href}>{link.label}</a>
+              ))}
+              <a
+                {...edit({ kind: "field", field: "phone" })}
+                href={primaryHref}
+                className={`${signature.btn} ${signature.btnPrimary} ${signature.headerCta}`}
+              >
+                {primaryLabel}
+              </a>
+            </nav>
+
+            <details className={signature.menu}>
+              <summary>
+                Menu <span aria-hidden="true" className={signature.menuIcon} />
+              </summary>
+              <div className={signature.menuPanel}>
+                {navLinks.map((link) => (
+                  <a key={link.href} href={link.href}>{link.label}</a>
+                ))}
+                <a href={primaryHref} className={`${signature.btn} ${signature.btnPrimary}`}>
+                  {primaryLabel}
+                </a>
+              </div>
+            </details>
+          </div>
+        </header>
+
+        <section id="top" data-siteai-hero data-layout={layout} className={signature.hero}>
+          <div className={signature.wrap}>
+            <div className={signature.heroIntro}>
+              <p className={signature.eyebrow}>
+                {textOr(site.heroEyebrow, sector.heroFallback)}
+              </p>
+              <h1 {...edit({ kind: "field", field: "heroTitle" })} className={signature.heroTitle}>
+                {site.heroTitle}
+              </h1>
+            </div>
+
+            <div className={signature.heroBottom}>
+              <p {...edit({ kind: "field", field: "heroText" })} className={signature.heroText}>
+                {site.heroText}
+              </p>
+
+              <div className={signature.heroSide}>
+                <div data-siteai-hero-actions className={signature.actions}>
+                  <a href={primaryHref} className={`${signature.btn} ${signature.btnPrimary}`}>
+                    {primaryLabel} <SignatureArrow />
+                  </a>
+                  <a href={secondaryHref} className={`${signature.btn} ${signature.btnGhost}`}>
+                    {secondaryLabel}
+                  </a>
+                </div>
+                {hasOwnBenefits && (
+                  <ul className={signature.facts}>
+                    {sector.trustItems.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+
+            {site.heroImageUrl ? (
+              <figure {...edit({ kind: "field", field: "heroImageUrl" })} className={signature.heroMedia}>
+                <img src={site.heroImageUrl} alt={site.businessName} />
+                {city && <figcaption className={signature.heroMediaTag}>{activity} · {city}</figcaption>}
+              </figure>
+            ) : services.length > 0 ? (
+              <ol className={signature.heroIndex}>
+                {services.slice(0, 3).map(({ section }, index) => (
+                  <li key={`${section.title}-${index}`}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <strong>{section.title}</strong>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+          </div>
+        </section>
+
+        <section className={signature.benefits} aria-label="Nos engagements">
+          <div className={`${signature.wrap} ${signature.benefitsGrid}`}>
+            {benefits.map((item, index) => (
+              <div key={item.title} className={signature.benefit}>
+                <span className={signature.num}>{String(index + 1).padStart(2, "0")}</span>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <OrderedBlock site={site} block="about">
+          <section id="a-propos" className={signature.section}>
+            <div className={`${signature.wrap} ${signature.split}`}>
+              <div>
+                <p className={signature.eyebrow}>{sector.aboutLabel}</p>
+                <h2 className={signature.h2}>{aboutTitle}</h2>
+              </div>
+              <div className={signature.aboutBody}>
+                <p className={signature.lead}>{aboutText}</p>
+                {facts.length > 0 && (
+                  <dl className={signature.metaList}>
+                    {facts.map((item) => (
+                      <div key={item.label}>
+                        <dt>{item.label}</dt>
+                        <dd>{item.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </div>
+            </div>
+          </section>
+        </OrderedBlock>
+
+        <OrderedBlock site={site} block="services">
+          <section id="services" className={`${signature.section} ${signature.sectionSurface}`}>
+            <div className={signature.wrap}>
+              <div className={signature.sectionHead}>
+                <div>
+                  <p className={signature.eyebrow}>{sector.serviceLabel}</p>
+                  <h2 className={signature.h2}>{sector.serviceHeading}</h2>
+                </div>
+                <p>{sector.serviceIntro}</p>
+              </div>
+
+              {showServiceImages ? (
+                <div className={signature.serviceGrid}>
+                  {services.map(({ section, sourceIndex }, index) => (
+                    <article key={`${section.title}-${sourceIndex}`} className={signature.serviceCard}>
+                      {serviceImages[index] && (
+                        <figure>
+                          <img
+                            {...edit({ kind: "section", index: sourceIndex })}
+                            src={serviceImages[index]}
+                            alt={section.title}
+                            loading="lazy"
+                          />
+                        </figure>
+                      )}
+                      <div className={signature.serviceCardTop}>
+                        <span className={signature.num}>{String(index + 1).padStart(2, "0")}</span>
+                        <span>{sector.serviceLabel}</span>
+                      </div>
+                      <h3 {...edit({ kind: "section", index: sourceIndex })}>{section.title}</h3>
+                      <p {...edit({ kind: "section", index: sourceIndex })}>{section.text}</p>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <ol className={signature.serviceList}>
+                  {services.map(({ section, sourceIndex }, index) => (
+                    <li key={`${section.title}-${sourceIndex}`} className={signature.serviceRow}>
+                      <span className={signature.num}>{String(index + 1).padStart(2, "0")}</span>
+                      <h3 {...edit({ kind: "section", index: sourceIndex })}>{section.title}</h3>
+                      <p {...edit({ kind: "section", index: sourceIndex })}>{section.text}</p>
+                      <a href="#contact" aria-label={`${sector.ctaLabel} : ${section.title}`}>
+                        <SignatureArrow />
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </section>
+
+          <section className={`${signature.ctaBand} ${signature.sectionSurface}`}>
+            <div className={`${signature.wrap}`}>
+              <div className={signature.ctaInner} style={{ background: "var(--sg-bg)" }}>
+                <div>
+                  <h2>Un projet ? Parlons-en avec {site.businessName}.</h2>
+                  <p>Présentez votre besoin, vous obtenez les informations utiles pour avancer.</p>
+                </div>
+                <a href={primaryIsContact ? "#contact" : primaryHref} className={`${signature.btn} ${signature.btnPrimary}`}>
+                  {primaryLabel} <SignatureArrow />
+                </a>
+              </div>
+            </div>
+          </section>
+        </OrderedBlock>
+
+        <OrderedBlock site={site} block="process">
+          <section className={`${signature.section} ${signature.band}`}>
+            <div className={signature.wrap}>
+              <div className={signature.sectionHead}>
+                <div>
+                  <p className={signature.eyebrow}>{sector.processEyebrow}</p>
+                  <h2 className={signature.h2}>{sector.processHeading}</h2>
+                </div>
+                <p>Trois étapes simples pour transformer votre besoin en échange concret avec {site.businessName}.</p>
+              </div>
+              <ol className={signature.steps}>
+                {steps.map((step, index) => (
+                  <li key={step.title}>
+                    <span className={signature.stepNum}>{String(index + 1).padStart(2, "0")}</span>
+                    <h3>{step.title}</h3>
+                    <p>{step.text}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+        </OrderedBlock>
+
+        <OrderedBlock site={site} block="faq">
+          <section id="faq" className={signature.section}>
+            <div className={`${signature.wrap} ${signature.split}`}>
+              <div>
+                <p className={signature.eyebrow}>Questions fréquentes</p>
+                <h2 className={signature.h2}>Les réponses avant de nous contacter.</h2>
+                <p className={signature.lead} style={{ fontSize: "1rem" }}>
+                  De quoi préparer votre demande auprès de {site.businessName}.
+                </p>
+              </div>
+              <div className={signature.faqList}>
+                {faq.map((item) => (
+                  <details key={item.question} className={signature.faqItem}>
+                    <summary>
+                      <span>{item.question}</span>
+                      <span aria-hidden="true" className={signature.faqToggle} />
+                    </summary>
+                    <p>{item.answer}</p>
+                  </details>
+                ))}
+              </div>
+            </div>
+          </section>
+        </OrderedBlock>
+
+        {showGallery && (
+          <section
+            id="realisations"
+            style={{ order: getLayoutOrder(site, "gallery") }}
+            className={`${signature.section} ${signature.sectionSurface}`}
+          >
+            <div className={signature.wrap}>
+              <div className={signature.sectionHead}>
+                <div>
+                  <p className={signature.eyebrow}>{sector.galleryLabel}</p>
+                  <h2 className={signature.h2}>Des projets qui parlent d&apos;eux-mêmes.</h2>
+                </div>
+                <p>Quelques exemples du travail réalisé par {site.businessName}.</p>
+              </div>
+              <div className={signature.gallery} data-count={Math.min(gallery.length, 6)}>
+                {gallery.map((imageUrl, index) => (
+                  <figure key={`${imageUrl}-${index}`} {...edit({ kind: "gallery" })} className={signature.galleryItem}>
+                    <div className={signature.galleryMedia}>
+                      <img
+                        src={imageUrl}
+                        alt={`Réalisation ${index + 1} de ${site.businessName}`}
+                        loading="lazy"
+                      />
+                    </div>
+                    <figcaption>
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <span>{getProjectTitle(activity, index)}</span>
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {testimonials.length > 0 && (
+          <section style={{ order: getLayoutOrder(site, "gallery") }} className={signature.section}>
+            <div className={signature.wrap}>
+              <div className={signature.sectionHead}>
+                <div>
+                  <p className={signature.eyebrow}>Avis clients</p>
+                  <h2 className={signature.h2}>Ce que nos clients disent de nous.</h2>
+                </div>
+              </div>
+              <div className={signature.quotes} data-single={testimonials.length === 1 ? "true" : undefined}>
+                {testimonials.slice(0, 6).map((item, index) => {
+                  const rating = Math.min(5, Math.max(1, Math.round(item.rating ?? 5)));
+                  return (
+                    <figure key={`${item.name}-${index}`} className={signature.quote}>
+                      <div>
+                        <p className={signature.stars} aria-label={`${rating} étoiles sur 5`}>
+                          {"★".repeat(rating)}
+                          <span className={signature.starsOff}>{"★".repeat(5 - rating)}</span>
+                        </p>
+                        <blockquote>« {item.text} »</blockquote>
+                      </div>
+                      <figcaption>
+                        <strong>{item.name}</strong>
+                        {item.role ? <span>{item.role}</span> : null}
+                      </figcaption>
+                    </figure>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
+        <OrderedBlock site={site} block="contact">
+          <section id="contact" className={`${signature.section} ${signature.contact}`}>
+            <div className={`${signature.wrap} ${signature.split}`}>
+              <div className={signature.contactInfo}>
+                <p className={signature.eyebrow}>{sector.contactBadge}</p>
+                <h2 className={signature.h2}>{textOr(site.contactTitle, "Parlons de votre projet.")}</h2>
+                <p>
+                  {textOr(
+                    site.contactText,
+                    `Contactez ${site.businessName} pour échanger sur votre besoin en ${getActivityTheme(activity).noun} à ${city}.`,
+                  )}
+                </p>
+                {hasPhone && (
+                  <a {...edit({ kind: "field", field: "phone" })} href={`tel:${phoneHref(site.phone)}`} className={signature.phone}>
+                    {formatPhoneNumber(site.phone)}
+                  </a>
+                )}
+                <dl className={signature.metaList}>
+                  <div>
+                    <dt>Secteur</dt>
+                    <dd>{textOr(site.serviceArea, city)}</dd>
+                  </div>
+                  <div>
+                    <dt>Horaires</dt>
+                    <dd>{textOr(site.openingHours, "Sur demande")}</dd>
+                  </div>
+                </dl>
+                <div className={signature.socials}>
+                  <SocialLinksList links={site.socialLinks} accentColor={accentColor} light />
+                </div>
+              </div>
+
+              <div className={signature.formCard}>
+                <LeadForm site={site} accentColor={accentColor} variant="elegant" activity={activity} />
+              </div>
+            </div>
+          </section>
+        </OrderedBlock>
+
+        <footer style={{ order: 1000 }} className={signature.footer}>
+          <div className={signature.wrap}>
+            <p {...edit({ kind: "field", field: "businessName" })} className={signature.footerName}>
+              {site.businessName}
+            </p>
+            <div className={signature.footerGrid}>
+              <div>
+                <h3>{activity}</h3>
+                <p>
+                  {textOr(site.metaDescription, `${site.businessName}, ${activity.toLowerCase()} à ${city}.`)}
+                </p>
+              </div>
+              <div>
+                <h3>Navigation</h3>
+                {navLinks.map((link) => (
+                  <a key={link.href} href={link.href}>{link.label}</a>
+                ))}
+              </div>
+              <div>
+                <h3>Contact</h3>
+                {city && <span>{city}</span>}
+                {hasPhone && <a href={`tel:${phoneHref(site.phone)}`}>{formatPhoneNumber(site.phone)}</a>}
+                <a href="#contact">Écrire un message</a>
+              </div>
+            </div>
+            <div className={signature.footerBottom}>
+              <p>© {year} {site.businessName}</p>
+              <p>Site créé avec Lumio</p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </>
+  );
 }
