@@ -23,7 +23,8 @@
 }
 
 .home * { box-sizing: border-box; }
-.home a { color: inherit; text-decoration: none; }
+/* Les aperçus de sites gardent leurs propres couleurs de liens. */
+.home a:where(:not(:global(.siteai-design-root) *)) { color: inherit; text-decoration: none; }
 .home button, .home summary { font: inherit; }
 .home a, .home summary { touch-action: manipulation; }
 .home a:focus-visible, .home summary:focus-visible, .home button:focus-visible {

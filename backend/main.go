@@ -6155,6 +6155,14 @@ STRUCTURE À PRODUIRE :
 - contactTitle : titre de prise de contact
 - contactText : 1 à 2 phrases pour encourager le contact sans fausse promesse
 
+STYLE ÉDITORIAL HAUT DE GAMME :
+- aucun emoji, aucun symbole décoratif et aucun point d'exclamation
+- heroTitle court et mémorable : 4 à 9 mots, sans deux-points ni énumération
+- heroEyebrow très court : 2 à 5 mots, sans ponctuation finale
+- titres de sections en 2 à 6 mots, précis plutôt que génériques
+- phrases nettes, rythme varié, un seul message par phrase ; préférer le concret au promotionnel
+- ton sobre et assuré, comme une marque premium du secteur : ni familier, ni publicitaire
+
 Le résultat doit être directement publiable sur un site professionnel.
 
 BARRE DE QUALITÉ AVANT RETOUR :

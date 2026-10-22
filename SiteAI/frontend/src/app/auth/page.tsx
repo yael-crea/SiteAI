@@ -22,7 +22,12 @@ function getAuthRedirectUrl(path: string) {
     typeof window !== "undefined" ? window.location.hostname : "";
   const isLocalDevelopment =
     currentHostname === "localhost" || currentHostname === "127.0.0.1";
-  const origin = isLocalDevelopment
+  // Aperçus Vercel du projet (déjà autorisés dans Supabase) : on reste sur l'aperçu.
+  const isVercelPreview =
+    typeof window !== "undefined" &&
+    window.location.protocol === "https:" &&
+    /^lumio-[a-z0-9-]+-yael-bf82\.vercel\.app$/.test(currentHostname);
+  const origin = isLocalDevelopment || isVercelPreview
     ? currentOrigin
     : PRODUCTION_AUTH_ORIGIN;
 

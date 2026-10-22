@@ -412,7 +412,7 @@ export default function DashboardPage() {
 
   function createSite() {
     sessionStorage.removeItem("siteai_site_to_open");
-    router.push("/builder");
+    router.push("/creer");
   }
 
   function editSite(id: number) {

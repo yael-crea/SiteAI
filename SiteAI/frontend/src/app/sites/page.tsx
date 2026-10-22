@@ -893,7 +893,7 @@ export default function SitesPage() {
 
 
 
-    router.push("/builder");
+    router.push("/creer");
 
 
 
