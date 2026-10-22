@@ -420,6 +420,9 @@ function ResponsiveSitePreview({
 
     frameDocument.documentElement.lang = "fr";
 
+    // Les variables de polices (next/font) sont posées sur <html> : l'aperçu en a besoin aussi.
+    frameDocument.documentElement.className = document.documentElement.className;
+
     frameDocument.documentElement.style.background = "#ffffff";
 
     frameDocument.body.style.margin = "0";
