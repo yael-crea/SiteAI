@@ -417,7 +417,27 @@ type StripeCheckoutSession struct {
 }
 
 type StripeCustomer struct {
-	ID string `json:"id"`
+	ID      string `json:"id"`
+	Deleted bool   `json:"deleted"`
+}
+
+type StripeAPIError struct {
+	StatusCode int
+	Code       string
+	Param      string
+	Message    string
+}
+
+func (err *StripeAPIError) Error() string {
+	if err == nil {
+		return ""
+	}
+
+	if strings.TrimSpace(err.Message) != "" {
+		return err.Message
+	}
+
+	return fmt.Sprintf("Stripe %d", err.StatusCode)
 }
 
 type StripePortalSession struct {
@@ -463,6 +483,7 @@ type BillingStatus struct {
 	MaxPublishedSites   int        `json:"maxPublishedSites"`
 	CustomDomainAllowed bool       `json:"customDomainAllowed"`
 	IsAdmin             bool       `json:"isAdmin"`
+	IsOwner             bool       `json:"isOwner"`
 }
 
 type PlanEntitlements struct {
@@ -7869,12 +7890,21 @@ func doStripeForm(
 		var stripeError struct {
 			Error struct {
 				Message string `json:"message"`
+				Code    string `json:"code"`
+				Param   string `json:"param"`
 			} `json:"error"`
 		}
 
-		if json.Unmarshal(data, &stripeError) == nil &&
-			strings.TrimSpace(stripeError.Error.Message) != "" {
-			return errors.New(stripeError.Error.Message)
+		if json.Unmarshal(data, &stripeError) == nil {
+			message := strings.TrimSpace(stripeError.Error.Message)
+			if message != "" {
+				return &StripeAPIError{
+					StatusCode: response.StatusCode,
+					Code:       strings.TrimSpace(stripeError.Error.Code),
+					Param:      strings.TrimSpace(stripeError.Error.Param),
+					Message:    message,
+				}
+			}
 		}
 
 		message := strings.TrimSpace(string(data))
@@ -7892,6 +7922,31 @@ func doStripeForm(
 	}
 
 	return nil
+}
+
+func isStripeMissingResource(err error) bool {
+	var stripeError *StripeAPIError
+
+	return errors.As(err, &stripeError) &&
+		stripeError.StatusCode == http.StatusNotFound &&
+		stripeError.Code == "resource_missing"
+}
+
+func retrieveStripeCustomer(
+	ctx context.Context,
+	customerID string,
+) (StripeCustomer, error) {
+	var customer StripeCustomer
+
+	err := doStripeForm(
+		ctx,
+		http.MethodGet,
+		"/v1/customers/"+url.PathEscape(strings.TrimSpace(customerID)),
+		nil,
+		&customer,
+	)
+
+	return customer, err
 }
 
 func getBillingStatus(
@@ -7947,12 +8002,12 @@ func getBillingStatus(
 			HasSubscription: false,
 			CanManage:       false,
 			IsAdmin:         isAdmin,
+			IsOwner:         isAdmin,
 		}
 
 		if isAdmin {
 			billingStatus.Plan = "agence"
 			billingStatus.Status = "active"
-			billingStatus.HasSubscription = true
 		}
 
 		applyBillingEntitlements(&billingStatus)
@@ -7974,8 +8029,9 @@ func getBillingStatus(
 		HasSubscription:   hasSubscription,
 		CancelAtPeriodEnd: cancelAtPeriodEnd,
 		CurrentPeriodEnd:  currentPeriodEnd,
-		CanManage:         customerID != "",
+		CanManage:         customerID != "" && hasSubscription,
 		IsAdmin:           isAdmin,
+		IsOwner:           isAdmin,
 	}
 
 	if isAdmin {
@@ -7985,7 +8041,6 @@ func getBillingStatus(
 		// débloque aussi les fonctions réservées Pro/Agence.
 		billingStatus.Plan = "agence"
 		billingStatus.Status = "active"
-		billingStatus.HasSubscription = true
 		billingStatus.CancelAtPeriodEnd = false
 	}
 
@@ -8066,13 +8121,31 @@ func ensureStripeCustomer(
 	ctx context.Context,
 	user SupabaseUser,
 ) (string, error) {
-	_, customerID, _, err := getBillingStatus(ctx, user.ID)
+	_, customerID, subscriptionID, err := getBillingStatus(ctx, user.ID)
 	if err != nil {
 		return "", err
 	}
 
 	if customerID != "" {
-		return customerID, nil
+		customer, retrieveErr := retrieveStripeCustomer(ctx, customerID)
+		if retrieveErr == nil && !customer.Deleted {
+			return customerID, nil
+		}
+
+		if retrieveErr != nil && !isStripeMissingResource(retrieveErr) {
+			return "", retrieveErr
+		}
+
+		if subscriptionID != "" {
+			return "", errors.New(
+				"le compte Stripe enregistré n'existe plus alors qu'un abonnement est encore référencé",
+			)
+		}
+
+		log.Printf(
+			"Customer Stripe obsolète remplacé pour l'utilisateur %s",
+			user.ID,
+		)
 	}
 
 	values := url.Values{}
@@ -8462,14 +8535,30 @@ func stripePortalHandler(
 		return
 	}
 
-	_, customerID, _, err := getBillingStatus(r.Context(), user.ID)
+	status, customerID, subscriptionID, err := getBillingStatus(r.Context(), user.ID)
 	if err != nil {
 		http.Error(w, "Impossible de lire l'abonnement", http.StatusInternalServerError)
 		return
 	}
 
-	if customerID == "" {
+	if customerID == "" || subscriptionID == "" || !status.HasSubscription {
 		http.Error(w, "Aucun compte Stripe associé", http.StatusBadRequest)
+		return
+	}
+
+	customer, err := retrieveStripeCustomer(r.Context(), customerID)
+	if err != nil || customer.Deleted {
+		if err != nil && !isStripeMissingResource(err) {
+			log.Println("Erreur vérification customer Stripe :", err)
+			http.Error(w, "Impossible de vérifier le compte Stripe", http.StatusBadGateway)
+			return
+		}
+
+		http.Error(
+			w,
+			"Le compte d'abonnement Stripe n'existe plus. Contacte le support Lumio.",
+			http.StatusConflict,
+		)
 		return
 	}
 
@@ -8521,10 +8610,25 @@ func stripeStatusHandler(
 		return
 	}
 
-	status, _, _, err := getBillingStatus(r.Context(), user.ID)
+	status, customerID, _, err := getBillingStatus(r.Context(), user.ID)
 	if err != nil {
 		http.Error(w, "Impossible de lire l'abonnement", http.StatusInternalServerError)
 		return
+	}
+
+	if status.IsOwner && status.CanManage && customerID != "" {
+		customer, retrieveErr := retrieveStripeCustomer(r.Context(), customerID)
+		if isStripeMissingResource(retrieveErr) ||
+			(retrieveErr == nil && customer.Deleted) {
+			// L'accès propriétaire ne dépend pas de Stripe. Une ancienne
+			// référence ne doit donc pas être présentée comme un abonnement réel.
+			status.HasSubscription = false
+			status.CanManage = false
+			status.CurrentPeriodEnd = nil
+			status.CancelAtPeriodEnd = false
+		} else if retrieveErr != nil {
+			log.Println("Erreur vérification abonnement propriétaire :", retrieveErr)
+		}
 	}
 
 	writeJSON(w, http.StatusOK, status)
