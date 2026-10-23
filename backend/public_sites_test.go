@@ -30,6 +30,13 @@ func TestPublicQueriesReadOnlyPublishedSnapshot(t *testing.T) {
 	}
 }
 
+func TestPublicDomainQueryRequiresVerifiedDomain(t *testing.T) {
+	lower := strings.ToLower(publicSiteByDomainQuery)
+	if !strings.Contains(lower, "custom_domain_verified = true") {
+		t.Fatal("la route publique par domaine doit exiger un domaine vérifié")
+	}
+}
+
 func TestStartupMigrationNeverBuildsPublishedSnapshotFromDraft(t *testing.T) {
 	lower := strings.ToLower(versionMigrationSQL)
 	if strings.Contains(lower, "update sites set published_snapshot") {

@@ -1259,6 +1259,10 @@ func createTables(ctx context.Context) error {
 		return err
 	}
 
+	if err := applySupabaseSecurityBaseline(ctx); err != nil {
+		return err
+	}
+
 	fmt.Println("Table sites prête")
 
 	return nil

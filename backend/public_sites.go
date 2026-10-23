@@ -23,6 +23,7 @@ SELECT published_snapshot, public_slug, published_at
 FROM sites
 WHERE LOWER(custom_domain) = LOWER($1)
   AND published = TRUE
+  AND custom_domain_verified = TRUE
 LIMIT 1;
 `
 
