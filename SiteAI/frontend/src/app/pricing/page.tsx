@@ -862,6 +862,20 @@ export default function PricingPage() {
           </div>
         </section>
 
+        <div className="mx-auto mt-10 max-w-3xl rounded-2xl border border-blue-800 bg-blue-950/30 p-6 text-center">
+          <h2 className="text-xl font-black text-white">Une question avant de choisir ?</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            Écris-nous à{" "}
+            <a
+              href="mailto:support@lumio.business"
+              className="font-bold text-blue-300 underline decoration-blue-500/60 underline-offset-4 hover:text-blue-200"
+            >
+              support@lumio.business
+            </a>
+            . L’équipe Lumio te répondra dès que possible.
+          </p>
+        </div>
+
       </section>
     </main>
       <LumioAssistant page="Abonnement" mobileOffset={24} />

@@ -394,9 +394,14 @@ Médiation de la consommation : [À COMPLÉTER si une offre B2C est proposée]`}
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">22. Contact</h2>
 
-            <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              {`E-mail du service client : [À COMPLÉTER]
-Adresse postale : [À COMPLÉTER]`}
+            <div className="mt-3 text-sm leading-7 text-slate-400">
+              <p>
+                E-mail du service client :{" "}
+                <a href="mailto:support@lumio.business" className="text-blue-400 hover:text-blue-300">
+                  support@lumio.business
+                </a>
+              </p>
+              <p>Adresse postale : [À COMPLÉTER]</p>
             </div>
           </section>
         </div>

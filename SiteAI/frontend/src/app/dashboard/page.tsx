@@ -1072,6 +1072,13 @@ export default function DashboardPage() {
                 </button>
               )}
 
+              <a
+                href="mailto:support@lumio.business"
+                className="rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2 text-sm font-bold text-slate-200 transition hover:border-blue-500 hover:text-blue-300"
+              >
+                Aide
+              </a>
+
               <button
                 type="button"
                 onClick={() => router.push("/prospects")}
@@ -1134,6 +1141,13 @@ export default function DashboardPage() {
                   Administration
                 </button>
               )}
+
+              <a
+                href="mailto:support@lumio.business"
+                className="mb-2 block w-full rounded-xl border border-blue-900 px-4 py-3 text-left text-sm font-bold text-blue-300 transition hover:bg-blue-950"
+              >
+                Contacter le support
+              </a>
 
               <button
                 type="button"

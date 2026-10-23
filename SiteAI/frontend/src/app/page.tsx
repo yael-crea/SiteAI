@@ -293,6 +293,7 @@ export default function HomePage() {
           <Link href="/exemples">Exemples</Link><Link href="/pricing">Tarifs</Link><Link href="/auth">Connexion</Link>
           <Link href="/mentions-legales">Mentions légales</Link><Link href="/confidentialite">Confidentialité</Link>
           <Link href="/cgu">CGU</Link><Link href="/cgv">CGV</Link>
+          <a href="mailto:support@lumio.business">Support</a>
         </nav>
         <span>© 2026 Lumio</span>
       </footer>

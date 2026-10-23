@@ -118,9 +118,12 @@ Juridiction / mécanisme de règlement des litiges : [À COMPLÉTER selon le sta
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">11. Contact</h2>
-            <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Contact Lumio : [À COMPLÉTER]
-            </div>
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              Contact Lumio :{" "}
+              <a href="mailto:support@lumio.business" className="text-blue-400 hover:text-blue-300">
+                support@lumio.business
+              </a>
+            </p>
           </section>
         </div>
 

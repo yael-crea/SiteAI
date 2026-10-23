@@ -109,12 +109,15 @@ Principe retenu : les données ne sont conservées que pendant la durée nécess
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">7. Droits des utilisateurs</h2>
-            <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Sous réserve des conditions prévues par la réglementation applicable, les personnes concernées peuvent notamment demander l’accès, la rectification, l’effacement, la limitation ou la portabilité de leurs données, et s’opposer à certains traitements.
-
-Contact pour exercer ces droits : [À COMPLÉTER]
-
-Les utilisateurs peuvent également introduire une réclamation auprès de la CNIL.
+            <div className="mt-3 text-sm leading-7 text-slate-400">
+              <p>Sous réserve des conditions prévues par la réglementation applicable, les personnes concernées peuvent notamment demander l’accès, la rectification, l’effacement, la limitation ou la portabilité de leurs données, et s’opposer à certains traitements.</p>
+              <p className="mt-3">
+                Contact pour exercer ces droits :{" "}
+                <a href="mailto:support@lumio.business" className="text-blue-400 hover:text-blue-300">
+                  support@lumio.business
+                </a>
+              </p>
+              <p className="mt-3">Les utilisateurs peuvent également introduire une réclamation auprès de la CNIL.</p>
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
