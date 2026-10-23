@@ -51,7 +51,7 @@ import (
 
 var db *pgxpool.Pool
 
-const currentCGVVersion = "2026-09-25"
+const currentCGVVersion = "2026-09-27"
 const aiHourlyLimit = 20
 
 const leadRateLimit = 5
