@@ -8473,6 +8473,7 @@ func stripeCheckoutHandler(
 	values.Set("success_url", baseURL+"/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}")
 	values.Set("cancel_url", baseURL+"/dashboard?checkout=cancel")
 	values.Set("locale", "fr")
+	configureStripeAutomaticTax(values)
 	values.Set("metadata[user_id]", user.ID)
 	values.Set("metadata[plan]", plan)
 	values.Set("metadata[cgv_version]", currentCGVVersion)
@@ -8507,6 +8508,16 @@ func stripeCheckoutHandler(
 		"url":       session.URL,
 		"sessionId": session.ID,
 	})
+}
+
+func configureStripeAutomaticTax(values url.Values) {
+	// Les tarifs Lumio sont affichés hors taxes. Stripe calcule et ajoute la
+	// taxe applicable à partir de l'adresse de facturation du client.
+	values.Set("automatic_tax[enabled]", "true")
+	values.Set("billing_address_collection", "required")
+	values.Set("customer_update[address]", "auto")
+	values.Set("customer_update[name]", "auto")
+	values.Set("tax_id_collection[enabled]", "true")
 }
 
 func stripePortalHandler(
