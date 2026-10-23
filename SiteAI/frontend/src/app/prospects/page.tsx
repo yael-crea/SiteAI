@@ -62,6 +62,74 @@ type Lead = {
 
 };
 
+type QuoteItem = {
+
+  description: string;
+
+  quantity: number;
+
+  unitPriceCents: number;
+
+  totalCents: number;
+
+};
+
+type Quote = {
+
+  id: number;
+
+  leadId: number;
+
+  quoteNumber: string;
+
+  title: string;
+
+  items: QuoteItem[];
+
+  subtotalCents: number;
+
+  taxRateBps: number;
+
+  taxCents: number;
+
+  totalCents: number;
+
+  notes: string;
+
+  status: "draft" | "sent";
+
+  validUntil: string;
+
+  sentAt: string | null;
+
+  createdAt: string;
+
+};
+
+type QuoteDraftItem = {
+
+  description: string;
+
+  quantity: string;
+
+  unitPrice: string;
+
+};
+
+type QuoteDraft = {
+
+  title: string;
+
+  taxRate: string;
+
+  validityDays: string;
+
+  notes: string;
+
+  items: QuoteDraftItem[];
+
+};
+
 
 
 type StatusFilter = "all" | LeadStatus;
@@ -261,6 +329,50 @@ export default function ProspectsPage() {
   const [savedID, setSavedID] =
 
     useState<number | null>(null);
+
+  const [quoteLeadID, setQuoteLeadID] =
+
+    useState<number | null>(null);
+
+  const [quoteDraft, setQuoteDraft] =
+
+    useState<QuoteDraft>({
+
+      title: "Devis",
+
+      taxRate: "20",
+
+      validityDays: "30",
+
+      notes: "",
+
+      items: [
+
+        {
+
+          description: "Prestation",
+
+          quantity: "1",
+
+          unitPrice: "",
+
+        },
+
+      ],
+
+    });
+
+  const [quotesByLead, setQuotesByLead] =
+
+    useState<Record<number, Quote[]>>({});
+
+  const [quoteWorkingID, setQuoteWorkingID] =
+
+    useState<number | null>(null);
+
+  const [quoteNotice, setQuoteNotice] =
+
+    useState("");
 
 
 
@@ -1447,6 +1559,652 @@ export default function ProspectsPage() {
       url,
 
     );
+
+  }
+
+  function quoteDraftSubtotal() {
+
+    return quoteDraft.items.reduce(
+
+      (total, item) => {
+
+        const quantity =
+
+          Math.max(
+
+            0,
+
+            Math.floor(
+
+              Number(
+
+                item.quantity.replace(
+
+                  ",",
+
+                  ".",
+
+                ),
+
+              ) || 0,
+
+            ),
+
+          );
+
+        const unitPrice =
+
+          Number(
+
+            item.unitPrice.replace(
+
+              ",",
+
+              ".",
+
+            ),
+
+          ) || 0;
+
+        return total +
+
+          quantity *
+
+            Math.max(
+
+              0,
+
+              Math.round(
+
+                unitPrice * 100,
+
+              ),
+
+            );
+
+      },
+
+      0,
+
+    );
+
+  }
+
+  async function loadQuotes(
+
+    leadID: number,
+
+  ) {
+
+    const response =
+
+      await authenticatedFetch(
+
+        `/quotes?leadId=${leadID}`,
+
+      );
+
+    if (!response.ok) {
+
+      const text =
+
+        await response.text();
+
+      throw new Error(
+
+        text ||
+
+          "Impossible de charger les devis.",
+
+      );
+
+    }
+
+    const quotes =
+
+      (await response.json()) as Quote[];
+
+    setQuotesByLead(
+
+      (current) => ({
+
+        ...current,
+
+        [leadID]: quotes,
+
+      }),
+
+    );
+
+  }
+
+  async function toggleQuotePanel(
+
+    lead: Lead,
+
+  ) {
+
+    if (quoteLeadID === lead.id) {
+
+      setQuoteLeadID(null);
+
+      return;
+
+    }
+
+    setQuoteLeadID(lead.id);
+
+    setQuoteNotice("");
+
+    setQuoteDraft({
+
+      title: "Devis",
+
+      taxRate: "20",
+
+      validityDays: "30",
+
+      notes: "",
+
+      items: [
+
+        {
+
+          description:
+
+            "Prestation",
+
+          quantity: "1",
+
+          unitPrice:
+
+            lead.quoteAmountCents >
+
+            0
+
+              ? String(
+
+                  lead.quoteAmountCents /
+
+                    100,
+
+                )
+
+              : "",
+
+        },
+
+      ],
+
+    });
+
+    setQuoteWorkingID(lead.id);
+
+    try {
+
+      await loadQuotes(lead.id);
+
+    } catch (err) {
+
+      setError(
+
+        err instanceof Error
+
+          ? err.message
+
+          : "Impossible de charger les devis.",
+
+      );
+
+    } finally {
+
+      setQuoteWorkingID(null);
+
+    }
+
+  }
+
+  function updateQuoteItem(
+
+    index: number,
+
+    field: keyof QuoteDraftItem,
+
+    value: string,
+
+  ) {
+
+    setQuoteDraft(
+
+      (current) => ({
+
+        ...current,
+
+        items: current.items.map(
+
+          (item, itemIndex) =>
+
+            itemIndex === index
+
+              ? {
+
+                  ...item,
+
+                  [field]: value,
+
+                }
+
+              : item,
+
+        ),
+
+      }),
+
+    );
+
+  }
+
+  function addQuoteItem() {
+
+    setQuoteDraft(
+
+      (current) => ({
+
+        ...current,
+
+        items: [
+
+          ...current.items,
+
+          {
+
+            description: "",
+
+            quantity: "1",
+
+            unitPrice: "",
+
+          },
+
+        ],
+
+      }),
+
+    );
+
+  }
+
+  function removeQuoteItem(
+
+    index: number,
+
+  ) {
+
+    setQuoteDraft(
+
+      (current) => ({
+
+        ...current,
+
+        items: current.items.filter(
+
+          (_, itemIndex) =>
+
+            itemIndex !== index,
+
+        ),
+
+      }),
+
+    );
+
+  }
+
+  async function createAndSendQuote(
+
+    lead: Lead,
+
+  ) {
+
+    setError("");
+
+    setQuoteNotice("");
+
+    if (!lead.email) {
+
+      setError(
+
+        "Ajoutez d'abord une adresse e-mail au prospect.",
+
+      );
+
+      return;
+
+    }
+
+    const items =
+
+      quoteDraft.items.map(
+
+        (item) => ({
+
+          description:
+
+            item.description.trim(),
+
+          quantity: Math.floor(
+
+            Number(
+
+              item.quantity.replace(
+
+                ",",
+
+                ".",
+
+              ),
+
+            ) || 0,
+
+          ),
+
+          unitPriceCents:
+
+            Math.round(
+
+              (Number(
+
+                item.unitPrice.replace(
+
+                  ",",
+
+                  ".",
+
+                ),
+
+              ) || 0) * 100,
+
+            ),
+
+        }),
+
+      );
+
+    if (
+
+      items.length === 0 ||
+
+      items.some(
+
+        (item) =>
+
+          !item.description ||
+
+          item.quantity < 1 ||
+
+          item.unitPriceCents < 0,
+
+      ) ||
+
+      quoteDraftSubtotal() <= 0
+
+    ) {
+
+      setError(
+
+        "Complétez les prestations, quantités et prix du devis.",
+
+      );
+
+      return;
+
+    }
+
+    setQuoteWorkingID(lead.id);
+
+    try {
+
+      const response =
+
+        await authenticatedFetch(
+
+          "/quotes",
+
+          {
+
+            method: "POST",
+
+            body: JSON.stringify({
+
+              leadId: lead.id,
+
+              title:
+
+                quoteDraft.title,
+
+              items,
+
+              taxRateBps:
+
+                Math.round(
+
+                  (Number(
+
+                    quoteDraft.taxRate.replace(
+
+                      ",",
+
+                      ".",
+
+                    ),
+
+                  ) || 0) *
+
+                    100,
+
+                ),
+
+              validityDays:
+
+                Math.round(
+
+                  Number(
+
+                    quoteDraft.validityDays,
+
+                  ) || 30,
+
+                ),
+
+              notes:
+
+                quoteDraft.notes,
+
+            }),
+
+          },
+
+        );
+
+      if (!response.ok) {
+
+        const text =
+
+          await response.text();
+
+        throw new Error(
+
+          text ||
+
+            "Impossible de créer le devis.",
+
+        );
+
+      }
+
+      const result =
+
+        (await response.json()) as {
+
+          quote: Quote;
+
+          emailSent: boolean;
+
+          warning?: string;
+
+        };
+
+      setQuotesByLead(
+
+        (current) => ({
+
+          ...current,
+
+          [lead.id]: [
+
+            result.quote,
+
+            ...(current[lead.id] ?? []),
+
+          ],
+
+        }),
+
+      );
+
+      if (result.emailSent) {
+
+        setLeads(
+
+          (current) =>
+
+            current.map(
+
+              (item) =>
+
+                item.id === lead.id
+
+                  ? {
+
+                      ...item,
+
+                      status:
+
+                        "quote_sent",
+
+                      quoteAmountCents:
+
+                        result.quote.totalCents,
+
+                    }
+
+                  : item,
+
+            ),
+
+        );
+
+      }
+
+      setQuoteNotice(
+
+        result.emailSent
+
+          ? `✓ ${result.quote.quoteNumber} envoyé à ${lead.email}`
+
+          : result.warning ??
+
+              "Devis enregistré, e-mail non envoyé.",
+
+      );
+
+    } catch (err) {
+
+      setError(
+
+        err instanceof Error
+
+          ? err.message
+
+          : "Impossible de créer le devis.",
+
+      );
+
+    } finally {
+
+      setQuoteWorkingID(null);
+
+    }
+
+  }
+
+  async function downloadQuote(
+
+    quote: Quote,
+
+  ) {
+
+    setError("");
+
+    try {
+
+      const response =
+
+        await authenticatedFetch(
+
+          `/quotes/${quote.id}/pdf`,
+
+        );
+
+      if (!response.ok) {
+
+        throw new Error(
+
+          "Impossible de télécharger le PDF.",
+
+        );
+
+      }
+
+      const url =
+
+        URL.createObjectURL(
+
+          await response.blob(),
+
+        );
+
+      const link =
+
+        document.createElement("a");
+
+      link.href = url;
+
+      link.download =
+
+        `${quote.quoteNumber}.pdf`;
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      link.remove();
+
+      URL.revokeObjectURL(url);
+
+    } catch (err) {
+
+      setError(
+
+        err instanceof Error
+
+          ? err.message
+
+          : "Impossible de télécharger le PDF.",
+
+      );
+
+    }
 
   }
 
@@ -3476,6 +4234,744 @@ export default function ProspectsPage() {
                       )}
 
                     </div>
+
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-violet-900/70 bg-violet-950/20 p-5">
+
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+
+                      <div>
+
+                        <p className="text-xs font-bold uppercase tracking-[0.15em] text-violet-300">
+
+                          Devis PDF
+
+                        </p>
+
+                        <p className="mt-1 text-sm text-slate-400">
+
+                          Créez le devis et envoyez-le directement au client.
+
+                        </p>
+
+                      </div>
+
+                      <button
+
+                        type="button"
+
+                        onClick={() =>
+
+                          void toggleQuotePanel(
+
+                            lead,
+
+                          )
+
+                        }
+
+                        className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-black transition hover:bg-violet-500"
+
+                      >
+
+                        {quoteLeadID ===
+
+                        lead.id
+
+                          ? "Fermer"
+
+                          : "Créer un devis"}
+
+                      </button>
+
+                    </div>
+
+                    {quoteLeadID ===
+
+                      lead.id && (
+
+                      <div className="mt-6 border-t border-violet-900/60 pt-6">
+
+                        {!lead.email && (
+
+                          <p className="mb-5 rounded-xl border border-amber-800 bg-amber-950/40 p-4 text-sm font-semibold text-amber-300">
+
+                            Ce prospect n&apos;a pas d&apos;adresse e-mail. L&apos;envoi sera disponible après ajout d&apos;un e-mail.
+
+                          </p>
+
+                        )}
+
+                        <div className="grid gap-4 md:grid-cols-3">
+
+                          <label className="text-sm font-bold text-slate-300 md:col-span-2">
+
+                            Titre
+
+                            <input
+
+                              value={
+
+                                quoteDraft.title
+
+                              }
+
+                              onChange={(event) =>
+
+                                setQuoteDraft(
+
+                                  (current) => ({
+
+                                    ...current,
+
+                                    title:
+
+                                      event.target.value,
+
+                                  }),
+
+                                )
+
+                              }
+
+                              maxLength={120}
+
+                              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-violet-500"
+
+                            />
+
+                          </label>
+
+                          <label className="text-sm font-bold text-slate-300">
+
+                            Validité (jours)
+
+                            <input
+
+                              type="number"
+
+                              min="1"
+
+                              max="365"
+
+                              value={
+
+                                quoteDraft.validityDays
+
+                              }
+
+                              onChange={(event) =>
+
+                                setQuoteDraft(
+
+                                  (current) => ({
+
+                                    ...current,
+
+                                    validityDays:
+
+                                      event.target.value,
+
+                                  }),
+
+                                )
+
+                              }
+
+                              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-violet-500"
+
+                            />
+
+                          </label>
+
+                        </div>
+
+                        <div className="mt-5 space-y-3">
+
+                          {quoteDraft.items.map(
+
+                            (item, index) => (
+
+                              <div
+
+                                key={index}
+
+                                className="grid gap-3 rounded-xl border border-slate-800 bg-slate-950 p-4 md:grid-cols-[1fr_110px_150px_auto] md:items-end"
+
+                              >
+
+                                <label className="text-xs font-bold text-slate-400">
+
+                                  Prestation
+
+                                  <input
+
+                                    value={
+
+                                      item.description
+
+                                    }
+
+                                    onChange={(event) =>
+
+                                      updateQuoteItem(
+
+                                        index,
+
+                                        "description",
+
+                                        event.target.value,
+
+                                      )
+
+                                    }
+
+                                    maxLength={240}
+
+                                    placeholder="Ex. Installation et fourniture"
+
+                                    className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-violet-500"
+
+                                  />
+
+                                </label>
+
+                                <label className="text-xs font-bold text-slate-400">
+
+                                  Quantité
+
+                                  <input
+
+                                    type="number"
+
+                                    min="1"
+
+                                    step="1"
+
+                                    value={
+
+                                      item.quantity
+
+                                    }
+
+                                    onChange={(event) =>
+
+                                      updateQuoteItem(
+
+                                        index,
+
+                                        "quantity",
+
+                                        event.target.value,
+
+                                      )
+
+                                    }
+
+                                    className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-violet-500"
+
+                                  />
+
+                                </label>
+
+                                <label className="text-xs font-bold text-slate-400">
+
+                                  Prix unitaire HT
+
+                                  <div className="mt-2 flex rounded-lg border border-slate-700 bg-slate-900 focus-within:border-violet-500">
+
+                                    <input
+
+                                      type="number"
+
+                                      min="0"
+
+                                      step="0.01"
+
+                                      value={
+
+                                        item.unitPrice
+
+                                      }
+
+                                      onChange={(event) =>
+
+                                        updateQuoteItem(
+
+                                          index,
+
+                                          "unitPrice",
+
+                                          event.target.value,
+
+                                        )
+
+                                      }
+
+                                      className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
+
+                                    />
+
+                                    <span className="pr-3 pt-2.5 text-sm text-slate-400">
+
+                                      €
+
+                                    </span>
+
+                                  </div>
+
+                                </label>
+
+                                <button
+
+                                  type="button"
+
+                                  onClick={() =>
+
+                                    removeQuoteItem(
+
+                                      index,
+
+                                    )
+
+                                  }
+
+                                  disabled={
+
+                                    quoteDraft.items.length ===
+
+                                    1
+
+                                  }
+
+                                  className="rounded-lg border border-red-900 px-3 py-2.5 text-xs font-bold text-red-300 disabled:opacity-30"
+
+                                >
+
+                                  Retirer
+
+                                </button>
+
+                              </div>
+
+                            ),
+
+                          )}
+
+                        </div>
+
+                        <button
+
+                          type="button"
+
+                          onClick={addQuoteItem}
+
+                          disabled={
+
+                            quoteDraft.items.length >=
+
+                            20
+
+                          }
+
+                          className="mt-3 text-sm font-bold text-violet-300 hover:text-violet-200 disabled:opacity-40"
+
+                        >
+
+                          + Ajouter une ligne
+
+                        </button>
+
+                        <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_280px]">
+
+                          <label className="text-sm font-bold text-slate-300">
+
+                            Conditions ou message
+
+                            <textarea
+
+                              value={
+
+                                quoteDraft.notes
+
+                              }
+
+                              onChange={(event) =>
+
+                                setQuoteDraft(
+
+                                  (current) => ({
+
+                                    ...current,
+
+                                    notes:
+
+                                      event.target.value,
+
+                                  }),
+
+                                )
+
+                              }
+
+                              rows={4}
+
+                              maxLength={3000}
+
+                              placeholder="Ex. Acompte de 30 % à la commande."
+
+                              className="mt-2 w-full resize-y rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-violet-500"
+
+                            />
+
+                          </label>
+
+                          <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+
+                            <label className="flex items-center justify-between gap-3 text-sm font-bold text-slate-300">
+
+                              TVA
+
+                              <span className="flex w-28 rounded-lg border border-slate-700 bg-slate-900">
+
+                                <input
+
+                                  type="number"
+
+                                  min="0"
+
+                                  max="100"
+
+                                  step="0.1"
+
+                                  value={
+
+                                    quoteDraft.taxRate
+
+                                  }
+
+                                  onChange={(event) =>
+
+                                    setQuoteDraft(
+
+                                      (current) => ({
+
+                                        ...current,
+
+                                        taxRate:
+
+                                          event.target.value,
+
+                                      }),
+
+                                    )
+
+                                  }
+
+                                  className="min-w-0 flex-1 bg-transparent px-3 py-2 text-right outline-none"
+
+                                />
+
+                                <span className="pr-3 pt-2 text-slate-500">
+
+                                  %
+
+                                </span>
+
+                              </span>
+
+                            </label>
+
+                            <div className="mt-4 space-y-2 text-sm">
+
+                              <p className="flex justify-between text-slate-400">
+
+                                <span>Total HT</span>
+
+                                <span>
+
+                                  {formatCurrency(
+
+                                    quoteDraftSubtotal(),
+
+                                  )}
+
+                                </span>
+
+                              </p>
+
+                              <p className="flex justify-between text-slate-400">
+
+                                <span>TVA</span>
+
+                                <span>
+
+                                  {formatCurrency(
+
+                                    Math.round(
+
+                                      quoteDraftSubtotal() *
+
+                                        (Number(
+
+                                          quoteDraft.taxRate.replace(
+
+                                            ",",
+
+                                            ".",
+
+                                          ),
+
+                                        ) || 0) /
+
+                                        100,
+
+                                    ),
+
+                                  )}
+
+                                </span>
+
+                              </p>
+
+                              <p className="flex justify-between border-t border-slate-800 pt-3 text-lg font-black text-violet-300">
+
+                                <span>Total TTC</span>
+
+                                <span>
+
+                                  {formatCurrency(
+
+                                    quoteDraftSubtotal() +
+
+                                      Math.round(
+
+                                        quoteDraftSubtotal() *
+
+                                          (Number(
+
+                                            quoteDraft.taxRate.replace(
+
+                                              ",",
+
+                                              ".",
+
+                                            ),
+
+                                          ) || 0) /
+
+                                          100,
+
+                                      ),
+
+                                  )}
+
+                                </span>
+
+                              </p>
+
+                            </div>
+
+                          </div>
+
+                        </div>
+
+                        <button
+
+                          type="button"
+
+                          onClick={() =>
+
+                            void createAndSendQuote(
+
+                              lead,
+
+                            )
+
+                          }
+
+                          disabled={
+
+                            quoteWorkingID ===
+
+                              lead.id ||
+
+                            !lead.email
+
+                          }
+
+                          className="mt-5 w-full rounded-xl bg-violet-600 px-5 py-3.5 text-sm font-black transition hover:bg-violet-500 disabled:opacity-50"
+
+                        >
+
+                          {quoteWorkingID ===
+
+                          lead.id
+
+                            ? "Création et envoi..."
+
+                            : `Créer le PDF et l’envoyer à ${lead.email || "ce client"}`}
+
+                        </button>
+
+                        {quoteNotice && (
+
+                          <p className="mt-4 rounded-xl border border-emerald-800 bg-emerald-950/40 p-4 text-sm font-bold text-emerald-300">
+
+                            {quoteNotice}
+
+                          </p>
+
+                        )}
+
+                        <div className="mt-7 border-t border-slate-800 pt-5">
+
+                          <h3 className="text-sm font-black text-white">
+
+                            Historique des devis
+
+                          </h3>
+
+                          {quoteWorkingID ===
+
+                            lead.id &&
+
+                          !quotesByLead[
+
+                            lead.id
+
+                          ] ? (
+
+                            <p className="mt-3 text-sm text-slate-500">
+
+                              Chargement...
+
+                            </p>
+
+                          ) : (quotesByLead[
+
+                              lead.id
+
+                            ] ?? []).length ===
+
+                            0 ? (
+
+                            <p className="mt-3 text-sm text-slate-500">
+
+                              Aucun devis créé pour ce prospect.
+
+                            </p>
+
+                          ) : (
+
+                            <div className="mt-3 space-y-2">
+
+                              {(quotesByLead[
+
+                                lead.id
+
+                              ] ?? []).map(
+
+                                (quote) => (
+
+                                  <div
+
+                                    key={
+
+                                      quote.id
+
+                                    }
+
+                                    className="flex flex-col justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950 p-4 sm:flex-row sm:items-center"
+
+                                  >
+
+                                    <div>
+
+                                      <p className="font-black text-white">
+
+                                        {
+
+                                          quote.quoteNumber
+
+                                        }
+
+                                      </p>
+
+                                      <p className="mt-1 text-xs text-slate-500">
+
+                                        {quote.status ===
+
+                                        "sent"
+
+                                          ? "Envoyé"
+
+                                          : "Enregistré, non envoyé"}
+
+                                        {" · "}
+
+                                        {formatDate(
+
+                                          quote.createdAt,
+
+                                        )}
+
+                                      </p>
+
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+
+                                      <span className="font-black text-violet-300">
+
+                                        {formatCurrency(
+
+                                          quote.totalCents,
+
+                                        )}
+
+                                      </span>
+
+                                      <button
+
+                                        type="button"
+
+                                        onClick={() =>
+
+                                          void downloadQuote(
+
+                                            quote,
+
+                                          )
+
+                                        }
+
+                                        className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold hover:border-violet-500"
+
+                                      >
+
+                                        PDF
+
+                                      </button>
+
+                                    </div>
+
+                                  </div>
+
+                                ),
+
+                              )}
+
+                            </div>
+
+                          )}
+
+                        </div>
+
+                      </div>
+
+                    )}
 
                   </div>
 

@@ -671,6 +671,8 @@ func main() {
 
 	http.HandleFunc("/leads", leadsHandler)
 	http.HandleFunc("/leads/", leadByIDHandler)
+	http.HandleFunc("/quotes", quotesHandler)
+	http.HandleFunc("/quotes/", quoteByIDHandler)
 
 	http.HandleFunc("/analytics/pageview", analyticsPageViewHandler)
 	http.HandleFunc("/analytics/summary", analyticsSummaryHandler)
@@ -1102,6 +1104,64 @@ func createTables(ctx context.Context) error {
         CREATE INDEX IF NOT EXISTS idx_leads_user_archived_created_at
 
         ON leads(user_id, archived, created_at DESC);
+
+        `,
+
+		`
+
+        CREATE TABLE IF NOT EXISTS quotes (
+
+            id BIGSERIAL PRIMARY KEY,
+
+            lead_id BIGINT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+
+            site_id BIGINT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+
+            user_id UUID NOT NULL,
+
+            quote_number TEXT NOT NULL,
+
+            title TEXT NOT NULL DEFAULT 'Devis',
+
+            items JSONB NOT NULL DEFAULT '[]'::jsonb,
+
+            subtotal_cents BIGINT NOT NULL,
+
+            tax_rate_bps INTEGER NOT NULL DEFAULT 0,
+
+            tax_cents BIGINT NOT NULL DEFAULT 0,
+
+            total_cents BIGINT NOT NULL,
+
+            notes TEXT NOT NULL DEFAULT '',
+
+            status TEXT NOT NULL DEFAULT 'draft',
+
+            valid_until DATE NOT NULL,
+
+            sent_at TIMESTAMPTZ,
+
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+            UNIQUE(user_id, quote_number)
+
+        );
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_quotes_user_created_at
+
+        ON quotes(user_id, created_at DESC);
+
+        `,
+
+		`
+
+        CREATE INDEX IF NOT EXISTS idx_quotes_lead_created_at
+
+        ON quotes(lead_id, created_at DESC);
 
         `,
 
