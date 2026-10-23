@@ -2377,6 +2377,12 @@ func sendLeadNotificationEmail(
 		"html":    htmlBody,
 	}
 
+	// Permet au propriétaire du site de répondre directement au visiteur,
+	// même si la notification est envoyée depuis l'adresse commune de Lumio.
+	if input.Email != "" {
+		payload["reply_to"] = input.Email
+	}
+
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
 		return err
