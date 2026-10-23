@@ -36,8 +36,6 @@ CREATE TABLE IF NOT EXISTS site_versions (
 ALTER TABLE site_versions ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON site_versions FROM anon, authenticated;
 CREATE INDEX IF NOT EXISTS idx_site_versions_site ON site_versions(site_id, revision DESC);
-UPDATE sites SET published_snapshot = ` + siteSnapshotSQL + `, published_revision = draft_revision
- WHERE published = TRUE AND published_snapshot IS NULL;
 INSERT INTO site_versions(site_id, revision, snapshot, reason)
  SELECT id, draft_revision, ` + siteSnapshotSQL + `, 'Version initiale' FROM sites
  ON CONFLICT(site_id, revision) DO NOTHING;

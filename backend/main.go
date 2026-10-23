@@ -342,7 +342,7 @@ type PublicSite struct {
 
 	AccentColor string `json:"accentColor"`
 
-	Site GeneratedSite `json:"site"`
+	Site PublicGeneratedSite `json:"site"`
 
 	PublicSlug string `json:"publicSlug"`
 
@@ -4008,69 +4008,7 @@ func publicSiteHandler(
 
 	}
 
-	query := `
-
-    SELECT
-
-        business_name,
-
-        activity,
-
-        city,
-
-        phone,
-
-        design_style,
-
-        accent_color,
-
-        site_data,
-
-        public_slug,
-
-        published_at
-
-    FROM sites
-
-    WHERE
-
-        public_slug = $1
-
-        AND published = TRUE;
-
-    `
-
-	var publicSite PublicSite
-
-	var siteJSON []byte
-
-	err := db.QueryRow(
-
-		r.Context(),
-
-		query,
-
-		slug,
-	).Scan(
-
-		&publicSite.BusinessName,
-
-		&publicSite.Activity,
-
-		&publicSite.City,
-
-		&publicSite.Phone,
-
-		&publicSite.DesignStyle,
-
-		&publicSite.AccentColor,
-
-		&siteJSON,
-
-		&publicSite.PublicSlug,
-
-		&publicSite.PublishedAt,
-	)
+	publicSite, err := loadPublicSiteBySlug(r.Context(), slug)
 
 	if err != nil {
 
@@ -4094,40 +4032,19 @@ func publicSiteHandler(
 
 		}
 
-		log.Println(
+		if errors.Is(err, errPublishedSnapshotUnavailable) {
+			log.Printf("Snapshot publié indisponible pour le slug %q", slug)
+			http.Error(w, "Version publiée temporairement indisponible", http.StatusServiceUnavailable)
+			return
+		}
 
-			"Erreur site public :",
-
-			err,
-		)
+		log.Println("Erreur site public :", err)
 
 		http.Error(
 
 			w,
 
 			"Erreur serveur",
-
-			http.StatusInternalServerError,
-		)
-
-		return
-
-	}
-
-	err = json.Unmarshal(
-
-		siteJSON,
-
-		&publicSite.Site,
-	)
-
-	if err != nil {
-
-		http.Error(
-
-			w,
-
-			"Site invalide",
 
 			http.StatusInternalServerError,
 		)
@@ -4170,37 +4087,7 @@ func publicDomainHandler(
 		return
 	}
 
-	query := `
-	SELECT
-		business_name,
-		activity,
-		city,
-		phone,
-		design_style,
-		accent_color,
-		site_data,
-		public_slug,
-		published_at
-	FROM sites
-	WHERE LOWER(custom_domain) = LOWER($1)
-	  AND published = TRUE
-	LIMIT 1;
-	`
-
-	var publicSite PublicSite
-	var siteJSON []byte
-
-	err := db.QueryRow(r.Context(), query, domain).Scan(
-		&publicSite.BusinessName,
-		&publicSite.Activity,
-		&publicSite.City,
-		&publicSite.Phone,
-		&publicSite.DesignStyle,
-		&publicSite.AccentColor,
-		&siteJSON,
-		&publicSite.PublicSlug,
-		&publicSite.PublishedAt,
-	)
+	publicSite, err := loadPublicSiteByDomain(r.Context(), domain)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -4208,13 +4095,14 @@ func publicDomainHandler(
 			return
 		}
 
+		if errors.Is(err, errPublishedSnapshotUnavailable) {
+			log.Printf("Snapshot publié indisponible pour le domaine %q", domain)
+			http.Error(w, "Version publiée temporairement indisponible", http.StatusServiceUnavailable)
+			return
+		}
+
 		log.Println("Erreur site public par domaine :", err)
 		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
-		return
-	}
-
-	if err := json.Unmarshal(siteJSON, &publicSite.Site); err != nil {
-		http.Error(w, "Site invalide", http.StatusInternalServerError)
 		return
 	}
 
