@@ -1,0 +1,80 @@
+name: Sauvegarde quotidienne de la base Lumio
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lumio-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Exporter, vérifier et chiffrer la base
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+      BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+
+    steps:
+      - name: Vérifier la configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DATABASE_URL"
+          test -n "$BACKUP_ENCRYPTION_KEY"
+
+      - name: Exporter et valider PostgreSQL
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p backups
+          BACKUP_FILE="lumio-$(date -u +'%Y-%m-%dT%H-%M-%SZ')-${GITHUB_RUN_ID}.dump"
+          export BACKUP_FILE
+
+          docker run --rm \
+            -e DATABASE_URL \
+            -e BACKUP_FILE \
+            -v "$PWD/backups:/backups" \
+            postgres:18-alpine \
+            sh -eu -c 'pg_dump "$DATABASE_URL" --format=custom --compress=9 --no-owner --no-acl --file="/backups/$BACKUP_FILE"'
+
+          docker run --rm \
+            -e BACKUP_FILE \
+            -v "$PWD/backups:/backups:ro" \
+            postgres:18-alpine \
+            sh -eu -c 'pg_restore --list "/backups/$BACKUP_FILE" > /dev/null'
+
+          test -s "backups/$BACKUP_FILE"
+          echo "BACKUP_FILE=$BACKUP_FILE" >> "$GITHUB_ENV"
+
+      - name: Chiffrer la sauvegarde
+        shell: bash
+        run: |
+          set -euo pipefail
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -md sha256 \
+            -pass env:BACKUP_ENCRYPTION_KEY \
+            -in "backups/$BACKUP_FILE" \
+            -out "backups/$BACKUP_FILE.enc"
+
+          rm "backups/$BACKUP_FILE"
+          (
+            cd backups
+            sha256sum "$BACKUP_FILE.enc" > "$BACKUP_FILE.enc.sha256"
+          )
+
+      - name: Conserver la sauvegarde chiffrée pendant 14 jours
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumio-database-backup-${{ github.run_id }}
+          path: |
+            backups/*.enc
+            backups/*.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
