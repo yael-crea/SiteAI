@@ -1,0 +1,28 @@
+name: Surveillance Lumio
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  uptime:
+    name: Vérifier le site et le backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Vérifier la vitrine Lumio
+        run: >-
+          curl --fail --silent --show-error
+          --retry 2 --retry-all-errors --max-time 20
+          https://lumio.business/ > /dev/null
+
+      - name: Vérifier le backend et la base de données
+        run: |
+          response="$(curl --fail --silent --show-error --retry 2 --retry-all-errors --max-time 20 https://siteai-production-aa03.up.railway.app/health)"
+          echo "$response"
+          echo "$response" | grep -q '"status":"ok"'
+          echo "$response" | grep -q '"database":"connected"'

@@ -2987,29 +2987,28 @@ func healthHandler(
 
 	}
 
-	writeJSON(
+	statusCode := http.StatusOK
+	status := "ok"
+	databaseStatus := "connected"
 
-		w,
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
 
-		http.StatusOK,
+	if db == nil || db.Ping(ctx) != nil {
+		statusCode = http.StatusServiceUnavailable
+		status = "degraded"
+		databaseStatus = "unavailable"
+	}
 
-		map[string]string{
-
-			"status": "ok",
-
-			"ai": "enabled",
-
-			"database": "connected",
-
-			"auth": "enabled",
-
-			"publication": "enabled",
-
-			"customDomains": domainIntegrationStatus(),
-
-			"stripe": stripeIntegrationStatus(),
-		},
-	)
+	writeJSON(w, statusCode, map[string]string{
+		"status":        status,
+		"ai":            "enabled",
+		"database":      databaseStatus,
+		"auth":          "enabled",
+		"publication":   "enabled",
+		"customDomains": domainIntegrationStatus(),
+		"stripe":        stripeIntegrationStatus(),
+	})
 
 }
 
