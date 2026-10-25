@@ -4,19 +4,37 @@ on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Action manuelle à exécuter sur la branche temporaire"
+        required: true
+        default: smoke-only
+        type: choice
+        options:
+          - smoke-only
+          - restore
+          - backup
+      confirmation:
+        description: "Pour restore uniquement : saisir RESTORE-40174188751"
+        required: false
+        type: string
 
 permissions:
+  actions: read
   contents: read
 
-concurrency:
-  group: lumio-database-backup
-  cancel-in-progress: false
+env:
+  PG_IMAGE: postgres:18-alpine@sha256:898c60cb390d1085bc97bdd6a1ae968757421df394b071848b52b1c09c89d6a5
 
 jobs:
   backup:
     name: Exporter, vérifier et chiffrer la base
+    if: ${{ github.event_name == 'schedule' || inputs.mode == 'backup' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    concurrency:
+      group: lumio-database-backup
+      cancel-in-progress: false
     env:
       DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
       BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
@@ -78,3 +96,349 @@ jobs:
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
+
+  restore-verification:
+    name: Vérifier la restauration dans PostgreSQL isolé
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'smoke-only' || inputs.mode == 'restore') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    concurrency:
+      group: lumio-restore-check-40174188751
+      cancel-in-progress: false
+    env:
+      ARTIFACT_RUN_ID: "40174188751"
+      ARTIFACT_ID: "12591312855"
+      EXPECTED_ENC_SHA256: 8b043fdd0f1a503a1966f92e6d9ba9a795427c0960c31b4a7d8b6c08161d8ad7
+      CONTAINER_NAME: lumio-pg-verify-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Contrôler l’autorisation du mode réel
+        if: ${{ inputs.mode == 'restore' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "${{ inputs.confirmation }}" = "RESTORE-40174188751"
+
+      - name: Test fictif du conteneur PostgreSQL 18
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+
+          cleanup() {
+            docker rm -fv "$CONTAINER_NAME" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT INT TERM
+
+          docker pull "$PG_IMAGE" >/dev/null
+
+          PG_UID="$(docker run --rm --network none \
+            --tmpfs /var/lib/postgresql:rw,nosuid,nodev,noexec,size=8m \
+            "$PG_IMAGE" id -u postgres)"
+          PG_GID="$(docker run --rm --network none \
+            --tmpfs /var/lib/postgresql:rw,nosuid,nodev,noexec,size=8m \
+            "$PG_IMAGE" id -g postgres)"
+
+          docker run --detach \
+            --name "$CONTAINER_NAME" \
+            --network none \
+            --read-only \
+            --user "$PG_UID:$PG_GID" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=1777,size=512m" \
+            --tmpfs "/var/run/postgresql:rw,nosuid,nodev,mode=1777,size=16m" \
+            --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=64m" \
+            -e PGDATA=/var/lib/postgresql/18/docker \
+            -e POSTGRES_DB=lumio_smoke \
+            -e POSTGRES_HOST_AUTH_METHOD=trust \
+            "$PG_IMAGE" >/dev/null
+
+          test -n "$(docker inspect --format \
+            '{{index .HostConfig.Tmpfs "/var/lib/postgresql"}}' \
+            "$CONTAINER_NAME")"
+          test -z "$(docker inspect --format \
+            '{{range .Mounts}}{{if eq .Type "volume"}}{{println .Name}}{{end}}{{end}}' \
+            "$CONTAINER_NAME")"
+          test "$(docker inspect --format '{{.HostConfig.NetworkMode}}' \
+            "$CONTAINER_NAME")" = "none"
+          test -z "$(docker inspect --format \
+            '{{range $port, $bindings := .NetworkSettings.Ports}}{{println $port}}{{end}}' \
+            "$CONTAINER_NAME")"
+
+          READY=false
+          for attempt in $(seq 1 60); do
+            if docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+              pg_isready -U postgres -d lumio_smoke >/dev/null 2>&1; then
+              READY=true
+              break
+            fi
+            sleep 1
+          done
+          test "$READY" = true
+
+          docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+            sh -eu -c 'test "$PGDATA" = /var/lib/postgresql/18/docker; test -s "$PGDATA/PG_VERSION"; test "$(stat -f -c %T "$PGDATA")" = tmpfs; test "$(stat -c %a "$PGDATA")" = 700'
+
+          docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+            psql -X -q -v ON_ERROR_STOP=1 -U postgres -d lumio_smoke -c \
+            "CREATE TABLE restore_smoke_test(id integer PRIMARY KEY, value text NOT NULL); INSERT INTO restore_smoke_test VALUES (1, 'fictif');" \
+            >/dev/null
+
+          TEST_ROWS="$(docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+            psql -X -qAt -U postgres -d lumio_smoke -c \
+            'SELECT count(*) FROM restore_smoke_test')"
+          test "$TEST_ROWS" = "1"
+
+          echo "SMOKE_STATUS=SUCCESS"
+          echo "PGDATA_STORAGE=tmpfs"
+          echo "ANONYMOUS_VOLUME_COUNT=0"
+          echo "PUBLIC_PORT_COUNT=0"
+
+      - name: Télécharger uniquement l’artefact chiffré attendu
+        if: ${{ inputs.mode == 'restore' }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          artifact-ids: ${{ env.ARTIFACT_ID }}
+          path: encrypted
+          github-token: ${{ github.token }}
+          repository: yael-crea/SiteAI
+          run-id: ${{ env.ARTIFACT_RUN_ID }}
+          digest-mismatch: error
+
+      - name: Déchiffrer, restaurer et vérifier sans exposer les données
+        if: ${{ inputs.mode == 'restore' }}
+        env:
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+
+          ENC_ROOT="$GITHUB_WORKSPACE/encrypted"
+          RAM_DIR="/dev/shm/lumio-restore-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          cleanup() {
+            unset BACKUP_ENCRYPTION_KEY || true
+            docker rm -fv "$CONTAINER_NAME" >/dev/null 2>&1 || true
+            rm -rf -- "$RAM_DIR" "$ENC_ROOT"
+          }
+          trap cleanup EXIT INT TERM
+
+          test -n "${BACKUP_ENCRYPTION_KEY:-}"
+          install -d -m 700 "$RAM_DIR"
+          test "$(findmnt -n -o FSTYPE -T "$RAM_DIR")" = "tmpfs"
+
+          test "$(find "$ENC_ROOT" -type l | wc -l)" -eq 0
+          test "$(find "$ENC_ROOT" -type f | wc -l)" -eq 2
+          test "$(find "$ENC_ROOT" -type f -name '*.enc' | wc -l)" -eq 1
+          test "$(find "$ENC_ROOT" -type f -name '*.enc.sha256' | wc -l)" -eq 1
+
+          ENC_FILE="$(find "$ENC_ROOT" -type f -name '*.enc' -print -quit)"
+          SHA_FILE="${ENC_FILE}.sha256"
+          test -s "$ENC_FILE"
+          test -s "$SHA_FILE"
+
+          ACTUAL_SHA256="$(sha256sum "$ENC_FILE" | awk '{print $1}')"
+          test "$ACTUAL_SHA256" = "$EXPECTED_ENC_SHA256"
+          (
+            cd "$(dirname "$ENC_FILE")"
+            sha256sum --check --status "$(basename "$SHA_FILE")"
+          )
+
+          PG_UID="$(docker run --rm --network none \
+            --tmpfs /var/lib/postgresql:rw,nosuid,nodev,noexec,size=8m \
+            "$PG_IMAGE" id -u postgres)"
+          PG_GID="$(docker run --rm --network none \
+            --tmpfs /var/lib/postgresql:rw,nosuid,nodev,noexec,size=8m \
+            "$PG_IMAGE" id -g postgres)"
+
+          docker run --detach \
+            --name "$CONTAINER_NAME" \
+            --network none \
+            --read-only \
+            --user "$PG_UID:$PG_GID" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=1777,size=1g" \
+            --tmpfs "/var/run/postgresql:rw,nosuid,nodev,mode=1777,size=16m" \
+            --tmpfs "/restore:rw,nosuid,nodev,noexec,mode=1777,size=512m" \
+            --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=64m" \
+            -e PGDATA=/var/lib/postgresql/18/docker \
+            -e POSTGRES_DB=lumio_restore_check \
+            -e POSTGRES_HOST_AUTH_METHOD=trust \
+            "$PG_IMAGE" >/dev/null
+
+          test -n "$(docker inspect --format \
+            '{{index .HostConfig.Tmpfs "/var/lib/postgresql"}}' \
+            "$CONTAINER_NAME")"
+          test -z "$(docker inspect --format \
+            '{{range .Mounts}}{{if eq .Type "volume"}}{{println .Name}}{{end}}{{end}}' \
+            "$CONTAINER_NAME")"
+          test "$(docker inspect --format '{{.HostConfig.NetworkMode}}' \
+            "$CONTAINER_NAME")" = "none"
+          test -z "$(docker inspect --format \
+            '{{range $port, $bindings := .NetworkSettings.Ports}}{{println $port}}{{end}}' \
+            "$CONTAINER_NAME")"
+
+          READY=false
+          for attempt in $(seq 1 60); do
+            if docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+              pg_isready -U postgres -d lumio_restore_check >/dev/null 2>&1; then
+              READY=true
+              break
+            fi
+            sleep 1
+          done
+          test "$READY" = true
+
+          docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+            sh -eu -c 'test "$PGDATA" = /var/lib/postgresql/18/docker; test -s "$PGDATA/PG_VERSION"; test "$(stat -f -c %T "$PGDATA")" = tmpfs; test "$(stat -c %a "$PGDATA")" = 700'
+
+          DUMP_FILE="$RAM_DIR/backup.dump"
+          if ! openssl enc -d -aes-256-cbc -salt -pbkdf2 \
+            -iter 200000 -md sha256 \
+            -pass env:BACKUP_ENCRYPTION_KEY \
+            -in "$ENC_FILE" \
+            -out "$DUMP_FILE" \
+            2>"$RAM_DIR/decrypt-error.log"; then
+            echo "::error::Le déchiffrement contrôlé a échoué. Aucun détail sensible n’est publié."
+            exit 1
+          fi
+
+          unset BACKUP_ENCRYPTION_KEY
+          test -s "$DUMP_FILE"
+
+          docker exec -i --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+            sh -c 'umask 077; cat > /restore/backup.dump' < "$DUMP_FILE"
+          rm -f -- "$DUMP_FILE"
+
+          docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+            pg_restore --list /restore/backup.dump >/dev/null
+
+          if ! docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+            pg_restore --no-owner --no-acl --no-publications --no-subscriptions \
+              --exit-on-error --username postgres --dbname lumio_restore_check \
+              /restore/backup.dump \
+              >/dev/null 2>"$RAM_DIR/restore-error.log"; then
+            if grep -Eqi \
+              'extension .* is not available|could not open extension control file' \
+              "$RAM_DIR/restore-error.log"; then
+              echo "::error::Restauration bloquée par une extension PostgreSQL ou Supabase indisponible."
+            else
+              echo "::error::Échec de restauration. Les détails sont volontairement masqués."
+            fi
+            exit 1
+          fi
+
+          METRICS="$(docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+            psql -X -qAt -F '|' -v ON_ERROR_STOP=1 -U postgres \
+              -d lumio_restore_check -c "
+                SELECT
+                  (SELECT count(*) FROM pg_namespace
+                   WHERE nspname !~ '^pg_' AND nspname <> 'information_schema'),
+                  (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
+                     AND c.relkind IN ('r','p')),
+                  (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                   WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
+                     AND c.relkind IN ('v','m')),
+                  (SELECT count(*) FROM pg_index i
+                   JOIN pg_class c ON c.oid=i.indexrelid
+                   JOIN pg_namespace n ON n.oid=c.relnamespace
+                   WHERE NOT i.indisvalid AND n.nspname !~ '^pg_'),
+                  (SELECT count(*) FROM pg_constraint c
+                   JOIN pg_namespace n ON n.oid=c.connamespace
+                   WHERE NOT c.convalidated AND n.nspname !~ '^pg_'),
+                  (SELECT count(*) FROM pg_extension),
+                  pg_database_size(current_database());
+              ")"
+
+          IFS='|' read -r SCHEMA_COUNT TABLE_COUNT VIEW_COUNT \
+            INVALID_INDEX_COUNT UNVALIDATED_CONSTRAINT_COUNT \
+            EXTENSION_COUNT DATABASE_BYTES <<< "$METRICS"
+
+          ROW_METRICS="$(docker exec -i --user "$PG_UID:$PG_GID" \
+            "$CONTAINER_NAME" psql -X -qAt -F '|' -v ON_ERROR_STOP=1 \
+            -U postgres -d lumio_restore_check <<'SQL'
+          CREATE TEMP TABLE verification_stats(metric text PRIMARY KEY, value numeric);
+          DO $verify$
+          DECLARE
+            relation record;
+            relation_rows bigint;
+            checked_tables bigint := 0;
+            total_rows numeric := 0;
+          BEGIN
+            FOR relation IN
+              SELECT n.nspname, c.relname
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace
+              WHERE n.nspname !~ '^pg_'
+                AND n.nspname <> 'information_schema'
+                AND c.relkind = 'r'
+            LOOP
+              EXECUTE format('SELECT count(*) FROM %I.%I',
+                relation.nspname, relation.relname) INTO relation_rows;
+              checked_tables := checked_tables + 1;
+              total_rows := total_rows + relation_rows;
+            END LOOP;
+            INSERT INTO verification_stats VALUES
+              ('checked_tables', checked_tables),
+              ('total_rows', total_rows);
+          END
+          $verify$;
+          SELECT
+            (SELECT value FROM verification_stats WHERE metric = 'checked_tables'),
+            (SELECT value FROM verification_stats WHERE metric = 'total_rows');
+          SQL
+          )"
+
+          IFS='|' read -r CHECKED_TABLE_COUNT TOTAL_ROW_COUNT <<< "$ROW_METRICS"
+
+          if ! docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
+            pg_amcheck --install-missing --username=postgres \
+              --database=lumio_restore_check \
+              >/dev/null 2>"$RAM_DIR/amcheck-error.log"; then
+            echo "::error::Le contrôle physique PostgreSQL a signalé une incohérence. Les détails sont masqués."
+            exit 1
+          fi
+
+          test "$TABLE_COUNT" -gt 0
+          test "$CHECKED_TABLE_COUNT" -gt 0
+          test "$TOTAL_ROW_COUNT" -gt 0
+          test "$INVALID_INDEX_COUNT" = "0"
+
+          {
+            echo "### Vérification de restauration Lumio 40174188751"
+            echo ""
+            echo "- Restauration : succès"
+            echo "- Stockage PostgreSQL : tmpfs"
+            echo "- Volumes Docker anonymes : 0"
+            echo "- Ports publiés : 0"
+            echo "- Schémas non système : $SCHEMA_COUNT"
+            echo "- Tables : $TABLE_COUNT"
+            echo "- Tables contrôlées : $CHECKED_TABLE_COUNT"
+            echo "- Lignes comptées : $TOTAL_ROW_COUNT"
+            echo "- Vues : $VIEW_COUNT"
+            echo "- Index invalides : $INVALID_INDEX_COUNT"
+            echo "- Contraintes non validées : $UNVALIDATED_CONSTRAINT_COUNT"
+            echo "- Extensions installées : $EXTENSION_COUNT"
+            echo "- Taille restaurée en octets : $DATABASE_BYTES"
+            echo "- Vérification physique pg_amcheck : succès"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "RESTORE_STATUS=SUCCESS"
+          echo "DATA_CHECK_STATUS=SUCCESS"
+          echo "PG_AMCHECK_STATUS=SUCCESS"
+
+      - name: Nettoyage final renforcé
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker rm -fv "$CONTAINER_NAME" >/dev/null 2>&1 || true
+          rm -rf -- \
+            "$GITHUB_WORKSPACE/encrypted" \
+            "/dev/shm/lumio-restore-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          test -z "$(docker ps -a --filter "name=^/${CONTAINER_NAME}$" --format '{{.ID}}')"
+
