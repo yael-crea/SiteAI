@@ -123,7 +123,8 @@ body {
 }
 
 ::selection { background: rgba(90, 132, 255, 0.35); color: white; }
-:focus-visible { outline: 3px solid rgba(142, 171, 255, 0.9); outline-offset: 3px; }
+/* Anneau de focus aux couleurs de Lumio (violet clair, lisible sur fond sombre comme clair) */
+:focus-visible { outline: 2px solid #8574ff; outline-offset: 3px; }
 
 button, a, input, textarea, select {
   transition: border-color 160ms ease, background-color 160ms ease,

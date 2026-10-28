@@ -53,7 +53,12 @@
 
 .intro h1 em,
 .trustSection h2 em {
-  font-style: normal;
+  /* Même signature que l'accueil : Newsreader italique en dégradé violet */
+  padding: 0 0.08em 0.04em 0;
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.02em;
   background: var(--ui-gradient-text);
   -webkit-background-clip: text;
   background-clip: text;

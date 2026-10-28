@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import MobileNavigation from "@/components/MobileNavigation";
+import SiteFooter from "@/components/marketing/SiteFooter";
+import SiteHeader from "@/components/marketing/SiteHeader";
+import Icon from "@/components/ui/Icon";
 import { demoSites } from "@/lib/demoSites";
 import {
   aiUsageText,
@@ -20,7 +22,10 @@ export const metadata = publicMetadata(
   "Crée et personnalise ton site professionnel avec Lumio : génération par IA, éditeur simple et publication en ligne.",
 );
 
-const Arrow = () => <span aria-hidden="true">↗</span>;
+const Arrow = () => <Icon name="arrowUpRight" size={15} className={styles.arrow} />;
+
+// Métiers affichés tour à tour dans l'invite du hero (le premier reste seul si les animations sont réduites).
+const promptExamples = ["Plombier à Montpellier", "Coiffeuse à Lyon", "Paysagiste à Nantes"];
 
 const steps = [
   ["01", "Ton activité", "Décris ton métier, tes services et ta ville. Quelques réponses suffisent pour poser une base solide."],
@@ -32,6 +37,12 @@ const editorBenefits = [
   ["Textes", "Écris toi-même ou demande à l’IA de reformuler."],
   ["Apparence", "Choisis le style et les couleurs qui te ressemblent."],
   ["Publication", "Connecte ton domaine dès que ton site est prêt."],
+];
+
+const leads = [
+  { name: "Camille R.", request: "Fuite sous l’évier · Montpellier", status: "Nouveau", tone: "new" },
+  { name: "Thomas L.", request: "Rénovation salle de bain", status: "Devis envoyé", tone: "quote" },
+  { name: "Inès M.", request: "Installation chauffe-eau", status: "Gagné", tone: "won" },
 ];
 
 const faqs = [
@@ -48,28 +59,7 @@ export default function HomePage() {
     <div className={styles.home}>
       <a className={styles.skip} href="#contenu">Aller au contenu</a>
 
-      <header className={styles.header}>
-        <div className={styles.navbar}>
-          <Link href="/" className={styles.logo} aria-label="Lumio, accueil">
-            lumio<span>.</span>
-          </Link>
-          <nav className={styles.desktopNav} aria-label="Navigation principale">
-            <a href="#comment-ca-marche">Comment ça marche</a>
-            <Link href="/exemples">Exemples</Link>
-            <a href="#tarifs">Tarifs</a>
-            <a href="#faq">Questions</a>
-          </nav>
-          <div className={styles.navActions}>
-            <Link href="/auth" className={styles.login}>Se connecter</Link>
-            <Link href="/auth" className={styles.headerButton}>
-              <span className={styles.headerCtaDesktop}>Créer mon site</span>
-              <span className={styles.headerCtaMobile}>Créer</span>
-              <Arrow />
-            </Link>
-          </div>
-          <MobileNavigation />
-        </div>
-      </header>
+      <SiteHeader />
 
       <main id="contenu">
         <section className={styles.hero}>
@@ -84,15 +74,18 @@ export default function HomePage() {
               <Link href="/auth" className={styles.promptCta}>
                 <span>
                   <small>Commence ici</small>
-                  <strong>Ex. Plombier à Montpellier</strong>
+                  <strong className={styles.promptRotator}>
+                    <span className={styles.srOnly}>Ex. {promptExamples[0]}</span>
+                    {promptExamples.map((example) => <span key={example} aria-hidden="true">Ex. {example}</span>)}
+                  </strong>
                 </span>
                 <b>Créer mon aperçu <Arrow /></b>
               </Link>
-              <div className={styles.heroNotes}>
-                <span>Sans carte bancaire</span>
-                <span>Sans coder</span>
-                <span>Tu publies quand tu veux</span>
-              </div>
+              <ul className={styles.heroNotes}>
+                {["Sans carte bancaire", "Sans coder", "Tu publies quand tu veux"].map((note) => (
+                  <li key={note}><Icon name="check" size={14} />{note}</li>
+                ))}
+              </ul>
             </div>
 
             <div className={styles.heroVisual}>
@@ -115,7 +108,7 @@ export default function HomePage() {
                 <figcaption><i /> Aperçu généré par Lumio · Exemple fictif</figcaption>
               </figure>
               <div className={styles.aiBadge}>
-                <span>✦</span>
+                <span><Icon name="sparkle" size={16} /></span>
                 <div><small>Assistant Lumio</small><strong>Première version prête</strong></div>
               </div>
             </div>
@@ -125,8 +118,9 @@ export default function HomePage() {
         <section className={styles.audience} aria-label="Public concerné">
           <div className={styles.audienceInner}>
             <span>Conçu pour les petites entreprises</span>
-            <p>Artisans</p><i>✦</i><p>Commerçants</p><i>✦</i>
-            <p>Indépendants</p><i>✦</i><p>Agences</p>
+            <ul>
+              {["Artisans", "Commerçants", "Indépendants", "Agences"].map((audience) => <li key={audience}>{audience}</li>)}
+            </ul>
           </div>
         </section>
 
@@ -185,7 +179,7 @@ export default function HomePage() {
                 <small>Ton site</small>
                 <strong>Atelier du Robinet</strong>
                 <nav>
-                  <span className={styles.editorActive}>✦ Assistant IA</span>
+                  <span className={styles.editorActive}><Icon name="sparkle" size={12} /> Assistant IA</span>
                   <span>Informations</span>
                   <span>Contenu</span>
                   <span>Apparence</span>
@@ -194,7 +188,7 @@ export default function HomePage() {
                 <div className={styles.assistantBox}>
                   <small>Modifier avec l’IA</small>
                   <p>« Rends le titre plus chaleureux »</p>
-                  <b>Appliquer ✦</b>
+                  <b>Appliquer <Icon name="sparkle" size={12} /></b>
                 </div>
               </aside>
               <div className={styles.editorCanvas}>
@@ -219,10 +213,64 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section id="suivi" className={styles.followSection} aria-labelledby="suivi-titre">
+          <div className={styles.sectionIntro}>
+            <p className={styles.kicker}>Après la mise en ligne</p>
+            <h2 id="suivi-titre">Les demandes arrivent.<br /><em>Tu sais quoi en faire.</em></h2>
+            <p>Les messages envoyés depuis ton site arrivent dans ton espace Lumio. Tu suis chaque prospect, prépares tes devis et vois ce qui fonctionne.</p>
+          </div>
+
+          <div className={styles.bento}>
+            <article className={styles.bentoLarge}>
+              <div className={styles.bentoCopy}>
+                <span className={styles.bentoIcon}><Icon name="inbox" size={18} /></span>
+                <h3>Chaque demande au même endroit</h3>
+                <p>Statut, notes et relances : tu sais toujours où en est chaque prospect.</p>
+              </div>
+              <ul className={styles.leadList} aria-label="Exemple de suivi des prospects">
+                {leads.map((lead) => (
+                  <li key={lead.name}>
+                    <span className={styles.leadAvatar} aria-hidden="true">{lead.name.charAt(0)}</span>
+                    <span className={styles.leadText}><strong>{lead.name}</strong><small>{lead.request}</small></span>
+                    <span className={styles.leadStatus} data-tone={lead.tone}>{lead.status}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+
+            <article>
+              <div className={styles.bentoCopy}>
+                <span className={styles.bentoIcon}><Icon name="document" size={18} /></span>
+                <h3>Des devis en quelques minutes</h3>
+                <p>Prépare un devis depuis une demande, télécharge-le en PDF ou envoie-le par e-mail.</p>
+              </div>
+              <div className={styles.quoteMock} aria-hidden="true">
+                <div><span>Remplacement chauffe-eau</span><b>890,00 €</b></div>
+                <div><span>Main-d’œuvre</span><b>240,00 €</b></div>
+                <div className={styles.quoteTotal}><span>Total HT</span><b>1 130,00 €</b></div>
+              </div>
+            </article>
+
+            <article>
+              <div className={styles.bentoCopy}>
+                <span className={styles.bentoIcon}><Icon name="chart" size={18} /></span>
+                <h3>Ce que ton site t’apporte</h3>
+                <p>Visites, appels et e-mails déclenchés depuis ton site. Statistiques détaillées avec la formule Pro.</p>
+              </div>
+              <div className={styles.statsMock} aria-hidden="true">
+                <div><Icon name="phone" size={15} /><span>Appels</span><b>12</b></div>
+                <div><Icon name="mail" size={15} /><span>E-mails</span><b>8</b></div>
+                <div className={styles.bars}>{[38, 52, 44, 70, 58, 86, 74].map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div>
+              </div>
+            </article>
+          </div>
+          <p className={styles.disclaimer}>Données d’illustration · Prospects et montants fictifs</p>
+        </section>
+
         <section id="exemples" className={styles.examplesSection}>
           <div className={styles.examplesHead}>
             <div><p className={styles.kicker}>Exemples fictifs</p><h2>Un métier différent.<br />Une présence différente.</h2></div>
-            <Link href="/exemples">Voir tous les exemples <span>→</span></Link>
+            <Link href="/exemples">Voir tous les exemples <Icon name="arrowRight" size={16} className={styles.arrow} /></Link>
           </div>
           <div className={styles.examples}>
             {demoSites.slice(0, 3).map((site, index) => (
@@ -254,7 +302,7 @@ export default function HomePage() {
                 </div>
                 <p className={styles.price}>{plan.price}<small>{priceSuffix}</small></p>
                 <Link href="/auth">Choisir {plan.name} <Arrow /></Link>
-                <ul>{plan.features.map((feature) => <li key={feature}><span>✓</span>{feature}</li>)}</ul>
+                <ul>{plan.features.map((feature) => <li key={feature}><Icon name="check" size={15} />{feature}</li>)}</ul>
               </article>
             ))}
           </div>
@@ -271,7 +319,7 @@ export default function HomePage() {
           <div className={styles.faqList}>
             {faqs.map(([question, answer], index) => (
               <details key={question}>
-                <summary><span>0{index + 1}</span>{question}<b aria-hidden="true">+</b></summary>
+                <summary><span>0{index + 1}</span>{question}<b aria-hidden="true"><Icon name="plus" size={18} /></b></summary>
                 <p>{answer}</p>
               </details>
             ))}
@@ -279,7 +327,7 @@ export default function HomePage() {
         </section>
 
         <section className={styles.finalCta}>
-          <span className={styles.orbit} aria-hidden="true">✦</span>
+          <span className={styles.orbit} aria-hidden="true"><Icon name="sparkle" size={24} /></span>
           <p>Ton site peut commencer ici</p>
           <h2>Donne à ton activité<br />la vitrine qu’elle mérite.</h2>
           <Link href="/auth">Créer mon aperçu gratuit <Arrow /></Link>
@@ -287,16 +335,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer className={styles.footer}>
-        <div><Link href="/" className={styles.logo}>lumio<span>.</span></Link><p>Ton activité. Ton style. Ton site.</p></div>
-        <nav aria-label="Liens de bas de page">
-          <Link href="/exemples">Exemples</Link><Link href="/pricing">Tarifs</Link><Link href="/auth">Connexion</Link>
-          <Link href="/mentions-legales">Mentions légales</Link><Link href="/confidentialite">Confidentialité</Link>
-          <Link href="/cgu">CGU</Link><Link href="/cgv">CGV</Link>
-          <a href="mailto:support@lumio.business">Support</a>
-        </nav>
-        <span>© 2026 Lumio</span>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
