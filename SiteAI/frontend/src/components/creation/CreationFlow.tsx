@@ -9,6 +9,7 @@ import { activityExamples } from "@/lib/activityExamples";
 import { designStyles, getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { clearExampleTemplate, readExampleTemplate } from "@/lib/exampleTemplates";
 import { withTradePhotos } from "@/lib/tradePhotos";
+import { clearPendingCreation, readPendingCreation, savePendingCreation } from "@/lib/pendingCreation";
 import type { SiteGoal } from "@/lib/siteGoal";
 import type { GeneratedSite } from "@/lib/builderTypes";
 import styles from "./CreationFlow.module.css";
@@ -94,6 +95,9 @@ function suggestedStyles(activity: string): DesignStyle[] {
 export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
+  // Sans compte, on peut répondre aux questions : le compte n'est demandé qu'au moment de générer.
+  const [signedIn, setSignedIn] = useState(false);
+  const [resumed, setResumed] = useState(false);
   const [step, setStep] = useState<Step>("activity");
   const [activity, setActivity] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -114,11 +118,10 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
     let active = true;
     async function initialize() {
       const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        router.replace("/auth");
-        return;
-      }
-      if (firstSite) {
+      const pending = data.session ? readPendingCreation() : null;
+      if (data.session && active) setSignedIn(true);
+      // Quelqu'un qui revient de l'inscription avec des réponses en attente reste ici.
+      if (data.session && firstSite && !pending) {
         try {
           const response = await fetch("/api-backend/sites", {
             headers: { Authorization: `Bearer ${data.session.access_token}` },
@@ -140,6 +143,18 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
         setActivity(template.activity);
         setCity(template.city);
         setTemplateServices(template.services);
+      }
+      if (pending && active) {
+        setActivity(pending.activity);
+        setBusinessName(pending.businessName);
+        setCity(pending.city);
+        setPhone(pending.phone);
+        setBookingUrl(pending.bookingUrl);
+        if (pending.templateServices) setTemplateServices(pending.templateServices);
+        const savedGoal = goals.find((item) => item.id === pending.goal);
+        if (savedGoal) setGoal(savedGoal.id);
+        setResumed(true);
+        setStep("goal");
       }
       if (active) setChecking(false);
     }
@@ -214,6 +229,12 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
 
   async function generate(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
+    if (!signedIn) {
+      // Les réponses sont gardées pendant l'inscription, puis le parcours reprend ici.
+      savePendingCreation({ activity, businessName, city, phone, goal, bookingUrl, templateServices });
+      router.push("/auth?compte=nouveau");
+      return;
+    }
     setError("");
     setMessageIndex(0);
     setStep("generating");
@@ -306,6 +327,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
       }
       const saved: { id: number } = await response.json();
       clearExampleTemplate();
+      clearPendingCreation();
       sessionStorage.setItem("siteai_onboarding_skipped", "true");
       sessionStorage.setItem("siteai_site_to_open", String(saved.id));
       router.push("/builder");
@@ -337,7 +359,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
   return (
     <main className={styles.page}>
       <header className={styles.topbar}>
-        <Link href="/dashboard" className={styles.logo} aria-label="Lumio, tableau de bord">
+        <Link href={signedIn ? "/dashboard" : "/"} className={styles.logo} aria-label={signedIn ? "Lumio, tableau de bord" : "Lumio, accueil"}>
           lumio<span>.</span>
         </Link>
         {step !== "generating" && step !== "style" && (
@@ -347,7 +369,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
             ))}
           </div>
         )}
-        <Link href="/dashboard" className={styles.quit}>
+        <Link href={signedIn ? "/dashboard" : "/"} className={styles.quit}>
           Quitter
         </Link>
       </header>
@@ -490,10 +512,16 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
               Retour
             </button>
             <button type="submit" className={styles.primary}>
-              Créer mon site <Arrow />
+              {signedIn ? "Créer mon site" : "Créer mon compte et générer"} <Arrow />
             </button>
           </div>
-          <p className={styles.note}>Une création compte comme une demande IA. Rien n&apos;est publié sans ton accord.</p>
+          <p className={styles.note}>
+            {!signedIn
+              ? "Tes réponses sont gardées. Crée ton compte gratuit, sans carte bancaire, pour lancer la génération."
+              : resumed
+                ? "Tes réponses sont prêtes : vérifie-les puis lance la création. Une création compte comme une demande IA."
+                : "Une création compte comme une demande IA. Rien n’est publié sans ton accord."}
+          </p>
         </form>
       )}
 

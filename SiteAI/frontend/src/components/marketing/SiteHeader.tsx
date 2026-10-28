@@ -25,7 +25,7 @@ export default function SiteHeader({ current }: SiteHeaderProps) {
         </nav>
         <div className={styles.navActions}>
           <Link href="/auth" className={styles.login}>Se connecter</Link>
-          <Link href="/auth" className={styles.headerButton}>
+          <Link href="/creer" className={styles.headerButton}>
             <span className={styles.headerCtaDesktop}>Créer mon site</span>
             <span className={styles.headerCtaMobile}>Créer</span>
             <Icon name="arrowUpRight" size={15} className={styles.arrow} />
