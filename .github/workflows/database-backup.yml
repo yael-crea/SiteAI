@@ -329,11 +329,16 @@ jobs:
           echo "PGDATA_FILESYSTEM=$ACTUAL_PGDATA_FS"
           test "$ACTUAL_PGDATA_FS" = tmpfs
 
-          STAGE="permissions PGDATA"
+          STAGE="permissions et propriétaire PGDATA"
           ACTUAL_PGDATA_MODE="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
             "$CONTAINER_NAME" stat -c %a /var/lib/postgresql/data)"
           echo "PGDATA_MODE=$ACTUAL_PGDATA_MODE"
-          test "$ACTUAL_PGDATA_MODE" = 700
+          test "$ACTUAL_PGDATA_MODE" = 750
+
+          ACTUAL_PGDATA_OWNER="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" stat -c %u:%g /var/lib/postgresql/data)"
+          echo "PGDATA_OWNER=$ACTUAL_PGDATA_OWNER"
+          test "$ACTUAL_PGDATA_OWNER" = "$SERVER_UID:$SERVER_GID"
 
           STAGE="extensions (supabase_vault 0.3.1…)"
           COMPATIBLE_EXTENSION_COUNT="$(docker exec \
@@ -520,7 +525,11 @@ jobs:
 
           ACTUAL_PGDATA_MODE="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
             "$CONTAINER_NAME" stat -c %a /var/lib/postgresql/data)"
-          test "$ACTUAL_PGDATA_MODE" = 700
+          test "$ACTUAL_PGDATA_MODE" = 750
+
+          ACTUAL_PGDATA_OWNER="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" stat -c %u:%g /var/lib/postgresql/data)"
+          test "$ACTUAL_PGDATA_OWNER" = "$SERVER_UID:$SERVER_GID"
 
           docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
             createdb -h 127.0.0.1 -U "$RESTORE_DB_USER" \
