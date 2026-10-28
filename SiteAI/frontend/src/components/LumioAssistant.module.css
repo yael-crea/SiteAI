@@ -5,9 +5,9 @@
  */
 
 .root {
-  --ink: #000000;
-  --ink-soft: #1c1c1e;
-  --ink-raised: #2c2c2e;
+  --ink: var(--ui-bg);
+  --ink-soft: var(--ui-bg-elevated);
+  --ink-raised: var(--ui-bg-elevated-2);
   --paper: var(--ui-label);
   --muted: var(--ui-label-2);
   --faint: var(--ui-label-3);
@@ -415,7 +415,7 @@
 }
 
 .input::placeholder {
-  color: #6e6e73;
+  color: var(--ui-label-on-light-2);
 }
 
 .input:focus {

@@ -10,19 +10,19 @@
 
 .home {
   /* Variables historiques, conservées car lues aussi par exemples.module.css */
-  --ink: #000000;
-  --ink-soft: #1c1c1e;
-  --paper: #f5f5f7;
-  --paper-deep: #e8e8ed;
+  --ink: var(--ui-bg);
+  --ink-soft: var(--ui-bg-elevated);
+  --paper: var(--ui-light-alt);
+  --paper-deep: #e9e9ee;
   --line-dark: rgba(255, 255, 255, 0.1);
   --line-paper: rgba(0, 0, 0, 0.1);
-  --muted-dark: #a1a1a6;
-  --muted-paper: #6e6e73;
-  --ink-3: #86868b;
+  --muted-dark: var(--ui-label-2);
+  --muted-paper: var(--ui-label-on-light-2);
+  --ink-3: var(--ui-label-3);
   --violet: var(--ui-tint-text);
   --violet-light: #cbc3ff;
-  --acid: #f5f5f7;
-  --panel: #1c1c1e;
+  --acid: var(--ui-label);
+  --panel: var(--ui-bg-elevated);
   --panel-light: none;
   --font-display: var(--ui-font);
 
@@ -780,7 +780,7 @@
   font-weight: 500;
 }
 .canvasToolbar span:first-child {
-  background: #636366;
+  background: #5f5f6a;
   color: #fff;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
@@ -889,7 +889,7 @@
   position: relative;
   aspect-ratio: 1.22;
   overflow: hidden;
-  background: #e8e8ed;
+  background: #e9e9ee;
 }
 .exampleImage img {
   object-fit: cover;
@@ -910,7 +910,7 @@
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   backdrop-filter: blur(16px) saturate(180%);
   box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.5);
-  color: #1d1d1f;
+  color: var(--ui-label-on-light);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1007,7 +1007,7 @@
   min-height: 46px;
   padding: 0 20px;
   border-radius: var(--ui-radius-pill);
-  background: #e8e8ed;
+  background: #e9e9ee;
   color: var(--ui-label-on-light);
   display: flex;
   align-items: center;
@@ -1318,7 +1318,7 @@ a:hover > .arrow, a:hover b > .arrow, a:focus-visible > .arrow { transform: tran
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #e8e8ed;
+  background: #e9e9ee;
   color: var(--ui-label-on-light);
   font-size: 14px;
   font-weight: 600;

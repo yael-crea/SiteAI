@@ -5,7 +5,7 @@
  */
 
 .page {
-  --ink: #000000;
+  --ink: var(--ui-bg);
   --paper: var(--ui-label);
   --muted: var(--ui-label-2);
   --faint: var(--ui-label-3);
@@ -205,7 +205,7 @@
 }
 
 .field input::placeholder {
-  color: #6e6e73;
+  color: var(--ui-label-on-light-2);
 }
 
 .field input:focus {

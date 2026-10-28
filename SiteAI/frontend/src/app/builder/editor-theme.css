@@ -1,6 +1,6 @@
 /*
  * Éditeur Lumio — même direction que l'espace client (inspirée d'Apple :
- * noir pur, surfaces #1c1c1e, accent violet unique, verre sur les barres).
+ * fond encre, surfaces --ui-bg-elevated, accent violet unique, verre sur les barres).
  *
  * On redéfinit les couleurs Tailwind de l'interface de l'éditeur, puis on
  * rétablit les valeurs d'origine dans l'aperçu du site (.siteai-design-root)
@@ -16,17 +16,17 @@
   --line-strong: var(--ui-separator-strong);
   --display: var(--ui-font);
 
-  --color-white: #f5f5f7;
-  --color-slate-950: #000000;
-  --color-slate-900: #1c1c1e;
-  --color-slate-800: #2c2c2e;
-  --color-slate-700: #3a3a3c;
-  --color-slate-600: #636366;
-  --color-slate-500: #8e8e93;
-  --color-slate-400: #aeaeb2;
-  --color-slate-300: #c7c7cc;
-  --color-slate-200: #e5e5ea;
-  --color-slate-100: #f2f2f7;
+  --color-white: var(--ui-label);
+  --color-slate-950: var(--ui-bg);
+  --color-slate-900: var(--ui-bg-elevated);
+  --color-slate-800: var(--ui-bg-elevated-2);
+  --color-slate-700: var(--ui-bg-elevated-3);
+  --color-slate-600: #5f5f6a;
+  --color-slate-500: #8a8a94;
+  --color-slate-400: #ababb4;
+  --color-slate-300: #c8c8cf;
+  --color-slate-200: #e4e4e9;
+  --color-slate-100: #f2f2f5;
   --color-blue-950: #15122e;
   --color-blue-900: #221d4d;
   --color-blue-800: #342b7a;
@@ -110,9 +110,9 @@ main.lumio-editor {
 
 /* Étape active de la barre d'étapes : pilule claire neutre (au lieu du crème) */
 .lumio-editor :is(.bg-\[\#f0eadf\], .bg-\[\#f2ede3\]):not(.siteai-design-root *) {
-  border-color: #f5f5f7 !important;
-  background: #f5f5f7 !important;
-  color: #1d1d1f !important;
+  border-color: var(--ui-label) !important;
+  background: var(--ui-label) !important;
+  color: var(--ui-label-on-light) !important;
 }
 
 /* ---------- Logo ---------- */
