@@ -254,17 +254,28 @@ jobs:
             --cap-drop ALL \
             --security-opt no-new-privileges \
             --tmpfs "/var/lib/postgresql/data:rw,nosuid,nodev,noexec,mode=0700,uid=$SERVER_UID,gid=$SERVER_GID,size=512m" \
+            --tmpfs "/etc/postgresql-custom:rw,nosuid,nodev,noexec,mode=0700,uid=$SERVER_UID,gid=$SERVER_GID,size=16m" \
             --tmpfs "/var/run/postgresql:rw,nosuid,nodev,mode=0770,uid=$SERVER_UID,gid=$SERVER_GID,size=16m" \
             --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=64m" \
             -e PGDATA=/var/lib/postgresql/data \
             -e POSTGRES_DB=lumio_smoke \
             -e POSTGRES_USER="$RESTORE_DB_USER" \
             -e POSTGRES_HOST_AUTH_METHOD=trust \
-            "$RESTORE_SERVER_IMAGE" >/dev/null
+            --entrypoint /bin/bash \
+            "$RESTORE_SERVER_IMAGE" -ceu '
+              mkdir -p /etc/postgresql-custom/conf.d
+              : > /etc/postgresql-custom/wal-g.conf
+              : > /etc/postgresql-custom/read-replica.conf
+              : > /etc/postgresql-custom/supautils.conf
+              exec docker-entrypoint.sh postgres -D /etc/postgresql
+            ' >/dev/null
 
           STAGE="contrôles isolation"
           test -n "$(docker inspect --format \
             '{{index .HostConfig.Tmpfs "/var/lib/postgresql/data"}}' \
+            "$CONTAINER_NAME")"
+          test -n "$(docker inspect --format \
+            '{{index .HostConfig.Tmpfs "/etc/postgresql-custom"}}' \
             "$CONTAINER_NAME")"
           test -z "$(docker inspect --format \
             '{{range .Mounts}}{{if eq .Type "volume"}}{{println .Name}}{{end}}{{end}}' \
@@ -310,7 +321,6 @@ jobs:
           test "$COMPATIBLE_EXTENSION_COUNT" = "4"
 
           STAGE="écriture/lecture fictive"
-
           docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
             psql -X -q -v ON_ERROR_STOP=1 -U "$RESTORE_DB_USER" \
               -d lumio_smoke -c \
@@ -409,16 +419,27 @@ jobs:
             --cap-drop ALL \
             --security-opt no-new-privileges \
             --tmpfs "/var/lib/postgresql/data:rw,nosuid,nodev,noexec,mode=0700,uid=$SERVER_UID,gid=$SERVER_GID,size=1g" \
+            --tmpfs "/etc/postgresql-custom:rw,nosuid,nodev,noexec,mode=0700,uid=$SERVER_UID,gid=$SERVER_GID,size=16m" \
             --tmpfs "/var/run/postgresql:rw,nosuid,nodev,mode=0770,uid=$SERVER_UID,gid=$SERVER_GID,size=16m" \
             --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=64m" \
             -e PGDATA=/var/lib/postgresql/data \
             -e POSTGRES_DB=postgres \
             -e POSTGRES_USER="$RESTORE_DB_USER" \
             -e POSTGRES_HOST_AUTH_METHOD=trust \
-            "$RESTORE_SERVER_IMAGE" >/dev/null
+            --entrypoint /bin/bash \
+            "$RESTORE_SERVER_IMAGE" -ceu '
+              mkdir -p /etc/postgresql-custom/conf.d
+              : > /etc/postgresql-custom/wal-g.conf
+              : > /etc/postgresql-custom/read-replica.conf
+              : > /etc/postgresql-custom/supautils.conf
+              exec docker-entrypoint.sh postgres -D /etc/postgresql
+            ' >/dev/null
 
           test -n "$(docker inspect --format \
             '{{index .HostConfig.Tmpfs "/var/lib/postgresql/data"}}' \
+            "$CONTAINER_NAME")"
+          test -n "$(docker inspect --format \
+            '{{index .HostConfig.Tmpfs "/etc/postgresql-custom"}}' \
             "$CONTAINER_NAME")"
           test -z "$(docker inspect --format \
             '{{range .Mounts}}{{if eq .Type "volume"}}{{println .Name}}{{end}}{{end}}' \
@@ -679,4 +700,3 @@ jobs:
           test -z "$(docker ps -a --filter "name=^/${CONTAINER_NAME}$" --format '{{.ID}}')"
           test -z "$(docker ps -a --filter "name=^/${CLIENT_CONTAINER_NAME}$" --format '{{.ID}}')"
           test -z "$(docker network ls --filter "name=^${NETWORK_NAME}$" --format '{{.ID}}')"
-
