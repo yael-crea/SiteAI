@@ -5,6 +5,8 @@ import LumioAssistant from "@/components/LumioAssistant";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import Icon from "@/components/ui/Icon";
 
 type DesignStyle = "moderne" | "elegant" | "artisan";
 
@@ -182,6 +184,7 @@ function formatCurrency(
 }
 
 export default function DashboardPage() {
+  const [confirm, confirmDialog] = useConfirm();
   const router = useRouter();
 
   const [authLoading, setAuthLoading] = useState(true);
@@ -578,9 +581,10 @@ export default function DashboardPage() {
   }
 
   async function deleteSite(id: number, businessName: string) {
-    const confirmed = window.confirm(
-      `Supprimer définitivement le site "${businessName}" ?`,
-    );
+    const confirmed = await confirm({
+      title: `Supprimer définitivement le site "${businessName}" ?`,
+      confirmLabel: "Supprimer", tone: "danger",
+    });
 
     if (!confirmed) return;
 
@@ -746,9 +750,10 @@ export default function DashboardPage() {
   async function deleteDomain(siteID: number) {
     if (!domainStatus?.domain) return;
 
-    const confirmed = window.confirm(
-      `Retirer le domaine "${domainStatus.domain}" de ce site ?`,
-    );
+    const confirmed = await confirm({
+      title: `Retirer le domaine "${domainStatus.domain}" de ce site ?`,
+      confirmLabel: "Retirer le domaine", tone: "danger",
+    });
 
     if (!confirmed) return;
 
@@ -1034,6 +1039,7 @@ export default function DashboardPage() {
   return (
     <>
     <main className="lumio-app min-h-screen overflow-x-hidden bg-slate-950 text-white">
+      {confirmDialog}
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-3">
@@ -1053,7 +1059,7 @@ export default function DashboardPage() {
               aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
               aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? "✕" : "☰"}
+              <Icon name={mobileMenuOpen ? "close" : "menu"} size={20} />
             </button>
 
             <div className="hidden items-center gap-2 md:flex">
@@ -1105,7 +1111,7 @@ export default function DashboardPage() {
                 onClick={createSite}
                 className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold transition hover:bg-blue-500"
               >
-                + Nouveau site
+                <Icon name="plus" size={15} className="mr-1 inline-block align-[-0.15em]" />Nouveau site
               </button>
 
               <button
@@ -1303,7 +1309,7 @@ export default function DashboardPage() {
               onClick={() => router.push("/sites")}
               className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-bold text-slate-200 transition hover:border-blue-500"
             >
-              Voir tous les sites →
+              Voir tous les sites<Icon name="arrowRight" size={15} className="ml-1.5 inline-block align-[-0.15em]" />
             </button>
           </div>
 
@@ -1407,7 +1413,7 @@ export default function DashboardPage() {
               onClick={() => router.push("/prospects")}
               className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-bold text-slate-200 hover:border-emerald-500"
             >
-              Ouvrir le CRM →
+              Ouvrir le CRM<Icon name="arrowRight" size={15} className="ml-1.5 inline-block align-[-0.15em]" />
             </button>
           </div>
 
@@ -1736,7 +1742,7 @@ export default function DashboardPage() {
                 onClick={() => router.push("/prospects")}
                 className="mt-5 w-full rounded-2xl bg-blue-600 px-4 py-4 text-sm font-black hover:bg-blue-500"
               >
-                Voir tous les prospects →
+                Voir tous les prospects<Icon name="arrowRight" size={15} className="ml-1.5 inline-block align-[-0.15em]" />
               </button>
             </div>
           </div>

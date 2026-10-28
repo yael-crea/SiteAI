@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation";
 
 
 import { supabase } from "@/lib/supabase";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import Icon from "@/components/ui/Icon";
 
 
 
@@ -279,6 +281,7 @@ type BillingStatus = {
 
 
 export default function SitesPage() {
+  const [confirm, confirmDialog] = useConfirm();
 
 
 
@@ -1285,15 +1288,19 @@ export default function SitesPage() {
 
 
 
-    const confirmed = window.confirm(
+    const confirmed = await confirm({
 
 
 
-      `Supprimer définitivement le site "${businessName}" ?`,
+      title: `Supprimer définitivement le site "${businessName}" ?`,
 
 
 
-    );
+      confirmLabel: "Supprimer", tone: "danger",
+
+
+
+    });
 
 
 
@@ -2093,15 +2100,19 @@ export default function SitesPage() {
 
 
 
-    const confirmed = window.confirm(
+    const confirmed = await confirm({
 
 
 
-      `Retirer le domaine "${domainStatus.domain}" de ce site ?`,
+      title: `Retirer le domaine "${domainStatus.domain}" de ce site ?`,
 
 
 
-    );
+      confirmLabel: "Retirer le domaine", tone: "danger",
+
+
+
+    });
 
 
 
@@ -2677,6 +2688,7 @@ export default function SitesPage() {
   return (
     <>
     <main className="lumio-app min-h-screen bg-slate-950 pb-28 text-white md:pb-12">
+      {confirmDialog}
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
           <button
@@ -2702,7 +2714,7 @@ export default function SitesPage() {
               onClick={createSite}
               className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-black transition hover:bg-blue-500"
             >
-              + Nouveau site
+              <Icon name="plus" size={15} className="mr-1 inline-block align-[-0.15em]" />Nouveau site
             </button>
           </div>
         </div>

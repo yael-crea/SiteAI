@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation";
 
 
 import { supabase } from "@/lib/supabase";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import Icon from "@/components/ui/Icon";
 
 
 
@@ -261,6 +263,7 @@ function statusClasses(
 
 
 export default function ProspectsPage() {
+  const [confirm, confirmDialog] = useConfirm();
 
   const router = useRouter();
 
@@ -1222,11 +1225,13 @@ export default function ProspectsPage() {
 
       archived &&
 
-      !window.confirm(
+      !await confirm({
 
-        `Archiver le prospect "${lead.name}" ?`,
+        title: `Archiver le prospect "${lead.name}" ?`,
 
-      )
+        confirmLabel: "Archiver",
+
+      })
 
     ) {
 
@@ -2776,6 +2781,8 @@ export default function ProspectsPage() {
 
     <main className="lumio-app min-h-screen bg-slate-950 text-white">
 
+      {confirmDialog}
+
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
 
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-5">
@@ -2843,7 +2850,7 @@ export default function ProspectsPage() {
 
             >
 
-              ← Dashboard
+              <Icon name="arrowLeft" size={15} className="mr-1.5 inline-block align-[-0.15em]" />Dashboard
 
             </button>
 

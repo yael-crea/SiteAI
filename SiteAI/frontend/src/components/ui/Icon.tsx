@@ -28,6 +28,8 @@ const paths = {
   trash: <path d="M4.5 6h11M8 6V4.5h4V6M6 6l.7 9.6a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9L14 6M8.5 9v4.5M11.5 9v4.5" />,
   pause: <path d="M7.5 5.5v9M12.5 5.5v9" />,
   play: <path d="M7 5.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L7.9 4.7a.6.6 0 0 0-.9.5Z" />,
+  menu: <path d="M4 6.5h12M4 10h12M4 13.5h12" />,
+  arrowLeft: <path d="M16 10H4.5M9 5.5 4.5 10 9 14.5" />,
 } as const;
 
 export type IconName = keyof typeof paths;
