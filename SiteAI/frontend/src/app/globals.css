@@ -8,6 +8,69 @@
   --lumio-line: rgba(255, 255, 255, 0.1);
   --lumio-panel: rgba(17, 24, 43, 0.86);
   --lumio-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+
+  /*
+   * Design system Lumio — inspiré des Human Interface Guidelines d'Apple
+   * (Liquid Glass). Ces variables sont seulement lues par l'interface Lumio
+   * (vitrine, espace client, éditeur) ; elles ne modifient aucune règle
+   * existante et n'affectent pas les sites générés.
+   */
+  --ui-font: var(--font-lumio), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+
+  /* Fonds sombres (base → élevé) */
+  --ui-bg: #000000;
+  --ui-bg-elevated: #1c1c1e;
+  --ui-bg-elevated-2: #2c2c2e;
+  --ui-bg-elevated-3: #3a3a3c;
+
+  /* Fonds clairs (sections de la vitrine) */
+  --ui-light: #ffffff;
+  --ui-light-alt: #f5f5f7;
+
+  /* Textes */
+  --ui-label: #f5f5f7;
+  --ui-label-2: #a1a1a6;
+  --ui-label-3: #86868b;
+  --ui-label-on-light: #1d1d1f;
+  --ui-label-on-light-2: #6e6e73;
+
+  /* Séparateurs */
+  --ui-separator: rgba(255, 255, 255, 0.1);
+  --ui-separator-strong: rgba(255, 255, 255, 0.16);
+  --ui-separator-light: rgba(0, 0, 0, 0.1);
+
+  /* Couleur d'accent unique : le violet Lumio */
+  --ui-tint: #6a5af9;
+  --ui-tint-hover: #7262ff;
+  --ui-tint-text: #b4a9ff;
+  --ui-tint-text-light: #5a49e6;
+  --ui-tint-soft: rgba(122, 107, 255, 0.16);
+  --ui-gradient-text: linear-gradient(100deg, #c9c1ff 0%, #8f7dff 45%, #e0b3ff 100%);
+
+  /* États */
+  --ui-green: #30d158;
+  --ui-orange: #ff9230;
+  --ui-red: #ff4245;
+
+  /* Formes */
+  --ui-radius-control: 12px;
+  --ui-radius-card: 18px;
+  --ui-radius-panel: 22px;
+  --ui-radius-pill: 980px;
+
+  /* Liquid Glass (barres et menus flottants) */
+  --ui-glass-bg: rgba(28, 28, 30, 0.62);
+  --ui-glass-bg-strong: rgba(28, 28, 30, 0.82);
+  --ui-glass-filter: blur(24px) saturate(180%);
+  --ui-glass-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+
+  /* Mouvement */
+  --ui-ease: cubic-bezier(0.28, 0.11, 0.32, 1);
+  --ui-ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ui-duration: 0.32s;
 }
 
 @theme inline {

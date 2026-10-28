@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import "../app-theme.css";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -126,7 +127,7 @@ export default function ResetPasswordPage() {
 
   if (checking) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+      <main className="lumio-app flex min-h-screen items-center justify-center bg-slate-950 text-white">
         <div className="text-center">
           <div className="text-5xl">
             🔐
@@ -141,7 +142,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="lumio-app min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
           <Link

@@ -1,44 +1,49 @@
 /*
- * Éditeur Lumio — même charte que l'accueil et l'espace client.
+ * Éditeur Lumio — même direction que l'espace client (inspirée d'Apple :
+ * noir pur, surfaces #1c1c1e, accent violet unique, verre sur les barres).
+ *
  * On redéfinit les couleurs Tailwind de l'interface de l'éditeur, puis on
  * rétablit les valeurs d'origine dans l'aperçu du site (.siteai-design-root)
- * pour que l'aperçu reste identique au site publié.
+ * pour que l'aperçu reste identique au site publié. Toutes les règles
+ * d'interface excluent l'aperçu avec `:not(.siteai-design-root *)`.
  */
 
 .lumio-editor {
-  --paper: #f3f1ed;
-  --violet: #a99cff;
-  --violet-light: #cfc8ff;
-  --line: rgba(255, 255, 255, 0.09);
-  --line-strong: rgba(255, 255, 255, 0.16);
-  --display: var(--font-serif), Georgia, "Times New Roman", serif;
+  --paper: var(--ui-label);
+  --violet: var(--ui-tint-text);
+  --violet-light: #cbc3ff;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: var(--ui-separator-strong);
+  --display: var(--ui-font);
 
-  --color-white: #f3f1ed;
-  --color-slate-950: #070707;
-  --color-slate-900: #0e0e0d;
-  --color-slate-800: #1f1e1c;
-  --color-slate-700: #2f2e2b;
-  --color-slate-600: #57554f;
-  --color-slate-500: #85827b;
-  --color-slate-400: #a6a39d;
-  --color-slate-300: #c9c6bf;
-  --color-slate-200: #e3e0d9;
-  --color-slate-100: #f3f1ed;
-  --color-blue-950: #14112a;
-  --color-blue-900: #211c45;
-  --color-blue-800: #352e6e;
-  --color-blue-700: #6a5fd0;
-  --color-blue-600: #8f83ff;
-  --color-blue-500: #a99cff;
-  --color-blue-400: #cfc8ff;
-  --color-blue-300: #e2ddff;
-  --radius-lg: 6px;
-  --radius-xl: 8px;
-  --radius-2xl: 12px;
-  --radius-3xl: 16px;
-  --font-weight-black: 650;
+  --color-white: #f5f5f7;
+  --color-slate-950: #000000;
+  --color-slate-900: #1c1c1e;
+  --color-slate-800: #2c2c2e;
+  --color-slate-700: #3a3a3c;
+  --color-slate-600: #636366;
+  --color-slate-500: #8e8e93;
+  --color-slate-400: #aeaeb2;
+  --color-slate-300: #c7c7cc;
+  --color-slate-200: #e5e5ea;
+  --color-slate-100: #f2f2f7;
+  --color-blue-950: #15122e;
+  --color-blue-900: #221d4d;
+  --color-blue-800: #342b7a;
+  --color-blue-700: #5546e0;
+  --color-blue-600: #6a5af9;
+  --color-blue-500: #7262ff;
+  --color-blue-400: #b4a9ff;
+  --color-blue-300: #cbc3ff;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --font-weight-black: 700;
   --font-weight-bold: 600;
-  font-family: var(--font-lumio), "Segoe UI", Arial, sans-serif;
+  font-family: var(--ui-font);
+  font-feature-settings: "cv05", "cv11";
+  -webkit-font-smoothing: antialiased;
 }
 
 /* L'aperçu du site garde les valeurs d'origine. */
@@ -68,6 +73,39 @@
   --radius-3xl: 1.5rem;
   --font-weight-black: 900;
   --font-weight-bold: 700;
+  font-feature-settings: normal;
+}
+
+/* ---------- Fond et barre d'outils ---------- */
+
+main.lumio-editor {
+  background: var(--ui-bg) !important;
+  color: var(--ui-label) !important;
+}
+
+/* Barre du haut : verre, sans trait dur */
+.lumio-editor > header {
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(22, 22, 23, 0.72) !important;
+  -webkit-backdrop-filter: var(--ui-glass-filter);
+  backdrop-filter: var(--ui-glass-filter);
+}
+
+/* Barre d'actions mobile en bas : verre */
+.lumio-editor > .fixed.bottom-0:not(.siteai-design-root *) {
+  border-top-color: rgba(255, 255, 255, 0.06) !important;
+  background: var(--ui-glass-bg-strong) !important;
+  -webkit-backdrop-filter: var(--ui-glass-filter);
+  backdrop-filter: var(--ui-glass-filter);
+}
+
+/* Teintes chaudes codées en dur → neutres Apple */
+.lumio-editor .text-\[\#f5f0e8\]:not(.siteai-design-root *) {
+  color: var(--ui-label) !important;
+}
+
+.lumio-editor :is(.border-\[\#262629\], .border-\[\#303137\], .border-\[\#343238\], .border-\[\#34353a\], .border-\[\#35353a\]):not(.siteai-design-root *) {
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* ---------- Logo ---------- */
@@ -75,64 +113,94 @@
 .lumio-editor .lumio-logo {
   display: inline-flex;
   align-items: baseline;
-  font-family: var(--display);
-  font-size: 29px;
-  font-weight: 400;
+  font-family: var(--ui-font);
+  font-size: 23px;
+  font-weight: 650;
   line-height: 1;
-  letter-spacing: -0.06em;
-  color: var(--paper);
+  letter-spacing: -0.045em;
+  color: var(--ui-label);
 }
 
 .lumio-editor .lumio-logo span {
-  color: var(--violet);
+  color: var(--ui-tint-text);
 }
 
 /* ---------- Titres de l'interface ---------- */
 
 .lumio-editor :is(h1, h2):not(.siteai-design-root *) {
-  font-family: var(--display);
-  font-weight: 400 !important;
-  letter-spacing: -0.03em;
+  font-family: var(--ui-font);
+  font-weight: 650 !important;
+  letter-spacing: -0.022em;
 }
 
 .lumio-editor h2.text-xl:not(.siteai-design-root *) {
-  font-size: 1.55rem;
-  line-height: 1.1;
+  font-size: 1.35rem;
+  line-height: 1.15;
 }
 
 .lumio-editor h2 em:not(.siteai-design-root *),
 .lumio-editor h1 em:not(.siteai-design-root *) {
-  color: var(--violet-light);
+  font-style: normal;
+  color: var(--ui-tint-text);
+}
+
+.lumio-editor h3:not(.siteai-design-root *) {
+  letter-spacing: -0.012em;
 }
 
 /* ---------- Boutons ---------- */
 
+.lumio-editor :is(button, a):not(.siteai-design-root *) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lumio-editor :is(button, a):active:not(:disabled):not(.siteai-design-root *) {
+  transform: scale(0.97);
+}
+
+/* Boutons de taille « contrôle » de l'interface → pilules */
+.lumio-editor :is(button, a):is([class~="rounded-lg"], [class~="rounded-xl"]):is([class~="py-1"], [class~="py-1.5"], [class~="py-2"], [class~="py-2.5"]):not(.siteai-design-root *) {
+  border-radius: var(--ui-radius-pill);
+}
+
+.lumio-editor :is(button, a):is([class~="rounded-lg"], [class~="rounded-xl"]):is(.h-9.w-9, .h-10.w-10, .h-11.w-11):not(.siteai-design-root *) {
+  border-radius: 50%;
+}
+
 .lumio-editor :is(button, a):is(.bg-blue-600, .bg-blue-500, .bg-green-600):not(.siteai-design-root *) {
-  background: var(--paper) !important;
-  color: #0d0d0c !important;
+  background: var(--ui-tint) !important;
+  color: #ffffff !important;
   box-shadow: none !important;
 }
 
 .lumio-editor :is(button, a):is(.bg-blue-600, .bg-blue-500, .bg-green-600):hover:not(:disabled):not(.siteai-design-root *) {
-  background: var(--violet) !important;
+  background: var(--ui-tint-hover) !important;
 }
 
-.lumio-editor :is(button, a).border:not(.bg-blue-600):not(.bg-blue-500):hover:not(:disabled):not(.siteai-design-root *) {
-  border-color: var(--violet) !important;
+/* Boutons secondaires neutres : remplissage gris, sans contour */
+.lumio-editor :is(button, a).border:is(.border-slate-600, .border-slate-700):not(.bg-blue-600):not(.bg-blue-500):not(.siteai-design-root *) {
+  border-color: transparent !important;
+  background-color: var(--ui-bg-elevated-2) !important;
 }
 
-/* Étape active (mobile) et onglets actifs : papier clair. */
+.lumio-editor :is(button, a).border:is(.border-slate-600, .border-slate-700):not(.bg-blue-600):not(.bg-blue-500):hover:not(:disabled):not(.siteai-design-root *) {
+  background-color: var(--ui-bg-elevated-3) !important;
+}
+
+.lumio-editor :is(button, a):disabled:not(.siteai-design-root *) {
+  opacity: 0.4;
+}
+
+/* Étape active (mobile) et onglets actifs : accent violet. */
 .lumio-editor [aria-current="step"]:not(.siteai-design-root *) {
-  background: var(--paper) !important;
-  color: #0d0d0c !important;
+  background: var(--ui-tint) !important;
+  color: #ffffff !important;
 }
 
 /* ---------- Cartes et champs ---------- */
 
 .lumio-editor .bg-slate-900:not(.siteai-design-root *) {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
-    #0c0c0b !important;
+  background: var(--ui-bg-elevated) !important;
 }
 
 .lumio-editor .border-slate-800:not(.siteai-design-root *) {
@@ -143,48 +211,73 @@
   border-color: var(--line-strong) !important;
 }
 
+.lumio-editor :is(input, textarea, select):not(.siteai-design-root *) {
+  transition: border-color 0.2s var(--ui-ease), box-shadow 0.2s var(--ui-ease);
+}
+
 .lumio-editor :is(input, textarea, select):not(.siteai-design-root *):focus {
-  border-color: var(--violet) !important;
-  box-shadow: 0 0 0 3px rgba(169, 156, 255, 0.16);
+  border-color: var(--ui-tint-hover) !important;
+  box-shadow: 0 0 0 4px rgba(122, 107, 255, 0.22);
   outline: none;
 }
 
-.lumio-editor :is(input[type="checkbox"], input[type="radio"]):not(.siteai-design-root *) {
-  accent-color: var(--violet);
+.lumio-editor :is(input[type="checkbox"], input[type="radio"], input[type="range"]):not(.siteai-design-root *) {
+  accent-color: var(--ui-tint);
 }
 
 .lumio-editor .lumio-empty-mark {
-  font-family: var(--display);
+  font-family: var(--ui-font);
   font-size: 64px;
+  font-weight: 650;
   line-height: 1;
-  letter-spacing: -0.06em;
-  color: var(--paper);
+  letter-spacing: -0.05em;
+  color: var(--ui-label);
 }
 
 .lumio-editor .lumio-empty-mark span {
-  color: var(--violet);
+  color: var(--ui-tint-text);
 }
 
 .lumio-editor .lumio-loading {
   display: grid;
   justify-items: center;
-  gap: 16px;
+  gap: 14px;
   text-align: center;
 }
 
 .lumio-editor .lumio-loading strong {
-  font-family: var(--display);
+  font-family: var(--ui-font);
   font-size: 40px;
-  font-weight: 400;
-  letter-spacing: -0.06em;
+  font-weight: 650;
+  letter-spacing: -0.045em;
 }
 
 .lumio-editor .lumio-loading strong span {
-  color: var(--violet);
+  color: var(--ui-tint-text);
 }
 
 .lumio-editor .lumio-loading p {
   margin: 0;
-  color: #a6a39d;
+  color: var(--ui-label-2);
   font-size: 13px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lumio-editor .lumio-loading strong {
+    animation: lumio-editor-breathe 1.4s var(--ui-ease) infinite alternate;
+  }
+}
+
+@keyframes lumio-editor-breathe {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .lumio-editor > header,
+  .lumio-editor > .fixed.bottom-0 {
+    background: var(--ui-bg-elevated) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }

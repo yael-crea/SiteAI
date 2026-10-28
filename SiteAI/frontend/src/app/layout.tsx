@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { DM_Mono, Inter, Manrope, Newsreader, Schibsted_Grotesk, Source_Serif_4 } from "next/font/google";
+import { DM_Mono, Inter, Manrope, Newsreader, Source_Serif_4 } from "next/font/google";
 import { SITE_URL, publicRobots } from "@/lib/seo";
 import "./globals.css";
 
-const sans = Schibsted_Grotesk({ subsets: ["latin"], variable: "--font-lumio", display: "swap" });
+// Police de l'interface Lumio : Inter, la plus proche de SF Pro utilisable sur le web.
+const sans = Inter({ subsets: ["latin"], variable: "--font-lumio", display: "swap" });
 const serif = Newsreader({
   subsets: ["latin"],
   variable: "--font-serif",
