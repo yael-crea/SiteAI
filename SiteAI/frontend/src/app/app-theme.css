@@ -359,6 +359,13 @@ main.lumio-app::before {
   opacity: 0.4;
 }
 
+/* Cartes cliquables (statistiques, raccourcis) : ombre douce au survol, sans mouvement */
+@media (hover: hover) {
+  .lumio-app :is(button, a).border.rounded-2xl:hover:not(:disabled) {
+    box-shadow: var(--ui-highlight), var(--ui-shadow-1) !important;
+  }
+}
+
 /* Pastilles pleines (badges, onglets actifs) en texte sombre */
 .lumio-app :is(.bg-emerald-500, .bg-emerald-600, .bg-amber-500, .bg-violet-500, .bg-cyan-500, .bg-red-500) {
   color: #0b0b0c !important;
