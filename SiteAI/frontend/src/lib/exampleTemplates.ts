@@ -53,6 +53,42 @@ export const exampleTemplates: ExampleTemplate[] = [
     designStyle: "nature",
     accentColor: "#3f6212",
   },
+  {
+    id: "electricien",
+    businessName: "Mon entreprise d’électricité",
+    activity: "Électricien",
+    city: "Toulouse",
+    services: ["Dépannage", "Tableau électrique", "Rénovation complète"],
+    designStyle: "dynamique",
+    accentColor: "#c2410c",
+  },
+  {
+    id: "boulangerie",
+    businessName: "Ma boulangerie",
+    activity: "Boulangerie",
+    city: "Lyon",
+    services: ["Pains au levain", "Viennoiseries", "Commandes et buffets"],
+    designStyle: "artisan",
+    accentColor: "#b45309",
+  },
+  {
+    id: "coach",
+    businessName: "Mon activité de coaching",
+    activity: "Coach sportif",
+    city: "Bordeaux",
+    services: ["Coaching individuel", "Petits groupes", "Bilan et programme"],
+    designStyle: "creatif",
+    accentColor: "#7c3aed",
+  },
+  {
+    id: "avocat",
+    businessName: "Mon cabinet",
+    activity: "Cabinet d’avocat",
+    city: "Paris",
+    services: ["Droit des affaires", "Droit du travail", "Médiation et contentieux"],
+    designStyle: "premium",
+    accentColor: "#a16207",
+  },
 ];
 
 export function getExampleTemplate(id: string | null | undefined) {

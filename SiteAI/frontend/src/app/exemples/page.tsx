@@ -141,6 +141,110 @@ const examples: Example[] = [
     imageAlt: "Jardin contemporain avec pelouse et plantations",
     gallery: ["/images/demos/jardin.jpg", "/images/demos/plantations.jpg"],
   },
+  {
+    id: "electricien", name: "Volt & Fils", activity: "Électricien", city: "Toulouse", style: "dynamique", color: "#c2410c",
+    eyebrow: "ÉLECTRICITÉ GÉNÉRALE · MISE EN SÉCURITÉ", title: "Une installation sûre, claire et faite pour durer.",
+    text: "Panne, rénovation ou nouveau projet : Volt & Fils intervient chez les particuliers et les commerces avec un diagnostic expliqué et un chantier tenu.",
+    primaryCta: "Demander un devis", secondaryCta: "Voir nos services", aboutTitle: "Comprendre avant de brancher.",
+    aboutText: "Chaque intervention commence par un état des lieux de votre installation. Nous vous expliquons ce qui doit être corrigé, ce qui peut attendre, et nous laissons un tableau propre et lisible après notre passage.",
+    contactTitle: "Une panne ou un projet électrique ?", contactText: "Décrivez la situation ou les travaux envisagés. Nous revenons vers vous pour fixer un rendez-vous ou préparer un devis.",
+    services: [
+      { title: "Dépannage", text: "Recherche de l’origine de la panne, remise en service et explication de ce qui s’est passé." },
+      { title: "Tableau électrique", text: "Remplacement ou mise à niveau du tableau, repérage clair des circuits et contrôle des protections." },
+      { title: "Rénovation complète", text: "Nouvelle distribution, prises et éclairages pensés avec vous pièce par pièce." },
+    ],
+    benefits: [
+      { title: "Diagnostic expliqué", text: "Vous savez ce qui est fait et pourquoi, avant le début des travaux." },
+      { title: "Chantier propre", text: "Protection des sols, saignées refermées et pièces rendues en ordre." },
+      { title: "Un seul interlocuteur", text: "La même équipe du premier appel à la mise en service." },
+    ],
+    faq: [
+      { question: "Intervenez-vous en urgence ?", answer: "Oui, selon les disponibilités. Indiquez dans votre demande si l’électricité est coupée pour que nous puissions vous répondre en priorité." },
+      { question: "Faut-il refaire toute l’installation ?", answer: "Pas forcément. Le diagnostic permet de distinguer les corrections nécessaires des améliorations possibles." },
+    ],
+    testimonial: { name: "Nadia K.", role: "Rénovation d’appartement", text: "Des explications claires, un tableau enfin lisible et une équipe ponctuelle." },
+    image: "/images/demos/electricien.jpg",
+    imageAlt: "Électricien en casque de chantier intervenant sur un boîtier électrique",
+    gallery: ["/images/demos/electricien.jpg", "/images/demos/tableau-electrique.jpg"],
+  },
+  {
+    id: "boulangerie", name: "Le Fournil des Halles", activity: "Boulangerie", city: "Lyon", style: "artisan", color: "#b45309",
+    eyebrow: "PAINS AU LEVAIN · VIENNOISERIES · DEPUIS LE QUARTIER", title: "Le pain du matin, pétri et cuit sur place.",
+    text: "Au Fournil des Halles, les pains au levain, viennoiseries et gâteaux sortent du four tout au long de la journée, avec des farines choisies et des recettes simples.",
+    primaryCta: "Commander pour un événement", secondaryCta: "Découvrir nos pains", aboutTitle: "Du temps, de la farine et un four qui ne s’arrête pas.",
+    aboutText: "Nos pâtes reposent longuement pour développer le goût et la conservation. La gamme évolue avec les saisons : brioches en hiver, tartes aux fruits dès les beaux jours.",
+    contactTitle: "Un buffet, une commande ou une question ?", contactText: "Indiquez la date, le nombre de personnes et vos envies. Nous vous confirmons la commande et l’heure de retrait.",
+    services: [
+      { title: "Pains au levain", text: "Campagne, seigle, céréales : des pains à la croûte franche, pensés pour durer plusieurs jours." },
+      { title: "Viennoiseries", text: "Croissants et pains au chocolat feuilletés chaque matin, au beurre." },
+      { title: "Commandes et buffets", text: "Plateaux, gâteaux d’anniversaire et pains pour vos repas de fête ou d’entreprise." },
+    ],
+    benefits: [
+      { title: "Fait sur place", text: "Pétrissage, façonnage et cuisson au fournil, à la vue des clients." },
+      { title: "Farines choisies", text: "Des meuniers sélectionnés et des recettes courtes." },
+      { title: "Commande simple", text: "Une demande en ligne, une confirmation, un retrait à l’heure prévue." },
+    ],
+    faq: [
+      { question: "Peut-on réserver du pain ?", answer: "Oui. Passez votre commande la veille pour un retrait le lendemain matin." },
+      { question: "Proposez-vous des produits sans lactose ?", answer: "Une partie de nos pains n’en contient pas. Demandez-nous la liste des ingrédients en boutique ou dans votre message." },
+    ],
+    testimonial: { name: "Marc T.", role: "Client du quartier", text: "Un pain au levain qui tient toute la semaine et un accueil toujours souriant." },
+    image: "/images/demos/boulangerie.jpg",
+    imageAlt: "Vitrine de boulangerie garnie de pains et de viennoiseries",
+    gallery: ["/images/demos/boulangerie.jpg", "/images/demos/pain.jpg"],
+  },
+  {
+    id: "coach", name: "Élan Coaching", activity: "Coach sportif", city: "Bordeaux", style: "creatif", color: "#7c3aed",
+    eyebrow: "COACHING INDIVIDUEL · PETITS GROUPES · REPRISE DU SPORT", title: "Un programme qui part de vous, pas d’une routine toute faite.",
+    text: "Remise en forme, préparation d’un objectif ou reprise en douceur : Élan Coaching construit avec vous des séances adaptées à votre rythme et à votre niveau.",
+    primaryCta: "Réserver une séance découverte", secondaryCta: "Voir les formules", aboutTitle: "Progresser sans se blesser, et avec plaisir.",
+    aboutText: "La première séance sert à faire le point sur vos habitudes, vos contraintes et vos envies. Le programme évolue ensuite à chaque bilan, pour que les progrès restent visibles et motivants.",
+    contactTitle: "Envie de vous y remettre ?", contactText: "Présentez votre objectif et vos disponibilités. Nous vous proposons un créneau pour une séance découverte.",
+    services: [
+      { title: "Coaching individuel", text: "Des séances en salle, à domicile ou en extérieur, construites autour de votre objectif." },
+      { title: "Petits groupes", text: "Jusqu’à six personnes pour s’entraîner ensemble avec un suivi personnalisé." },
+      { title: "Bilan et programme", text: "Un point régulier sur vos progrès et un programme à suivre entre les séances." },
+    ],
+    benefits: [
+      { title: "Séances adaptées", text: "Exercices choisis selon votre niveau, votre corps et votre emploi du temps." },
+      { title: "Suivi régulier", text: "Des bilans pour mesurer les progrès et ajuster le programme." },
+      { title: "Motivation durable", text: "Des objectifs concrets et atteignables, étape par étape." },
+    ],
+    faq: [
+      { question: "Faut-il déjà être sportif ?", answer: "Non. Les séances sont adaptées à tous les niveaux, y compris pour une reprise après une longue pause." },
+      { question: "Où se déroulent les séances ?", answer: "En salle partenaire, à domicile ou en extérieur, selon la formule choisie ensemble." },
+    ],
+    testimonial: { name: "Laura B.", role: "Reprise du sport", text: "Des séances variées, un vrai suivi et enfin l’envie de continuer." },
+    image: "/images/demos/coach.jpg",
+    imageAlt: "Coach sportif présentant un programme d’entraînement à une cliente en salle",
+    gallery: ["/images/demos/coach.jpg", "/images/demos/salle-sport.jpg"],
+  },
+  {
+    id: "avocat", name: "Cabinet Ardent", activity: "Cabinet d’avocat", city: "Paris", style: "premium", color: "#a16207",
+    eyebrow: "CONSEIL · ACCOMPAGNEMENT · DROIT DES ENTREPRISES ET DES PARTICULIERS", title: "Un accompagnement juridique clair, à chaque étape.",
+    text: "Le Cabinet Ardent conseille les dirigeants et les particuliers avec une méthode simple : comprendre la situation, expliquer les options et avancer avec vous.",
+    primaryCta: "Demander un rendez-vous", secondaryCta: "Nos domaines d’intervention", aboutTitle: "Des réponses compréhensibles, sans jargon inutile.",
+    aboutText: "Chaque dossier commence par un premier échange pour cerner votre situation. Nous vous présentons ensuite les démarches possibles, leurs délais et leurs honoraires avant tout engagement.",
+    contactTitle: "Une question juridique à nous soumettre ?", contactText: "Décrivez brièvement votre situation. Nous vous recontactons pour convenir d’un premier rendez-vous.",
+    services: [
+      { title: "Droit des affaires", text: "Création de société, contrats commerciaux et accompagnement des dirigeants au quotidien." },
+      { title: "Droit du travail", text: "Conseil aux employeurs et aux salariés, rédaction et relecture de documents." },
+      { title: "Médiation et contentieux", text: "Recherche d’une solution amiable lorsque c’est possible, défense de vos intérêts sinon." },
+    ],
+    benefits: [
+      { title: "Honoraires annoncés", text: "Une convention d’honoraires claire avant le début de la mission." },
+      { title: "Interlocuteur dédié", text: "Un avocat qui suit votre dossier du début à la fin." },
+      { title: "Explications claires", text: "Chaque étape est expliquée en langage simple." },
+    ],
+    faq: [
+      { question: "Comment se passe le premier rendez-vous ?", answer: "Il permet de comprendre votre situation et de vous présenter les options possibles. Ses conditions vous sont indiquées lors de la prise de rendez-vous." },
+      { question: "Recevez-vous en visioconférence ?", answer: "Oui, les rendez-vous peuvent avoir lieu au cabinet ou à distance, selon votre préférence." },
+    ],
+    testimonial: { name: "Thomas G.", role: "Dirigeant d’entreprise", text: "Des conseils précis et une vraie disponibilité, même pour les questions du quotidien." },
+    image: "/images/demos/reunion.jpg",
+    imageAlt: "Salle de réunion avec une grande table en bois et des fauteuils",
+    gallery: ["/images/demos/reunion.jpg", "/images/demos/avocat.jpg"],
+  },
 ];
 
 function Arrow() {
@@ -175,7 +279,7 @@ export default function ExamplesPage() {
             <h1 id="examples-title">Des exemples concrets.<br /><em>Ton activité ensuite.</em></h1>
           </div>
           <div className={styles.introCopy}>
-            <p>Explore quatre démonstrations créées avec Lumio. Change de métier, observe le rendu et imagine ton propre contenu à la place.</p>
+            <p>Explore huit démonstrations créées avec Lumio. Change de métier, observe le rendu et imagine ton propre contenu à la place.</p>
             <span>Entreprises fictives · Aperçus interactifs</span>
           </div>
         </section>
