@@ -959,8 +959,11 @@
   box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.3s var(--ui-ease);
 }
-.plans article:hover { box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 24px 50px -30px rgba(0, 0, 0, 0.3); }
-.plans .planFeatured, .plans .planFeatured:hover {
+.plans article:hover { box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 24px 50px -30px rgba(0, 0, 0, 0.3); }
+/* Au clavier, la formule dont le bouton a le focus est mise en évidence */
+.plans article:focus-within { box-shadow: inset 0 0 0 1px rgba(90, 73, 230, 0.45), 0 24px 50px -30px rgba(0, 0, 0, 0.3); }
+.plans .planFeatured, .plans .planFeatured:hover, .plans .planFeatured:focus-within {
+  background: linear-gradient(180deg, rgba(106, 90, 249, 0.07), transparent 38%), var(--ui-light);
   box-shadow: inset 0 0 0 2px var(--ui-tint), 0 30px 60px -34px rgba(106, 90, 249, 0.55);
 }
 .planTop > span {
@@ -1108,7 +1111,10 @@
   position: relative;
   padding: var(--section-pad) 24px;
   overflow: hidden;
-  background: var(--ui-light);
+  /* Halo violet très léger derrière l'icône : la section se distingue sans couleur forte */
+  background:
+    radial-gradient(44rem 26rem at 50% 0, rgba(106, 90, 249, 0.09), transparent 70%),
+    var(--ui-light);
   color: var(--ui-label-on-light);
   text-align: center;
 }
@@ -1189,8 +1195,14 @@
   font-weight: 600;
 }
 .footerColumns ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
-.footerColumns a { color: #424245; transition: color 0.2s var(--ui-ease); }
-.footerColumns a:hover { color: var(--ui-label-on-light); text-decoration: underline; text-underline-offset: 3px; }
+.footerColumns a {
+  color: #3d3d47;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: color var(--ui-dur-micro) var(--ui-ease-out), text-decoration-color var(--ui-dur-base) var(--ui-ease-out);
+}
+.footerColumns a:hover { color: var(--ui-label-on-light); text-decoration-color: currentColor; }
 .footerBottom {
   grid-column: 1 / -1;
   padding-top: 20px;
@@ -1442,7 +1454,38 @@ a:hover > .arrow, a:hover b > .arrow, a:focus-visible > .arrow { transform: tran
   .promptRotator > span[aria-hidden]:nth-child(3) { animation-delay: 3s; }
   .promptRotator > span[aria-hidden]:nth-child(4) { animation-delay: 6s; }
   .promptRotator > span[aria-hidden]:nth-child(2) { animation-delay: -0.4s; }
+
+  /* Au survol ou au focus de l'invite, le métier affiché reste en place */
+  .promptCta:is(:hover, :focus-visible) .promptRotator > span[aria-hidden] { animation-play-state: paused; }
+
+  /* Bouton d'arrêt du défilement (affiché seulement quand il y a une animation) */
+  .heroCopy .motionToggle { display: inline-flex; animation: enter 0.6s var(--ui-ease-spring) 0.2s both; }
+  .heroCopy:has(.motionToggle input:checked) .promptRotator > span[aria-hidden] {
+    visibility: hidden !important;
+    animation: none;
+  }
+  .heroCopy:has(.motionToggle input:checked) .promptRotator > span[aria-hidden]:nth-child(2) { visibility: visible !important; }
 }
+
+.motionToggle {
+  position: relative;
+  display: none;
+  align-items: center;
+  gap: 7px;
+  margin: 14px auto 0;
+  padding: 5px 12px 5px 10px;
+  border-radius: var(--ui-radius-pill);
+  color: var(--ui-label-3);
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-medium);
+  cursor: pointer;
+  transition: color var(--ui-dur-micro) var(--ui-ease-out), background-color var(--ui-dur-micro) var(--ui-ease-out);
+}
+.motionToggle:hover { color: var(--ui-label-2); background: rgba(255, 255, 255, 0.05); }
+.motionToggle input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.motionToggle:has(input:focus-visible) { outline: 2px solid #8574ff; outline-offset: 2px; }
+.motionPlay, .motionToggle:has(input:checked) .motionPause { display: none; }
+.motionToggle:has(input:checked) .motionPlay { display: inline; }
 
 @supports (animation-timeline: scroll()) {
   @media (prefers-reduced-motion: no-preference) {
@@ -1480,8 +1523,9 @@ a:hover > .arrow, a:hover b > .arrow, a:focus-visible > .arrow { transform: tran
   to { opacity: 1; transform: none; }
 }
 
+/* Révélation du visuel : inclinaison légère, pour accompagner la lecture sans l'attirer */
 @keyframes tilt {
-  from { transform: rotateX(14deg) scale(0.94); }
+  from { transform: rotateX(9deg) translateY(16px) scale(0.96); }
   to { transform: none; }
 }
 

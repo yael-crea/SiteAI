@@ -26,6 +26,8 @@ const paths = {
   alert: <path d="M10 7.5v3.5M10 13.75v.01M8.7 3.9 2.9 14a1.5 1.5 0 0 0 1.3 2.25h11.6A1.5 1.5 0 0 0 17.1 14L11.3 3.9a1.5 1.5 0 0 0-2.6 0Z" />,
   info: <path d="M10 9v4.5M10 6.5v.01M16.5 10a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z" />,
   trash: <path d="M4.5 6h11M8 6V4.5h4V6M6 6l.7 9.6a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9L14 6M8.5 9v4.5M11.5 9v4.5" />,
+  pause: <path d="M7.5 5.5v9M12.5 5.5v9" />,
+  play: <path d="M7 5.2v9.6a.6.6 0 0 0 .9.5l7.4-4.8a.6.6 0 0 0 0-1L7.9 4.7a.6.6 0 0 0-.9.5Z" />,
 } as const;
 
 export type IconName = keyof typeof paths;

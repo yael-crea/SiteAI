@@ -81,6 +81,14 @@ export default function HomePage() {
                 </span>
                 <b>Créer mon aperçu <Arrow /></b>
               </Link>
+              {/* Les exemples défilent en continu : WCAG 2.2.2 demande un moyen de les arrêter (sans JavaScript, via :has). */}
+              <label className={styles.motionToggle}>
+                <input type="checkbox" />
+                <Icon name="pause" size={13} className={styles.motionPause} />
+                <Icon name="play" size={13} className={styles.motionPlay} />
+                <span className={styles.motionPause}>Arrêter le défilement des exemples</span>
+                <span className={styles.motionPlay}>Relancer le défilement des exemples</span>
+              </label>
               <ul className={styles.heroNotes}>
                 {["Sans carte bancaire", "Sans coder", "Tu publies quand tu veux"].map((note) => (
                   <li key={note}><Icon name="check" size={14} />{note}</li>
