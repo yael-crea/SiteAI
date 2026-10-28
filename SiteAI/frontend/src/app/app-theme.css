@@ -464,3 +464,176 @@ main.lumio-app::before {
     background: var(--ui-bg-elevated) !important;
   }
 }
+
+/* ---------- Barre latérale (écrans larges) ---------- */
+
+@media (min-width: 1024px) {
+  main.lumio-app.has-sidebar {
+    padding-left: 248px;
+  }
+
+  /* Sans en-tête flottant, le fondu du haut de page n'a plus de raison d'être */
+  main.lumio-app.has-sidebar::before {
+    display: none;
+  }
+}
+
+.lumio-app .lumio-sidebar {
+  background: var(--ui-bg);
+  border-color: var(--ui-separator);
+}
+
+.lumio-app .lumio-nav-item {
+  position: relative;
+  min-height: 38px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition:
+    background-color var(--ui-dur-micro) var(--ui-ease-out),
+    color var(--ui-dur-micro) var(--ui-ease-out);
+}
+
+@media (hover: hover) {
+  .lumio-app .lumio-nav-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--ui-label);
+  }
+}
+
+.lumio-app .lumio-nav-item.is-active {
+  background: var(--ui-bg-elevated-2);
+  box-shadow: var(--ui-highlight);
+}
+
+/* Repère de la page active : un trait violet à gauche */
+.lumio-app .lumio-nav-item.is-active::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ui-tint);
+}
+
+.lumio-app .lumio-nav-badge {
+  min-width: 20px;
+  padding: 2px 6px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-tint-soft);
+  color: var(--ui-tint-text);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.lumio-app .lumio-plan-card {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-separator);
+  border-radius: 14px;
+  background: var(--ui-bg-elevated);
+  box-shadow: var(--ui-highlight);
+  transition: border-color var(--ui-dur-base) var(--ui-ease-out);
+}
+
+@media (hover: hover) {
+  .lumio-app .lumio-plan-card:hover {
+    border-color: var(--ui-separator-strong);
+  }
+}
+
+/* ---------- Indicateurs et pipeline du tableau de bord ---------- */
+
+/* Pas de display ici : la mise en page reste pilotée par les classes Tailwind de la page */
+.lumio-app .lumio-kpi {
+  padding: 18px 20px;
+  border: 1px solid var(--ui-separator);
+  border-radius: var(--ui-radius-card);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 45%), var(--ui-bg-elevated);
+  box-shadow: var(--ui-highlight);
+  text-align: left;
+  transition:
+    border-color var(--ui-dur-base) var(--ui-ease-out),
+    box-shadow var(--ui-dur-base) var(--ui-ease-out);
+}
+
+@media (hover: hover) {
+  .lumio-app button.lumio-kpi:hover {
+    border-color: var(--ui-separator-strong);
+    box-shadow: var(--ui-highlight), var(--ui-shadow-1);
+  }
+}
+
+.lumio-app .lumio-kpi-value {
+  margin-top: 8px;
+  color: var(--ui-label);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.lumio-app .lumio-pipeline-bar {
+  display: flex;
+  gap: 3px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-bg-elevated-2);
+}
+
+.lumio-app .lumio-pipeline-bar > i {
+  min-width: 6px;
+  border-radius: 2px;
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lumio-app .lumio-pipeline-bar > i {
+    animation: lumioGrow var(--ui-dur-enter) var(--ui-ease-out) both;
+  }
+
+  .lumio-app .lumio-pipeline-bar > i:nth-child(2) { animation-delay: var(--ui-stagger); }
+  .lumio-app .lumio-pipeline-bar > i:nth-child(3) { animation-delay: calc(var(--ui-stagger) * 2); }
+  .lumio-app .lumio-pipeline-bar > i:nth-child(4) { animation-delay: calc(var(--ui-stagger) * 3); }
+  .lumio-app .lumio-pipeline-bar > i:nth-child(5) { animation-delay: calc(var(--ui-stagger) * 4); }
+}
+
+@keyframes lumioGrow {
+  from { opacity: 0; transform: scaleX(0.4); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Volet « Détail des chiffres » */
+.lumio-app .lumio-details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.lumio-app .lumio-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.lumio-app .lumio-details > summary svg {
+  transition: transform var(--ui-dur-base) var(--ui-ease-out);
+}
+
+.lumio-app .lumio-details[open] > summary svg {
+  transform: rotate(45deg);
+}
+
+.lumio-app .lumio-site-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--ui-tint-soft);
+  color: var(--ui-tint-text);
+  font-size: 16px;
+  font-weight: 600;
+}
