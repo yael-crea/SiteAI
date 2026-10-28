@@ -141,6 +141,7 @@ main.lumio-app {
 
 .lumio-app > header {
   position: sticky;
+  z-index: 50;
   top: 10px;
   width: min(1280px, calc(100% - 20px));
   margin: 10px auto 0;
@@ -317,6 +318,8 @@ main.lumio-app::before {
 /* Les boutons de taille « contrôle » deviennent des pilules */
 .lumio-app :is(button, a):is([class~="rounded-lg"], [class~="rounded-xl"], [class~="rounded-2xl"]):is([class~="py-1"], [class~="py-1.5"], [class~="py-2"], [class~="py-2.5"], [class~="py-3"], [class~="py-3.5"]) {
   border-radius: var(--ui-radius-pill);
+  /* Une pilule ne se replie pas sur deux lignes dans une rangée flexible */
+  flex-shrink: 0;
 }
 
 /* Boutons icône carrés → cercles */
