@@ -4,6 +4,8 @@ import SaveStatus from "@/components/builder/SaveStatus";
 import BuilderToolsMenu from "@/components/builder/BuilderToolsMenu";
 import FirstSiteGuide from "@/components/builder/FirstSiteGuide";
 import { sameContent } from "@/lib/builderSaveState";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import Icon from "@/components/ui/Icon";
 
 import PublicationPanel from "@/components/builder/PublicationPanel";
 import AppearancePanel from "@/components/builder/AppearancePanel";
@@ -754,6 +756,8 @@ export default function Home() {
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>("desktop");
 
   const [previewFullscreenOpen, setPreviewFullscreenOpen] = useState(false);
+  const previewDialogRef = useRef<HTMLDivElement | null>(null);
+  const [confirm, confirmDialog] = useConfirm();
 
   const [editorCollapsed, setEditorCollapsed] = useState(false);
 
@@ -1015,11 +1019,55 @@ export default function Home() {
 
     const previousOverflow = document.body.style.overflow;
 
+    // Le focus entre dans l'aperçu à l'ouverture et revient ensuite à
+    // l'élément qui l'a ouvert.
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    previewDialogRef.current?.focus();
+
     document.body.style.overflow = "hidden";
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setPreviewFullscreenOpen(false);
+
+        return;
+      }
+
+      // Tab et Maj+Tab restent dans l'aperçu tant qu'il est ouvert.
+      const dialog = previewDialogRef.current;
+
+      if (event.key !== "Tab" || !dialog) {
+        return;
+      }
+
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => element.getClientRects().length > 0);
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (!first || !last) {
+        event.preventDefault();
+
+        return;
+      }
+
+      const active = document.activeElement;
+
+      if (event.shiftKey && (active === first || active === dialog)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      } else if (!dialog.contains(active)) {
+        event.preventDefault();
+        first.focus();
       }
     }
 
@@ -1029,6 +1077,8 @@ export default function Home() {
       document.body.style.overflow = previousOverflow;
 
       window.removeEventListener("keydown", handleKeyDown);
+
+      previouslyFocused?.focus();
     };
   }, [previewFullscreenOpen]);
 
@@ -1687,7 +1737,11 @@ export default function Home() {
   }
 
   async function deleteSavedSite(id: number) {
-    const confirmed = window.confirm("Supprimer définitivement ce site ?");
+    const confirmed = await confirm({
+      title: "Supprimer définitivement ce site ?",
+      confirmLabel: "Supprimer",
+      tone: "danger",
+    });
 
     if (!confirmed) {
       return;
@@ -2799,7 +2853,7 @@ export default function Home() {
               }
               aria-expanded={builderMobileMenuOpen}
             >
-              {builderMobileMenuOpen ? "✕" : "☰"}
+              <Icon name={builderMobileMenuOpen ? "close" : "menu"} size={20} />
             </button>
 
             <div className="hidden items-center gap-2 md:flex">
@@ -5059,9 +5113,13 @@ export default function Home() {
         )}
       </nav>
 
+      {confirmDialog}
+
       {site && previewFullscreenOpen && (
         <div
-          className="fixed inset-0 z-[100] flex flex-col bg-slate-950/95 backdrop-blur-sm"
+          ref={previewDialogRef}
+          tabIndex={-1}
+          className="fixed inset-0 z-[100] flex flex-col bg-slate-950/95 outline-none backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Aperçu du site en grand"
@@ -5106,7 +5164,8 @@ export default function Home() {
                 onClick={() => setPreviewFullscreenOpen(false)}
                 className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
               >
-                ✕ Fermer
+                <Icon name="close" size={15} className="mr-1.5 inline-block align-[-0.15em]" />
+                Fermer
               </button>
             </div>
           </div>

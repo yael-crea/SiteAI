@@ -38,10 +38,12 @@ export default function SaveStatus({
       <div className="flex min-w-0 items-center gap-3" role="status" aria-live="polite">
         <span
           aria-hidden="true"
-          className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-            error || hasUnsavedChanges
-              ? "bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.35)]"
-              : "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.3)]"
+          className={`h-2.5 w-2.5 shrink-0 rounded-full transition-colors duration-300 ${
+            saving || publishing
+              ? "bg-violet-400 shadow-[0_0_12px_rgba(180,169,255,0.45)] motion-safe:animate-pulse"
+              : error || hasUnsavedChanges
+                ? "bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.35)]"
+                : "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.3)]"
           }`}
         />
         <div className="min-w-0">
