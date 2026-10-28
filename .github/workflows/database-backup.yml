@@ -25,6 +25,9 @@ permissions:
 
 env:
   PG_IMAGE: postgres:18-alpine@sha256:898c60cb390d1085bc97bdd6a1ae968757421df394b071848b52b1c09c89d6a5
+  # Image officielle Supabase correspondant exactement à Lumio production.
+  # Digest linux/amd64 publié pour supabase/postgres:17.6.1.166.
+  RESTORE_SERVER_IMAGE: supabase/postgres:17.6.1.166@sha256:d5424e9f4d0c21d63991c3f3dd77881f23f722c3a212452a61bc91924b79e8c8
 
 jobs:
   backup:
@@ -110,6 +113,9 @@ jobs:
       ARTIFACT_ID: "12591312855"
       EXPECTED_ENC_SHA256: 8b043fdd0f1a503a1966f92e6d9ba9a795427c0960c31b4a7d8b6c08161d8ad7
       CONTAINER_NAME: lumio-pg-verify-${{ github.run_id }}-${{ github.run_attempt }}
+      CLIENT_CONTAINER_NAME: lumio-pg-client-${{ github.run_id }}-${{ github.run_attempt }}
+      NETWORK_NAME: lumio-restore-net-${{ github.run_id }}-${{ github.run_attempt }}
+      RESTORE_DB_USER: supabase_admin
 
     steps:
       - name: Contrôler l’autorisation du mode réel
@@ -195,6 +201,107 @@ jobs:
           echo "ANONYMOUS_VOLUME_COUNT=0"
           echo "PUBLIC_PORT_COUNT=0"
 
+      - name: Test fictif de l’image Supabase PostgreSQL 17 compatible
+        if: ${{ inputs.mode == 'smoke-only' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          umask 077
+
+          cleanup() {
+            docker rm -fv "$CONTAINER_NAME" >/dev/null 2>&1 || true
+            docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT INT TERM
+
+          docker pull "$RESTORE_SERVER_IMAGE" >/dev/null
+
+          SERVER_UID="$(docker run --rm --network none \
+            --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=8m \
+            --entrypoint id "$RESTORE_SERVER_IMAGE" -u postgres)"
+          SERVER_GID="$(docker run --rm --network none \
+            --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=8m \
+            --entrypoint id "$RESTORE_SERVER_IMAGE" -g postgres)"
+
+          docker network create --internal "$NETWORK_NAME" >/dev/null
+          test "$(docker network inspect --format '{{.Internal}}' \
+            "$NETWORK_NAME")" = "true"
+
+          docker run --detach \
+            --name "$CONTAINER_NAME" \
+            --network "$NETWORK_NAME" \
+            --read-only \
+            --user "$SERVER_UID:$SERVER_GID" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs "/var/lib/postgresql/data:rw,nosuid,nodev,noexec,mode=0700,uid=$SERVER_UID,gid=$SERVER_GID,size=512m" \
+            --tmpfs "/var/run/postgresql:rw,nosuid,nodev,mode=0770,uid=$SERVER_UID,gid=$SERVER_GID,size=16m" \
+            --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=64m" \
+            -e PGDATA=/var/lib/postgresql/data \
+            -e POSTGRES_DB=lumio_smoke \
+            -e POSTGRES_USER="$RESTORE_DB_USER" \
+            -e POSTGRES_HOST_AUTH_METHOD=trust \
+            "$RESTORE_SERVER_IMAGE" >/dev/null
+
+          test -n "$(docker inspect --format \
+            '{{index .HostConfig.Tmpfs "/var/lib/postgresql/data"}}' \
+            "$CONTAINER_NAME")"
+          test -z "$(docker inspect --format \
+            '{{range .Mounts}}{{if eq .Type "volume"}}{{println .Name}}{{end}}{{end}}' \
+            "$CONTAINER_NAME")"
+          test "$(docker inspect --format '{{.HostConfig.NetworkMode}}' \
+            "$CONTAINER_NAME")" = "$NETWORK_NAME"
+          test -z "$(docker inspect --format \
+            '{{range $port, $bindings := .NetworkSettings.Ports}}{{println $port}}{{end}}' \
+            "$CONTAINER_NAME")"
+
+          READY=false
+          for attempt in $(seq 1 60); do
+            if docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+              pg_isready -U "$RESTORE_DB_USER" -d lumio_smoke >/dev/null 2>&1; then
+              READY=true
+              break
+            fi
+            sleep 1
+          done
+          test "$READY" = true
+
+          docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+            sh -eu -c 'test "$PGDATA" = /var/lib/postgresql/data; test "$(cat "$PGDATA/PG_VERSION")" = 17; test "$(stat -f -c %T "$PGDATA")" = tmpfs; test "$(stat -c %a "$PGDATA")" = 700'
+
+          COMPATIBLE_EXTENSION_COUNT="$(docker exec \
+            --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+            psql -X -qAt -U "$RESTORE_DB_USER" -d lumio_smoke -c "
+              WITH required(name, version) AS (VALUES
+                ('pg_stat_statements', '1.11'),
+                ('pgcrypto', '1.3'),
+                ('supabase_vault', '0.3.1'),
+                ('uuid-ossp', '1.1')
+              )
+              SELECT count(*)
+              FROM required r
+              JOIN pg_available_extension_versions a
+                ON a.name = r.name AND a.version = r.version;
+            ")"
+          test "$COMPATIBLE_EXTENSION_COUNT" = "4"
+
+          docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+            psql -X -q -v ON_ERROR_STOP=1 -U "$RESTORE_DB_USER" \
+              -d lumio_smoke -c \
+              "CREATE TABLE restore_smoke_test(id integer PRIMARY KEY, value text NOT NULL); INSERT INTO restore_smoke_test VALUES (1, 'fictif');" \
+              >/dev/null
+
+          TEST_ROWS="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" psql -X -qAt -U "$RESTORE_DB_USER" \
+              -d lumio_smoke -c 'SELECT count(*) FROM restore_smoke_test')"
+          test "$TEST_ROWS" = "1"
+
+          echo "SUPABASE_IMAGE_SMOKE_STATUS=SUCCESS"
+          echo "SUPABASE_EXTENSION_COMPATIBILITY=SUCCESS"
+          echo "SUPABASE_PGDATA_STORAGE=tmpfs"
+          echo "SUPABASE_ANONYMOUS_VOLUME_COUNT=0"
+          echo "SUPABASE_PUBLIC_PORT_COUNT=0"
+
       - name: Télécharger uniquement l’artefact chiffré attendu
         if: ${{ inputs.mode == 'restore' }}
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
@@ -220,7 +327,9 @@ jobs:
 
           cleanup() {
             unset BACKUP_ENCRYPTION_KEY || true
+            docker rm -fv "$CLIENT_CONTAINER_NAME" >/dev/null 2>&1 || true
             docker rm -fv "$CONTAINER_NAME" >/dev/null 2>&1 || true
+            docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
             rm -rf -- "$RAM_DIR" "$ENC_ROOT"
           }
           trap cleanup EXIT INT TERM
@@ -246,45 +355,58 @@ jobs:
             sha256sum --check --status "$(basename "$SHA_FILE")"
           )
 
-          PG_UID="$(docker run --rm --network none \
+          docker pull "$RESTORE_SERVER_IMAGE" >/dev/null
+          docker pull "$PG_IMAGE" >/dev/null
+
+          SERVER_UID="$(docker run --rm --network none \
+            --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=8m \
+            --entrypoint id "$RESTORE_SERVER_IMAGE" -u postgres)"
+          SERVER_GID="$(docker run --rm --network none \
+            --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=8m \
+            --entrypoint id "$RESTORE_SERVER_IMAGE" -g postgres)"
+          CLIENT_UID="$(docker run --rm --network none \
             --tmpfs /var/lib/postgresql:rw,nosuid,nodev,noexec,size=8m \
             "$PG_IMAGE" id -u postgres)"
-          PG_GID="$(docker run --rm --network none \
+          CLIENT_GID="$(docker run --rm --network none \
             --tmpfs /var/lib/postgresql:rw,nosuid,nodev,noexec,size=8m \
             "$PG_IMAGE" id -g postgres)"
 
+          docker network create --internal "$NETWORK_NAME" >/dev/null
+          test "$(docker network inspect --format '{{.Internal}}' "$NETWORK_NAME")" = "true"
+
           docker run --detach \
             --name "$CONTAINER_NAME" \
-            --network none \
+            --network "$NETWORK_NAME" \
+            --network-alias lumio-db \
             --read-only \
-            --user "$PG_UID:$PG_GID" \
+            --user "$SERVER_UID:$SERVER_GID" \
             --cap-drop ALL \
             --security-opt no-new-privileges \
-            --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=1777,size=1g" \
-            --tmpfs "/var/run/postgresql:rw,nosuid,nodev,mode=1777,size=16m" \
-            --tmpfs "/restore:rw,nosuid,nodev,noexec,mode=1777,size=512m" \
+            --tmpfs "/var/lib/postgresql/data:rw,nosuid,nodev,noexec,mode=0700,uid=$SERVER_UID,gid=$SERVER_GID,size=1g" \
+            --tmpfs "/var/run/postgresql:rw,nosuid,nodev,mode=0770,uid=$SERVER_UID,gid=$SERVER_GID,size=16m" \
             --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=64m" \
-            -e PGDATA=/var/lib/postgresql/18/docker \
-            -e POSTGRES_DB=lumio_restore_check \
+            -e PGDATA=/var/lib/postgresql/data \
+            -e POSTGRES_DB=postgres \
+            -e POSTGRES_USER="$RESTORE_DB_USER" \
             -e POSTGRES_HOST_AUTH_METHOD=trust \
-            "$PG_IMAGE" >/dev/null
+            "$RESTORE_SERVER_IMAGE" >/dev/null
 
           test -n "$(docker inspect --format \
-            '{{index .HostConfig.Tmpfs "/var/lib/postgresql"}}' \
+            '{{index .HostConfig.Tmpfs "/var/lib/postgresql/data"}}' \
             "$CONTAINER_NAME")"
           test -z "$(docker inspect --format \
             '{{range .Mounts}}{{if eq .Type "volume"}}{{println .Name}}{{end}}{{end}}' \
             "$CONTAINER_NAME")"
           test "$(docker inspect --format '{{.HostConfig.NetworkMode}}' \
-            "$CONTAINER_NAME")" = "none"
+            "$CONTAINER_NAME")" = "$NETWORK_NAME"
           test -z "$(docker inspect --format \
             '{{range $port, $bindings := .NetworkSettings.Ports}}{{println $port}}{{end}}' \
             "$CONTAINER_NAME")"
 
           READY=false
           for attempt in $(seq 1 60); do
-            if docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
-              pg_isready -U postgres -d lumio_restore_check >/dev/null 2>&1; then
+            if docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+              pg_isready -U "$RESTORE_DB_USER" -d postgres >/dev/null 2>&1; then
               READY=true
               break
             fi
@@ -292,8 +414,11 @@ jobs:
           done
           test "$READY" = true
 
-          docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
-            sh -eu -c 'test "$PGDATA" = /var/lib/postgresql/18/docker; test -s "$PGDATA/PG_VERSION"; test "$(stat -f -c %T "$PGDATA")" = tmpfs; test "$(stat -c %a "$PGDATA")" = 700'
+          docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+            sh -eu -c 'test "$PGDATA" = /var/lib/postgresql/data; test -s "$PGDATA/PG_VERSION"; test "$(cat "$PGDATA/PG_VERSION")" = 17; test "$(stat -f -c %T "$PGDATA")" = tmpfs; test "$(stat -c %a "$PGDATA")" = 700'
+
+          docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+            createdb -U "$RESTORE_DB_USER" --template=template0 lumio_restore_check
 
           DUMP_FILE="$RAM_DIR/backup.dump"
           if ! openssl enc -d -aes-256-cbc -salt -pbkdf2 \
@@ -309,16 +434,97 @@ jobs:
           unset BACKUP_ENCRYPTION_KEY
           test -s "$DUMP_FILE"
 
-          docker exec -i --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
-            sh -c 'umask 077; cat > /restore/backup.dump' < "$DUMP_FILE"
-          rm -f -- "$DUMP_FILE"
+          docker run --rm \
+            --name "$CLIENT_CONTAINER_NAME" \
+            --network none \
+            --read-only \
+            --user "$CLIENT_UID:$CLIENT_GID" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
+            --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
+            --mount "type=bind,src=$DUMP_FILE,dst=/restore/backup.dump,readonly" \
+            "$PG_IMAGE" pg_restore --list /restore/backup.dump \
+            >"$RAM_DIR/toc.list"
 
-          docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
-            pg_restore --list /restore/backup.dump >/dev/null
+          sed -nE 's/^.* EXTENSION - ([^ ]+).*$/\1/p' \
+            "$RAM_DIR/toc.list" | sort -u >"$RAM_DIR/required-extensions.txt"
+          test -s "$RAM_DIR/required-extensions.txt"
 
-          if ! docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
-            pg_restore --no-owner --no-acl --no-publications --no-subscriptions \
-              --exit-on-error --username postgres --dbname lumio_restore_check \
+          # Versions relevées en lecture seule sur la production Lumio.
+          # Seuls les noms et versions d'extensions sont contrôlés ; aucune donnée
+          # applicative n'est interrogée ni affichée.
+          printf '%s\n' \
+            'pg_stat_statements|1.11' \
+            'pgcrypto|1.3' \
+            'supabase_vault|0.3.1' \
+            'uuid-ossp|1.1' \
+            >"$RAM_DIR/expected-extension-versions.txt"
+
+          docker run --rm \
+            --name "$CLIENT_CONTAINER_NAME" \
+            --network "$NETWORK_NAME" \
+            --read-only \
+            --user "$CLIENT_UID:$CLIENT_GID" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
+            --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
+            "$PG_IMAGE" psql -X -qAt -h lumio-db -U "$RESTORE_DB_USER" \
+              -d lumio_restore_check \
+              -c 'SELECT name FROM pg_available_extensions ORDER BY name' \
+            >"$RAM_DIR/available-extensions.txt"
+
+          docker run --rm \
+            --name "$CLIENT_CONTAINER_NAME" \
+            --network "$NETWORK_NAME" \
+            --read-only \
+            --user "$CLIENT_UID:$CLIENT_GID" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
+            --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
+            "$PG_IMAGE" psql -X -qAt -h lumio-db -U "$RESTORE_DB_USER" \
+              -d lumio_restore_check \
+              -c "SELECT name || '|' || version
+                  FROM pg_available_extension_versions
+                  WHERE name IN ('pg_stat_statements', 'pgcrypto',
+                                 'supabase_vault', 'uuid-ossp')
+                  ORDER BY 1" \
+            >"$RAM_DIR/available-extension-versions.txt"
+
+          comm -23 "$RAM_DIR/required-extensions.txt" \
+            "$RAM_DIR/available-extensions.txt" >"$RAM_DIR/missing-extensions.txt"
+          if test -s "$RAM_DIR/missing-extensions.txt"; then
+            MISSING_EXTENSIONS="$(paste -sd, "$RAM_DIR/missing-extensions.txt")"
+            echo "::error::Extensions absentes de l’image compatible : $MISSING_EXTENSIONS"
+            exit 1
+          fi
+
+          comm -23 "$RAM_DIR/expected-extension-versions.txt" \
+            "$RAM_DIR/available-extension-versions.txt" \
+            >"$RAM_DIR/incompatible-extension-versions.txt"
+          if test -s "$RAM_DIR/incompatible-extension-versions.txt"; then
+            INCOMPATIBLE_EXTENSIONS="$(paste -sd, \
+              "$RAM_DIR/incompatible-extension-versions.txt")"
+            echo "::error::Versions d’extensions requises indisponibles : $INCOMPATIBLE_EXTENSIONS"
+            exit 1
+          fi
+
+          if ! docker run --rm \
+            --name "$CLIENT_CONTAINER_NAME" \
+            --network "$NETWORK_NAME" \
+            --read-only \
+            --user "$CLIENT_UID:$CLIENT_GID" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
+            --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
+            --mount "type=bind,src=$DUMP_FILE,dst=/restore/backup.dump,readonly" \
+            "$PG_IMAGE" pg_restore \
+              --no-owner --no-acl --no-publications --no-subscriptions \
+              --single-transaction --username "$RESTORE_DB_USER" \
+              --host lumio-db --dbname lumio_restore_check \
               /restore/backup.dump \
               >/dev/null 2>"$RAM_DIR/restore-error.log"; then
             if grep -Eqi \
@@ -331,8 +537,10 @@ jobs:
             exit 1
           fi
 
-          METRICS="$(docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
-            psql -X -qAt -F '|' -v ON_ERROR_STOP=1 -U postgres \
+          rm -f -- "$DUMP_FILE"
+
+          METRICS="$(docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+            psql -X -qAt -F '|' -v ON_ERROR_STOP=1 -U "$RESTORE_DB_USER" \
               -d lumio_restore_check -c "
                 SELECT
                   (SELECT count(*) FROM pg_namespace
@@ -358,9 +566,9 @@ jobs:
             INVALID_INDEX_COUNT UNVALIDATED_CONSTRAINT_COUNT \
             EXTENSION_COUNT DATABASE_BYTES <<< "$METRICS"
 
-          ROW_METRICS="$(docker exec -i --user "$PG_UID:$PG_GID" \
+          ROW_METRICS="$(docker exec -i --user "$SERVER_UID:$SERVER_GID" \
             "$CONTAINER_NAME" psql -X -qAt -F '|' -v ON_ERROR_STOP=1 \
-            -U postgres -d lumio_restore_check <<'SQL'
+            -U "$RESTORE_DB_USER" -d lumio_restore_check <<'SQL'
           CREATE TEMP TABLE verification_stats(metric text PRIMARY KEY, value numeric);
           DO $verify$
           DECLARE
@@ -395,8 +603,8 @@ jobs:
 
           IFS='|' read -r CHECKED_TABLE_COUNT TOTAL_ROW_COUNT <<< "$ROW_METRICS"
 
-          if ! docker exec --user "$PG_UID:$PG_GID" "$CONTAINER_NAME" \
-            pg_amcheck --install-missing --username=postgres \
+          if ! docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+            pg_amcheck --install-missing --username="$RESTORE_DB_USER" \
               --database=lumio_restore_check \
               >/dev/null 2>"$RAM_DIR/amcheck-error.log"; then
             echo "::error::Le contrôle physique PostgreSQL a signalé une incohérence. Les détails sont masqués."
@@ -436,9 +644,13 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          docker rm -fv "$CLIENT_CONTAINER_NAME" >/dev/null 2>&1 || true
           docker rm -fv "$CONTAINER_NAME" >/dev/null 2>&1 || true
+          docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
           rm -rf -- \
             "$GITHUB_WORKSPACE/encrypted" \
             "/dev/shm/lumio-restore-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           test -z "$(docker ps -a --filter "name=^/${CONTAINER_NAME}$" --format '{{.ID}}')"
+          test -z "$(docker ps -a --filter "name=^/${CLIENT_CONTAINER_NAME}$" --format '{{.ID}}')"
+          test -z "$(docker network ls --filter "name=^${NETWORK_NAME}$" --format '{{.ID}}')"
 
