@@ -1709,3 +1709,164 @@ a:hover > .arrow, a:hover b > .arrow, a:focus-visible > .arrow { transform: tran
 @media (prefers-reduced-motion: reduce) {
   .home * { transition: none !important; animation: none !important; }
 }
+
+/* ---------- Visite en trois temps du hero (HeroTour) ---------- */
+
+.heroVisual:has(> .tour) { min-height: 0; }
+
+.tour {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+}
+
+.tourTabs {
+  display: inline-flex;
+  gap: 4px;
+  max-width: 100%;
+  padding: 5px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-glass-bg);
+  -webkit-backdrop-filter: var(--ui-glass-filter);
+  backdrop-filter: var(--ui-glass-filter);
+  box-shadow: var(--ui-glass-shadow);
+}
+.tourTabs button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px 0 8px;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--ui-radius-pill);
+  background: transparent;
+  color: var(--ui-label-2);
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--ui-dur-base) var(--ui-ease-out), color var(--ui-dur-micro) var(--ui-ease-out);
+}
+.tourTabs button:hover { color: var(--ui-label); }
+.tourTabs button[aria-selected="true"] { background: var(--ui-bg-elevated-2); color: var(--ui-label); box-shadow: var(--ui-highlight); }
+.tourTabs button > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: var(--ui-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+.tourTabs button[aria-selected="true"] > span:first-child { background: var(--ui-tint); color: #fff; }
+.tourTabs button:focus-visible { outline: 2px solid #8574ff; outline-offset: 2px; }
+
+/* Progression de l'étape : visible seulement quand la visite avance seule */
+.tourTabs button > i {
+  position: absolute;
+  right: 14px;
+  bottom: 5px;
+  left: 40px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ui-tint-text);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.tour[data-running] .tourTabs button[aria-selected="true"] > i {
+  opacity: 0.7;
+  animation: tourProgress 5s linear both;
+}
+
+.tourStage {
+  display: grid;
+  width: min(880px, 100%);
+  transform-origin: 50% 0;
+}
+.tourPanel {
+  grid-area: 1 / 1;
+  display: grid;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(10px) scale(0.985);
+  pointer-events: none;
+  transition: opacity var(--ui-dur-enter) var(--ui-ease-out), transform var(--ui-dur-enter) var(--ui-ease-out);
+}
+.tourPanel[data-active] { opacity: 1; transform: none; pointer-events: auto; }
+
+/* Les cartes reprises des autres sections perdent leur placement et leurs animations propres */
+.tourStage .siteCard { position: relative; top: auto; left: auto; width: 100%; animation: none; }
+.tourStage .briefCard,
+.tourLeads {
+  width: min(640px, 100%);
+  margin: 0 auto;
+  border-radius: 28px;
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.18),
+    0 40px 100px -24px rgba(0, 0, 0, 0.85),
+    0 24px 70px -30px rgba(106, 90, 249, 0.45);
+  text-align: left;
+  animation: none;
+}
+.tourLeads {
+  overflow: hidden;
+  background: var(--ui-light);
+  color: var(--ui-label-on-light);
+}
+.tourLeads .briefTop { border-bottom: 1px solid var(--line-paper); }
+.tourLeads .briefTop b {
+  padding: 6px 12px;
+  border-radius: var(--ui-radius-pill);
+  background: rgba(106, 90, 249, 0.1);
+  color: var(--ui-tint-text-light);
+  font-size: 13px;
+  font-weight: 600;
+}
+.tourLeads .leadList { margin: 12px; }
+
+.tourCaption {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--ui-label-3);
+  font-size: var(--ui-text-xs);
+}
+.tourCaption i { width: 6px; height: 6px; border-radius: 50%; background: var(--ui-green); }
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Le visuel se redresse en défilant, comme avant */
+    .tourStage {
+      animation: tilt linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 45%;
+    }
+  }
+}
+
+@keyframes tourProgress {
+  to { transform: scaleX(1); }
+}
+
+/* Petits écrans : seuls le numéro et l'étape en cours restent écrits */
+@media (max-width: 560px) {
+  .tourTabs button { padding: 0 6px; }
+  .tourTabs button[aria-selected="true"] { padding-right: 14px; }
+  .tourTabs button:not([aria-selected="true"]) .tourLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .tourTabs button > i { left: 36px; }
+  .tourStage .briefCard, .tourLeads { border-radius: 22px; }
+}

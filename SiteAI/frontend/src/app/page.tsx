@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import SiteFooter from "@/components/marketing/SiteFooter";
+import HeroTour from "@/components/marketing/HeroTour";
 import SiteHeader from "@/components/marketing/SiteHeader";
 import Icon from "@/components/ui/Icon";
 import { demoSites } from "@/lib/demoSites";
@@ -81,13 +82,13 @@ export default function HomePage() {
                 </span>
                 <b>Créer mon aperçu <Arrow /></b>
               </Link>
-              {/* Les exemples défilent en continu : WCAG 2.2.2 demande un moyen de les arrêter (sans JavaScript, via :has). */}
+              {/* Les exemples et la visite défilent seuls : WCAG 2.2.2 demande un moyen de les arrêter (exemples : CSS :has ; visite : HeroTour lit la case). */}
               <label className={styles.motionToggle}>
-                <input type="checkbox" />
+                <input type="checkbox" id="hero-motion-pause" />
                 <Icon name="pause" size={13} className={styles.motionPause} />
                 <Icon name="play" size={13} className={styles.motionPlay} />
-                <span className={styles.motionPause}>Arrêter le défilement des exemples</span>
-                <span className={styles.motionPlay}>Relancer le défilement des exemples</span>
+                <span className={styles.motionPause}>Mettre en pause les animations</span>
+                <span className={styles.motionPlay}>Relancer les animations</span>
               </label>
               <ul className={styles.heroNotes}>
                 {["Sans carte bancaire", "Sans coder", "Tu publies quand tu veux"].map((note) => (
@@ -98,27 +99,7 @@ export default function HomePage() {
 
             <div className={styles.heroVisual}>
               <div className={styles.glow} />
-              <div className={`${styles.siteCard} ${styles.siteCardBack}`}>
-                <div className={styles.siteCardBar}><span>Studio Nacre</span><i /></div>
-                <div className={styles.backArt}><b>Des gestes précis.<br />Un style à toi.</b></div>
-              </div>
-              <figure className={styles.siteCard}>
-                <div className={styles.siteCardBar}>
-                  <span>Atelier du Robinet</span>
-                  <div><i /><i /><i /></div>
-                </div>
-                <div className={styles.sitePreview}>
-                  <p>ARTISAN PLOMBIER · MONTPELLIER</p>
-                  <h2>Votre maison.<br /><em>Notre attention</em><br />au détail.</h2>
-                  <span>Dépannage, installation et rénovation.</span>
-                  <b>Parler de mon projet <Arrow /></b>
-                </div>
-                <figcaption><i /> Aperçu généré par Lumio · Exemple fictif</figcaption>
-              </figure>
-              <div className={styles.aiBadge}>
-                <span><Icon name="sparkle" size={16} /></span>
-                <div><small>Assistant Lumio</small><strong>Première version prête</strong></div>
-              </div>
+              <HeroTour leads={leads} pauseInputId="hero-motion-pause" />
             </div>
           </div>
         </section>
