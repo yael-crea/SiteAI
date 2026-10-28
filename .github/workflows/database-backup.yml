@@ -286,11 +286,14 @@ jobs:
             '{{range $port, $bindings := .NetworkSettings.Ports}}{{println $port}}{{end}}' \
             "$CONTAINER_NAME")"
 
-          STAGE="attente pg_isready (60 s)"
+          # L’entrypoint Supabase ouvre d’abord un serveur Unix temporaire pendant
+          # ses migrations. Le contrôle TCP attend le serveur final, sans faux positif.
+          STAGE="attente du serveur PostgreSQL final sur TCP 127.0.0.1 (180 s)"
           READY=false
-          for attempt in $(seq 1 60); do
+          for attempt in $(seq 1 180); do
             if docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
-              pg_isready -U "$RESTORE_DB_USER" -d lumio_smoke >/dev/null 2>&1; then
+              pg_isready -h 127.0.0.1 -U "$RESTORE_DB_USER" \
+                -d lumio_smoke >/dev/null 2>&1; then
               READY=true
               break
             fi
@@ -298,14 +301,45 @@ jobs:
           done
           test "$READY" = true
 
-          STAGE="vérification PGDATA tmpfs"
+          STAGE="confirmation de la fin de l’initialisation Supabase"
+          INIT_MARKER_COUNT="$(docker logs "$CONTAINER_NAME" 2>&1 | \
+            grep -Fc 'PostgreSQL init process complete; ready for start up.' || true)"
+          test "$INIT_MARKER_COUNT" -ge 1
+
+          STAGE="requête TCP sur le serveur PostgreSQL final"
           docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
-            sh -eu -c 'test "$PGDATA" = /var/lib/postgresql/data; test "$(cat "$PGDATA/PG_VERSION")" = 17; test "$(stat -f -c %T "$PGDATA")" = tmpfs; test "$(stat -c %a "$PGDATA")" = 700'
+            psql -X -qAt -h 127.0.0.1 -U "$RESTORE_DB_USER" \
+              -d lumio_smoke -c 'SELECT 1' >/dev/null
+
+          STAGE="chemin PGDATA"
+          ACTUAL_PGDATA="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" sh -c 'printf %s "$PGDATA"')"
+          echo "PGDATA_PATH=$ACTUAL_PGDATA"
+          test "$ACTUAL_PGDATA" = /var/lib/postgresql/data
+
+          STAGE="version PostgreSQL"
+          ACTUAL_PG_VERSION="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" cat /var/lib/postgresql/data/PG_VERSION)"
+          echo "POSTGRESQL_MAJOR_VERSION=$ACTUAL_PG_VERSION"
+          test "$ACTUAL_PG_VERSION" = 17
+
+          STAGE="stockage PGDATA sur tmpfs"
+          ACTUAL_PGDATA_FS="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" stat -f -c %T /var/lib/postgresql/data)"
+          echo "PGDATA_FILESYSTEM=$ACTUAL_PGDATA_FS"
+          test "$ACTUAL_PGDATA_FS" = tmpfs
+
+          STAGE="permissions PGDATA"
+          ACTUAL_PGDATA_MODE="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" stat -c %a /var/lib/postgresql/data)"
+          echo "PGDATA_MODE=$ACTUAL_PGDATA_MODE"
+          test "$ACTUAL_PGDATA_MODE" = 700
 
           STAGE="extensions (supabase_vault 0.3.1…)"
           COMPATIBLE_EXTENSION_COUNT="$(docker exec \
             --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
-            psql -X -qAt -U "$RESTORE_DB_USER" -d lumio_smoke -c "
+            psql -X -qAt -h 127.0.0.1 -U "$RESTORE_DB_USER" \
+              -d lumio_smoke -c "
               WITH required(name, version) AS (VALUES
                 ('pg_stat_statements', '1.11'),
                 ('pgcrypto', '1.3'),
@@ -322,13 +356,15 @@ jobs:
 
           STAGE="écriture/lecture fictive"
           docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
-            psql -X -q -v ON_ERROR_STOP=1 -U "$RESTORE_DB_USER" \
+            psql -X -q -v ON_ERROR_STOP=1 -h 127.0.0.1 \
+              -U "$RESTORE_DB_USER" \
               -d lumio_smoke -c \
               "CREATE TABLE restore_smoke_test(id integer PRIMARY KEY, value text NOT NULL); INSERT INTO restore_smoke_test VALUES (1, 'fictif');" \
               >/dev/null
 
           TEST_ROWS="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
-            "$CONTAINER_NAME" psql -X -qAt -U "$RESTORE_DB_USER" \
+            "$CONTAINER_NAME" psql -X -qAt -h 127.0.0.1 \
+              -U "$RESTORE_DB_USER" \
               -d lumio_smoke -c 'SELECT count(*) FROM restore_smoke_test')"
           test "$TEST_ROWS" = "1"
 
@@ -451,9 +487,10 @@ jobs:
             "$CONTAINER_NAME")"
 
           READY=false
-          for attempt in $(seq 1 60); do
+          for attempt in $(seq 1 180); do
             if docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
-              pg_isready -U "$RESTORE_DB_USER" -d postgres >/dev/null 2>&1; then
+              pg_isready -h 127.0.0.1 -U "$RESTORE_DB_USER" \
+                -d postgres >/dev/null 2>&1; then
               READY=true
               break
             fi
@@ -461,11 +498,33 @@ jobs:
           done
           test "$READY" = true
 
-          docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
-            sh -eu -c 'test "$PGDATA" = /var/lib/postgresql/data; test -s "$PGDATA/PG_VERSION"; test "$(cat "$PGDATA/PG_VERSION")" = 17; test "$(stat -f -c %T "$PGDATA")" = tmpfs; test "$(stat -c %a "$PGDATA")" = 700'
+          INIT_MARKER_COUNT="$(docker logs "$CONTAINER_NAME" 2>&1 | \
+            grep -Fc 'PostgreSQL init process complete; ready for start up.' || true)"
+          test "$INIT_MARKER_COUNT" -ge 1
 
           docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
-            createdb -U "$RESTORE_DB_USER" --template=template0 lumio_restore_check
+            psql -X -qAt -h 127.0.0.1 -U "$RESTORE_DB_USER" \
+              -d postgres -c 'SELECT 1' >/dev/null
+
+          ACTUAL_PGDATA="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" sh -c 'printf %s "$PGDATA"')"
+          test "$ACTUAL_PGDATA" = /var/lib/postgresql/data
+
+          ACTUAL_PG_VERSION="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" cat /var/lib/postgresql/data/PG_VERSION)"
+          test "$ACTUAL_PG_VERSION" = 17
+
+          ACTUAL_PGDATA_FS="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" stat -f -c %T /var/lib/postgresql/data)"
+          test "$ACTUAL_PGDATA_FS" = tmpfs
+
+          ACTUAL_PGDATA_MODE="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" stat -c %a /var/lib/postgresql/data)"
+          test "$ACTUAL_PGDATA_MODE" = 700
+
+          docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+            createdb -h 127.0.0.1 -U "$RESTORE_DB_USER" \
+              --template=template0 lumio_restore_check
 
           DUMP_FILE="$RAM_DIR/backup.dump"
           if ! openssl enc -d -aes-256-cbc -salt -pbkdf2 \
