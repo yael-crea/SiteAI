@@ -8,7 +8,15 @@ import {
   readExampleTemplate,
   rememberExampleTemplate,
 } from "@/lib/exampleTemplates";
+import { hasPendingCreation } from "@/lib/pendingCreation";
 import styles from "./auth.module.css";
+
+// Après connexion : reprendre une création commencée sans compte, sinon l'éditeur (modèle choisi) ou le tableau de bord.
+function afterSignInPath() {
+  if (hasPendingCreation()) return "/creer";
+  const template = readExampleTemplate();
+  return template ? "/builder" : "/dashboard";
+}
 
 type AuthMode = "login" | "signup" | "forgot";
 
@@ -46,6 +54,7 @@ export default function AuthPage() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [pendingNotice, setPendingNotice] = useState(false);
 
   useEffect(() => {
     const templateID = new URLSearchParams(window.location.search).get("modele");
@@ -62,9 +71,13 @@ export default function AuthPage() {
         if (!active) return;
 
         if (data.session) {
-          router.replace(readExampleTemplate() ? "/builder" : "/dashboard");
+          router.replace(afterSignInPath());
           return;
         }
+
+        // Création commencée sans compte : on le rappelle, et on propose directement l'inscription.
+        if (hasPendingCreation()) setPendingNotice(true);
+        if (new URLSearchParams(window.location.search).get("compte") === "nouveau") setMode("signup");
       } catch (sessionError) {
         console.error(sessionError);
       } finally {
@@ -197,7 +210,7 @@ export default function AuthPage() {
 
         if (loginError) throw loginError;
 
-        router.replace(readExampleTemplate() ? "/builder" : "/dashboard");
+        router.replace(afterSignInPath());
         router.refresh();
         return;
       }
@@ -507,6 +520,12 @@ export default function AuthPage() {
               {message && (
                 <div className={styles.success} role="status">
                   {message}
+                </div>
+              )}
+
+              {pendingNotice && !message && (
+                <div className={styles.success} role="status">
+                  Tes réponses sont gardées. Crée ton compte ou connecte-toi pour générer ton site.
                 </div>
               )}
 

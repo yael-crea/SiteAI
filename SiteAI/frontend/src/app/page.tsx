@@ -75,7 +75,7 @@ export default function HomePage() {
                 Décris ce que tu fais. Lumio crée une première version de ton site,
                 puis te laisse tout modifier avant de publier.
               </p>
-              <Link href="/auth" className={styles.promptCta}>
+              <Link href="/creer" className={styles.promptCta}>
                 <span>
                   <small>Commence ici</small>
                   <strong className={styles.promptRotator}>
@@ -325,7 +325,7 @@ export default function HomePage() {
           <span className={styles.orbit} aria-hidden="true"><Icon name="sparkle" size={24} /></span>
           <p>Ton site peut commencer ici</p>
           <h2>Donne à ton activité<br />la vitrine qu’elle mérite.</h2>
-          <Link href="/auth">Créer mon aperçu gratuit <Arrow /></Link>
+          <Link href="/creer">Créer mon aperçu gratuit <Arrow /></Link>
           <small>Sans carte bancaire · Sans coder · Sans engagement</small>
         </section>
       </main>

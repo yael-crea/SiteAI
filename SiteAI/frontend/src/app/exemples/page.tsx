@@ -347,7 +347,7 @@ export default function ExamplesPage() {
           <span className={home.orbit} aria-hidden="true"><Icon name="sparkle" size={24} /></span>
           <p>À ton tour</p>
           <h2>Maintenant, imagine<br />ton activité ici.</h2>
-          <Link href="/auth">Créer mon aperçu gratuit <Arrow /></Link>
+          <Link href="/creer">Créer mon aperçu gratuit <Arrow /></Link>
           <small>Sans carte bancaire · Tu publies uniquement quand tu es prêt</small>
         </section>
       </main>
