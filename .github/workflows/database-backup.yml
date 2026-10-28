@@ -208,14 +208,31 @@ jobs:
           set -Eeuo pipefail
           umask 077
 
+          # Mode smoke-only : base 100 % fictive, aucun secret ni artefact réel.
+          # En cas d'échec, les journaux du conteneur sont donc publiables sans risque.
+          STAGE="init"
           cleanup() {
+            STATUS=$?
+            if [ "$STATUS" -ne 0 ]; then
+              echo "::error::Échec du test fictif Supabase à l'étape : $STAGE"
+              if docker inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
+                echo "CONTAINER_STATE=$(docker inspect --format '{{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}}' "$CONTAINER_NAME")"
+                echo "::group::Journaux du conteneur fictif (80 dernières lignes)"
+                docker logs --tail 80 "$CONTAINER_NAME" 2>&1 || true
+                echo "::endgroup::"
+              fi
+            fi
             docker rm -fv "$CONTAINER_NAME" >/dev/null 2>&1 || true
             docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
+            exit "$STATUS"
           }
-          trap cleanup EXIT INT TERM
+          trap cleanup EXIT
+          trap 'exit 130' INT TERM
 
+          STAGE="pull image"
           docker pull "$RESTORE_SERVER_IMAGE" >/dev/null
 
+          STAGE="uid/gid postgres"
           SERVER_UID="$(docker run --rm --network none \
             --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=8m \
             --entrypoint id "$RESTORE_SERVER_IMAGE" -u postgres)"
@@ -223,10 +240,12 @@ jobs:
             --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=8m \
             --entrypoint id "$RESTORE_SERVER_IMAGE" -g postgres)"
 
+          STAGE="réseau interne"
           docker network create --internal "$NETWORK_NAME" >/dev/null
           test "$(docker network inspect --format '{{.Internal}}' \
             "$NETWORK_NAME")" = "true"
 
+          STAGE="démarrage conteneur"
           docker run --detach \
             --name "$CONTAINER_NAME" \
             --network "$NETWORK_NAME" \
@@ -243,6 +262,7 @@ jobs:
             -e POSTGRES_HOST_AUTH_METHOD=trust \
             "$RESTORE_SERVER_IMAGE" >/dev/null
 
+          STAGE="contrôles isolation"
           test -n "$(docker inspect --format \
             '{{index .HostConfig.Tmpfs "/var/lib/postgresql/data"}}' \
             "$CONTAINER_NAME")"
@@ -255,6 +275,7 @@ jobs:
             '{{range $port, $bindings := .NetworkSettings.Ports}}{{println $port}}{{end}}' \
             "$CONTAINER_NAME")"
 
+          STAGE="attente pg_isready (60 s)"
           READY=false
           for attempt in $(seq 1 60); do
             if docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
@@ -266,9 +287,11 @@ jobs:
           done
           test "$READY" = true
 
+          STAGE="vérification PGDATA tmpfs"
           docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
             sh -eu -c 'test "$PGDATA" = /var/lib/postgresql/data; test "$(cat "$PGDATA/PG_VERSION")" = 17; test "$(stat -f -c %T "$PGDATA")" = tmpfs; test "$(stat -c %a "$PGDATA")" = 700'
 
+          STAGE="extensions (supabase_vault 0.3.1…)"
           COMPATIBLE_EXTENSION_COUNT="$(docker exec \
             --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
             psql -X -qAt -U "$RESTORE_DB_USER" -d lumio_smoke -c "
@@ -283,7 +306,10 @@ jobs:
               JOIN pg_available_extension_versions a
                 ON a.name = r.name AND a.version = r.version;
             ")"
+          echo "COMPATIBLE_EXTENSION_COUNT=$COMPATIBLE_EXTENSION_COUNT"
           test "$COMPATIBLE_EXTENSION_COUNT" = "4"
+
+          STAGE="écriture/lecture fictive"
 
           docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
             psql -X -q -v ON_ERROR_STOP=1 -U "$RESTORE_DB_USER" \
