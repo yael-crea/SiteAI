@@ -389,7 +389,7 @@ jobs:
           chmod 700 "$SMOKE_DUMP_DIR"
           docker run --rm \
             --name "$CLIENT_CONTAINER_NAME" \
-            --network "$NETWORK_NAME" \
+            --network "container:$CONTAINER_NAME" \
             --read-only \
             --user "$CLIENT_UID:$CLIENT_GID" \
             --cap-drop ALL \
@@ -397,7 +397,7 @@ jobs:
             --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
             --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
             "$PG_IMAGE" pg_dump --format=custom --no-owner --no-acl \
-              --host "$CONTAINER_NAME" --username "$RESTORE_DB_USER" \
+              --host 127.0.0.1 --username "$RESTORE_DB_USER" \
               --dbname lumio_smoke --table public.restore_smoke_test \
               >"$SMOKE_DUMP_FILE"
           chmod 600 "$SMOKE_DUMP_FILE"
@@ -425,7 +425,7 @@ jobs:
           STAGE="restauration du dump fictif via stdin"
           docker run --rm --interactive \
             --name "$CLIENT_CONTAINER_NAME" \
-            --network "$NETWORK_NAME" \
+            --network "container:$CONTAINER_NAME" \
             --read-only \
             --user "$CLIENT_UID:$CLIENT_GID" \
             --cap-drop ALL \
@@ -433,7 +433,7 @@ jobs:
             --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
             --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
             "$PG_IMAGE" pg_restore --no-owner --no-acl \
-              --single-transaction --host "$CONTAINER_NAME" \
+              --single-transaction --host 127.0.0.1 \
               --username "$RESTORE_DB_USER" --dbname lumio_smoke \
             <"$SMOKE_DUMP_FILE" >/dev/null
 
@@ -648,28 +648,28 @@ jobs:
 
           docker run --rm \
             --name "$CLIENT_CONTAINER_NAME" \
-            --network "$NETWORK_NAME" \
+            --network "container:$CONTAINER_NAME" \
             --read-only \
             --user "$CLIENT_UID:$CLIENT_GID" \
             --cap-drop ALL \
             --security-opt no-new-privileges \
             --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
             --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
-            "$PG_IMAGE" psql -X -qAt -h lumio-db -U "$RESTORE_DB_USER" \
+            "$PG_IMAGE" psql -X -qAt -h 127.0.0.1 -U "$RESTORE_DB_USER" \
               -d lumio_restore_check \
               -c 'SELECT name FROM pg_available_extensions ORDER BY name' \
             >"$RAM_DIR/available-extensions.txt"
 
           docker run --rm \
             --name "$CLIENT_CONTAINER_NAME" \
-            --network "$NETWORK_NAME" \
+            --network "container:$CONTAINER_NAME" \
             --read-only \
             --user "$CLIENT_UID:$CLIENT_GID" \
             --cap-drop ALL \
             --security-opt no-new-privileges \
             --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
             --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
-            "$PG_IMAGE" psql -X -qAt -h lumio-db -U "$RESTORE_DB_USER" \
+            "$PG_IMAGE" psql -X -qAt -h 127.0.0.1 -U "$RESTORE_DB_USER" \
               -d lumio_restore_check \
               -c "SELECT name || '|' || version
                   FROM pg_available_extension_versions
@@ -698,7 +698,7 @@ jobs:
 
           if ! docker run --rm --interactive \
             --name "$CLIENT_CONTAINER_NAME" \
-            --network "$NETWORK_NAME" \
+            --network "container:$CONTAINER_NAME" \
             --read-only \
             --user "$CLIENT_UID:$CLIENT_GID" \
             --cap-drop ALL \
@@ -708,7 +708,7 @@ jobs:
             "$PG_IMAGE" pg_restore \
               --no-owner --no-acl --no-publications --no-subscriptions \
               --single-transaction --username "$RESTORE_DB_USER" \
-              --host lumio-db --dbname lumio_restore_check \
+              --host 127.0.0.1 --dbname lumio_restore_check \
               <"$DUMP_FILE" \
               >/dev/null 2>"$RAM_DIR/restore-error.log"; then
             if grep -Eqi \
