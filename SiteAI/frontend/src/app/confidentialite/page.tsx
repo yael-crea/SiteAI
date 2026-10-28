@@ -1,8 +1,9 @@
 import Link from "next/link";
+import "../app-theme.css";
 
 export default function LegalPage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="lumio-app min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
           <Link href="/" className="text-2xl font-black">
