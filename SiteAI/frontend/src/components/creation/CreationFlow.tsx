@@ -8,6 +8,7 @@ import SitePreview from "@/components/SitePreview";
 import { activityExamples } from "@/lib/activityExamples";
 import { designStyles, getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { clearExampleTemplate, readExampleTemplate } from "@/lib/exampleTemplates";
+import { withTradePhotos } from "@/lib/tradePhotos";
 import type { SiteGoal } from "@/lib/siteGoal";
 import type { GeneratedSite } from "@/lib/builderTypes";
 import styles from "./CreationFlow.module.css";
@@ -264,7 +265,8 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
         serviceArea: data.serviceArea ?? city.trim(),
       };
       const choices = suggestedStyles(activity);
-      setGenerated(site);
+      // Sans photo, le site paraît vide : on part des photos du métier, remplaçables dans l'éditeur.
+      setGenerated(withTradePhotos(site, activity));
       setStyleChoices(choices);
       setSelectedStyle(choices[0]);
       setStep("style");

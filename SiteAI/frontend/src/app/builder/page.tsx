@@ -4,6 +4,7 @@ import SaveStatus from "@/components/builder/SaveStatus";
 import BuilderToolsMenu from "@/components/builder/BuilderToolsMenu";
 import FirstSiteGuide from "@/components/builder/FirstSiteGuide";
 import { sameContent } from "@/lib/builderSaveState";
+import { withTradePhotos } from "@/lib/tradePhotos";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import Icon from "@/components/ui/Icon";
 
@@ -1275,7 +1276,7 @@ export default function Home() {
 
       const data: GeneratedSite = await response.json();
 
-      const generatedSite: GeneratedSite = {
+      const generatedSite: GeneratedSite = withTradePhotos({
         ...data,
         siteGoal: newSiteGoal,
         bookingUrl: newBookingUrl,
@@ -1300,7 +1301,7 @@ export default function Home() {
         clientName: data.clientName ?? "",
         clientEmail: data.clientEmail ?? "",
         socialLinks: normalizeSocialLinks(data.socialLinks),
-      };
+      }, activity);
 
       draft.clearDraft();
       setSavedSiteID(null);
