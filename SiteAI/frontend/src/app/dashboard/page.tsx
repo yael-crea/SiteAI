@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import Icon from "@/components/ui/Icon";
+import AppSidebar from "@/components/app/AppSidebar";
+import { Badge, EmptyState, Skeleton } from "@/components/ui/Surface";
 
 type DesignStyle = "moderne" | "elegant" | "artisan";
 
@@ -1038,9 +1040,23 @@ export default function DashboardPage() {
 
   return (
     <>
-    <main className="lumio-app min-h-screen overflow-x-hidden bg-slate-950 text-white">
+    <main className="lumio-app has-sidebar min-h-screen overflow-x-hidden bg-slate-950 text-white">
       {confirmDialog}
-      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+      <AppSidebar
+        className="hidden lg:flex"
+        current="dashboard"
+        userEmail={userEmail}
+        isAdmin={isAdmin}
+        newLeadsCount={newLeadsCount}
+        leadsLoading={leadsLoading}
+        planName={planName}
+        billingStatus={billingStatus}
+        billingLoading={billingLoading}
+        onNavigate={(path) => router.push(path)}
+        onLogout={() => void handleLogout()}
+      />
+      {/* En dessous de 1024 px, l'en-tête reste la navigation ; au-delà, la barre latérale le remplace. */}
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur lg:hidden">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-3">
             <button
@@ -1171,14 +1187,14 @@ export default function DashboardPage() {
       </header>
 
       <section id="dashboard-top" className="mx-auto max-w-7xl px-4 py-7 pb-28 sm:px-6 sm:py-9 md:pb-12">
-        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.3em] text-blue-400">
-              Tableau de bord
+            <p className="text-sm text-slate-400 first-letter:uppercase">
+              {new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}
             </p>
 
-            <h1 className="mt-3 text-4xl font-black md:text-5xl">
-              Ton espace, <em>en un coup d&apos;œil.</em>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight md:text-5xl">
+              Bonjour, <em>voici ton activité.</em>
             </h1>
 
             <p className="mt-3 max-w-2xl text-slate-400">
@@ -1189,119 +1205,125 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={createSite}
-            className="rounded-xl bg-blue-600 px-6 py-3 font-bold shadow-lg shadow-blue-950/40 transition hover:-translate-y-0.5 hover:bg-blue-500"
+            className="rounded-xl bg-blue-600 px-6 py-3 font-bold transition hover:bg-blue-500"
           >
-            + Créer un nouveau site
+            <Icon name="plus" size={16} className="mr-1.5 inline-block align-[-0.2em]" />
+            Créer un nouveau site
           </button>
         </div>
 
-        <div className="mt-7 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
-          <button
-            type="button"
-            onClick={() => setFilter("all")}
-            className={`rounded-2xl border p-3 text-left transition sm:p-4 ${
-              filter === "all"
-                ? "border-blue-500 bg-blue-500/10"
-                : "border-slate-800 bg-slate-900 hover:border-slate-700"
-            }`}
-          >
-            <p className="text-sm text-slate-400">Tous les sites</p>
-            <p className="mt-1 text-2xl font-black sm:text-3xl">{sites.length}</p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilter("published")}
-            className={`rounded-2xl border p-3 text-left transition sm:p-4 ${
-              filter === "published"
-                ? "border-emerald-500 bg-emerald-500/10"
-                : "border-slate-800 bg-slate-900 hover:border-slate-700"
-            }`}
-          >
-            <p className="text-sm text-slate-400">Publiés</p>
-            <p className="mt-1 text-2xl font-black text-emerald-400 sm:text-3xl">
-              {publishedSites}
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFilter("draft")}
-            className={`rounded-2xl border p-3 text-left transition sm:p-4 ${
-              filter === "draft"
-                ? "border-amber-500 bg-amber-500/10"
-                : "border-slate-800 bg-slate-900 hover:border-slate-700"
-            }`}
-          >
-            <p className="text-sm text-slate-400">Brouillons</p>
-            <p className="mt-1 text-2xl font-black text-amber-400 sm:text-3xl">
-              {draftSites}
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => router.push("/prospects")}
-            className="rounded-2xl border border-slate-800 bg-slate-900 p-3 text-left transition hover:border-emerald-500 sm:p-4"
-          >
-            <p className="text-sm text-slate-400">Prospects</p>
-
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <button type="button" onClick={() => router.push("/prospects")} className="lumio-kpi block">
+            <span className="flex items-center justify-between gap-2 text-sm text-slate-400">
+              Prospects à traiter
+              {!leadsLoading && newLeadsCount > 0 && <Badge tone="accent" dot>Nouveau</Badge>}
+            </span>
             {leadsLoading ? (
-              <p className="mt-3 text-sm text-slate-500">Chargement...</p>
+              <span className="mt-3 grid gap-2" aria-label="Chargement des prospects">
+                <Skeleton width={64} height={28} />
+                <Skeleton width="70%" height={10} />
+              </span>
             ) : (
               <>
-                <p className="mt-1 text-2xl font-black text-emerald-400 sm:text-3xl">
-                  {newLeadsCount}
-                </p>
-                <p className="mt-2 hidden text-xs text-slate-400 sm:block">
+                <span className="lumio-kpi-value block">{newLeadsCount}</span>
+                <span className="mt-2 block text-xs text-slate-500">
                   {leads.length} demande{leads.length > 1 ? "s" : ""} au total
-                </p>
+                </span>
               </>
             )}
           </button>
 
-          <button
-            type="button"
-            onClick={() => router.push("/pricing")}
-            className="col-span-2 rounded-2xl border border-slate-800 bg-slate-900 p-3 text-left transition hover:border-violet-500 sm:col-span-1 sm:p-4"
-          >
-            <p className="text-sm text-slate-400">Abonnement</p>
-
-            {billingLoading ? (
-              <p className="mt-3 text-sm text-slate-500">Chargement...</p>
+          <button type="button" onClick={() => router.push("/prospects")} className="lumio-kpi block">
+            <span className="block text-sm text-slate-400">Pipeline ouvert</span>
+            {leadsLoading ? (
+              <span className="mt-3 grid gap-2" aria-label="Chargement du pipeline">
+                <Skeleton width={110} height={28} />
+                <Skeleton width="70%" height={10} />
+              </span>
             ) : (
               <>
-                <p className="mt-1 text-2xl font-black text-violet-300">{planName}</p>
-                <p
-                  className={`mt-2 text-sm font-semibold ${
-                    subscriptionActive
-                      ? "text-emerald-400"
-                      : "text-slate-500"
-                  }`}
-                >
-                  {billingStatus}
-                </p>
-                {billing?.currentPeriodEnd && (
-                  <p className="mt-1 text-xs text-slate-400">
-                    {billing.cancelAtPeriodEnd ? "Fin le " : "Renouvellement le "}
-                    {formatBillingDate(billing.currentPeriodEnd)}
-                  </p>
-                )}
+                <span className="lumio-kpi-value block">{formatCurrency(commercialStats.openPipelineValue)}</span>
+                <span className="mt-2 block text-xs text-slate-500">
+                  {commercialStats.quoteSent30d} devis envoyé{commercialStats.quoteSent30d > 1 ? "s" : ""} · 30 jours
+                </span>
               </>
             )}
           </button>
+
+          <div className="lumio-kpi col-span-2 sm:col-span-1">
+            <span className="block text-sm text-slate-400">Conversion commerciale</span>
+            {leadsLoading ? (
+              <span className="mt-3 grid gap-2" aria-label="Chargement de la conversion">
+                <Skeleton width={80} height={28} />
+                <Skeleton width="70%" height={10} />
+              </span>
+            ) : (
+              <>
+                <span className="lumio-kpi-value block">{commercialStats.commercialConversion.toFixed(1)} %</span>
+                <span className="mt-2 block text-xs text-slate-500">
+                  {commercialStats.won30d} gagné{commercialStats.won30d > 1 ? "s" : ""} sur {commercialStats.total30d} · 30 jours
+                </span>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Sur petit écran, la formule reste visible ici (la barre latérale n'apparaît qu'à partir de 1024 px). */}
+        <button
+          type="button"
+          onClick={() => router.push("/pricing")}
+          className="lumio-kpi mt-3 flex w-full items-center justify-between gap-4 lg:hidden"
+        >
+          <span>
+            <span className="block text-sm text-slate-400">Abonnement</span>
+            {billingLoading ? (
+              <span className="mt-2 block"><Skeleton width={90} height={16} /></span>
+            ) : (
+              <span className="mt-1 block text-lg font-semibold text-white">{planName}</span>
+            )}
+          </span>
+          {!billingLoading && (
+            <span className="text-right">
+              <span className={`block text-sm font-semibold ${subscriptionActive ? "text-emerald-400" : "text-slate-500"}`}>
+                {billingStatus}
+              </span>
+              {billing?.currentPeriodEnd && (
+                <span className="mt-1 block text-xs text-slate-400">
+                  {billing.cancelAtPeriodEnd ? "Fin le " : "Renouvellement le "}
+                  {formatBillingDate(billing.currentPeriodEnd)}
+                </span>
+              )}
+            </span>
+          )}
+        </button>
 
         <section className="mt-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-blue-400">
-                Sites
-              </p>
-              <h2 className="mt-2 text-2xl font-black">Mes sites</h2>
+              <h2 className="text-2xl font-semibold tracking-tight">Mes sites</h2>
               <p className="mt-1 text-sm text-slate-400">
                 Accède directement aux sites que tu gères le plus récemment.
               </p>
+            </div>
+
+            <div className="lumio-segmented flex gap-1 self-start rounded-full bg-slate-900 p-1 sm:self-auto" role="group" aria-label="Filtrer les sites">
+              {([
+                ["all", "Tous", sites.length],
+                ["published", "Publiés", publishedSites],
+                ["draft", "Brouillons", draftSites],
+              ] as const).map(([value, label, count]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setFilter(value)}
+                  aria-pressed={filter === value}
+                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                    filter === value ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {label} <span className="ml-1 text-slate-500">{count}</span>
+                </button>
+              ))}
             </div>
 
             <button
@@ -1314,33 +1336,50 @@ export default function DashboardPage() {
           </div>
 
           {sitesLoading ? (
-            <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center text-slate-500">
-              Chargement des sites...
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Chargement des sites">
+              {[0, 1, 2].map((index) => (
+                <div key={index} className="lumio-kpi grid gap-3">
+                  <Skeleton width="60%" height={16} />
+                  <Skeleton width="40%" height={10} />
+                  <Skeleton height={40} />
+                </div>
+              ))}
             </div>
           ) : sites.length === 0 ? (
-            <div className="mt-5 rounded-2xl border border-dashed border-slate-700 bg-slate-900/60 p-7 text-center">
-              <p className="font-black">Aucun site pour le moment</p>
-              <p className="mt-2 text-sm text-slate-400">
-                Crée ton premier site avec Lumio.
-              </p>
-              <button
-                type="button"
-                onClick={createSite}
-                className="mt-4 rounded-xl bg-blue-600 px-5 py-3 text-sm font-black hover:bg-blue-500"
-              >
-                + Créer un site
-              </button>
-            </div>
+            <EmptyState
+              className="mt-5"
+              icon="globe"
+              title="Crée ton premier site"
+              description="Décris ton activité : Lumio prépare une première version que tu pourras modifier avant de publier."
+              action={
+                <button
+                  type="button"
+                  onClick={createSite}
+                  className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold hover:bg-blue-500"
+                >
+                  <Icon name="plus" size={15} className="mr-1 inline-block align-[-0.15em]" />
+                  Créer un site
+                </button>
+              }
+            />
           ) : (
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {sites.slice(0, 3).map((savedSite) => (
+              {sites
+                .filter((savedSite) =>
+                  filter === "all" ? true : filter === "published" ? savedSite.published : !savedSite.published,
+                )
+                .slice(0, 3)
+                .map((savedSite) => (
                 <article
                   key={`dashboard-site-${savedSite.id}`}
-                  className="rounded-2xl border border-slate-800 bg-slate-900 p-5 transition hover:border-slate-700"
+                  className="lumio-kpi"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-lg font-black">
+                    <span className="lumio-site-mark" aria-hidden="true">
+                      {savedSite.businessName.trim().charAt(0).toUpperCase() || "L"}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-lg font-semibold">
                         {savedSite.businessName}
                       </p>
                       <p className="mt-1 truncate text-sm text-slate-500">
@@ -1348,15 +1387,9 @@ export default function DashboardPage() {
                       </p>
                     </div>
 
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${
-                        savedSite.published
-                          ? "bg-emerald-500/10 text-emerald-400"
-                          : "bg-amber-500/10 text-amber-400"
-                      }`}
-                    >
-                      {savedSite.published ? "Publié" : "Brouillon"}
-                    </span>
+                    <Badge tone={savedSite.published ? "success" : "warning"} dot className="shrink-0">
+                      {savedSite.published ? "En ligne" : "Brouillon"}
+                    </Badge>
                   </div>
 
                   <div className="mt-5 flex gap-2">
@@ -1395,11 +1428,7 @@ export default function DashboardPage() {
         <section className="mt-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.25em] text-emerald-400">
-                Commercial
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black">
+              <h2 className="text-2xl font-semibold tracking-tight">
                 Pipeline commercial
               </h2>
 
@@ -1417,7 +1446,48 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-5">
+          <div className="lumio-kpi mt-4">
+            {commercialStats.total30d === 0 ? (
+              <p className="text-sm text-slate-400">
+                Aucun prospect sur les 30 derniers jours. Les demandes envoyées depuis tes sites apparaîtront ici.
+              </p>
+            ) : (
+              <>
+                <div className="lumio-pipeline-bar" role="img" aria-label={`Pipeline sur 30 jours : ${commercialStats.new30d} nouveaux, ${commercialStats.contacted30d} contactés, ${commercialStats.quoteSent30d} devis envoyés, ${commercialStats.won30d} gagnés, ${commercialStats.lost30d} perdus`}>
+                  {[
+                    [commercialStats.new30d, "#6a5af9"],
+                    [commercialStats.contacted30d, "#8f7dff"],
+                    [commercialStats.quoteSent30d, "#b4a9ff"],
+                    [commercialStats.won30d, "var(--ui-green)"],
+                    [commercialStats.lost30d, "#3a3a46"],
+                  ].map(([count, color], index) =>
+                    Number(count) > 0 ? <i key={index} style={{ flexGrow: Number(count), background: String(color) }} /> : null,
+                  )}
+                </div>
+                <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-slate-400">
+                  {[
+                    ["Nouveaux", commercialStats.new30d, "#6a5af9"],
+                    ["Contactés", commercialStats.contacted30d, "#8f7dff"],
+                    ["Devis envoyés", commercialStats.quoteSent30d, "#b4a9ff"],
+                    ["Gagnés", commercialStats.won30d, "var(--ui-green)"],
+                    ["Perdus", commercialStats.lost30d, "#3a3a46"],
+                  ].map(([label, count, color]) => (
+                    <li key={String(label)} className="flex items-center gap-2">
+                      <i className="h-2 w-2 rounded-full" style={{ background: String(color) }} aria-hidden="true" />
+                      {label} <span className="font-semibold text-white">{count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+
+          <details className="lumio-details mt-3">
+            <summary className="inline-flex items-center gap-2 rounded-full px-1 py-1 text-sm font-medium text-slate-400 hover:text-white">
+              <Icon name="plus" size={14} />
+              Détail des chiffres sur 30 jours
+            </summary>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-5">
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
               <p className="text-sm text-slate-400">
                 Prospects créés
@@ -1544,6 +1614,8 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
+
+          </details>
 
           <div className="mt-5 space-y-4 md:hidden">
             <div className="rounded-3xl border border-slate-800 bg-slate-900 p-5">
@@ -2092,7 +2164,7 @@ export default function DashboardPage() {
             className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-blue-400"
             aria-label="Accueil du dashboard"
           >
-            <span className="text-lg">⌂</span>
+            <Icon name="home" size={20} />
             <span>Accueil</span>
           </button>
 
@@ -2102,7 +2174,7 @@ export default function DashboardPage() {
             className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-slate-300"
             aria-label="Mes sites"
           >
-            <span className="text-lg">▣</span>
+            <Icon name="globe" size={20} />
             <span>Sites</span>
           </button>
 
@@ -2112,7 +2184,7 @@ export default function DashboardPage() {
             className="mx-auto flex h-14 w-14 -translate-y-2 items-center justify-center rounded-2xl bg-blue-600 text-3xl font-light text-white shadow-lg shadow-blue-950/60 transition hover:bg-blue-500"
             aria-label="Créer un nouveau site"
           >
-            +
+            <Icon name="plus" size={24} />
           </button>
 
           <button
@@ -2121,7 +2193,7 @@ export default function DashboardPage() {
             className="relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-slate-300"
             aria-label="Prospects"
           >
-            <span className="text-lg">✉</span>
+            <Icon name="inbox" size={20} />
             <span>Prospects</span>
             {!leadsLoading && newLeadsCount > 0 && (
               <span className="absolute right-2 top-0 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-black text-slate-950">
@@ -2136,7 +2208,7 @@ export default function DashboardPage() {
             className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold text-slate-300"
             aria-label="Abonnement"
           >
-            <span className="text-lg">◈</span>
+            <Icon name="card" size={20} />
             <span>Abonnement</span>
           </button>
         </div>
