@@ -46,6 +46,9 @@ const leads = [
   { name: "Inès M.", request: "Installation chauffe-eau", status: "Gagné", tone: "won" },
 ];
 
+// Six métiers variés sur l'accueil ; la page /exemples les présente tous.
+const homeExampleIds = ["plombier", "boulangerie", "coach", "restaurant", "electricien", "avocat"];
+
 const faqs = [
   ["Puis-je essayer avant de payer ?", freePreviewText],
   ["Est-ce que je dois savoir coder ?", "Non. Lumio est conçu pour être utilisé sans écrire une seule ligne de code."],
@@ -262,7 +265,10 @@ export default function HomePage() {
             <Link href="/exemples">Voir tous les exemples <Icon name="arrowRight" size={16} className={styles.arrow} /></Link>
           </div>
           <div className={styles.examples}>
-            {demoSites.slice(0, 3).map((site, index) => (
+            {homeExampleIds
+              .map((id) => demoSites.find((site) => site.id === id))
+              .filter((site) => site !== undefined)
+              .map((site, index) => (
               <Link key={site.id} href={`/exemples?metier=${site.id}`} className={styles.exampleCard}>
                 <div className={styles.exampleImage}>
                   <Image src={site.image} alt={site.imageAlt} fill sizes="(max-width: 760px) 100vw, 33vw" />
