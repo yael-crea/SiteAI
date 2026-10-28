@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import SitePreview from "@/components/SitePreview";
-import MobileNavigation from "@/components/MobileNavigation";
+import SiteFooter from "@/components/marketing/SiteFooter";
+import SiteHeader from "@/components/marketing/SiteHeader";
+import Icon from "@/components/ui/Icon";
 import type { DesignStyle } from "@/lib/designStyles";
 import { rememberExampleTemplate } from "@/lib/exampleTemplates";
 import home from "../home.module.css";
@@ -142,7 +144,7 @@ const examples: Example[] = [
 ];
 
 function Arrow() {
-  return <span aria-hidden="true">↗</span>;
+  return <Icon name="arrowUpRight" size={15} className={home.arrow} />;
 }
 
 export default function ExamplesPage() {
@@ -164,28 +166,7 @@ export default function ExamplesPage() {
   return (
     <div className={home.home}>
       <a href="#contenu" className={home.skip}>Aller au contenu</a>
-      <header className={home.header}>
-        <div className={home.navbar}>
-          <Link className={home.logo} href="/" aria-label="Lumio, accueil">
-            lumio<span>.</span>
-          </Link>
-          <nav className={home.desktopNav} aria-label="Navigation principale">
-            <Link href="/#comment-ca-marche">Comment ça marche</Link>
-            <Link href="/exemples" aria-current="page">Exemples</Link>
-            <Link href="/#tarifs">Tarifs</Link>
-            <Link href="/#faq">Questions</Link>
-          </nav>
-          <div className={home.navActions}>
-            <Link className={home.login} href="/auth">Se connecter</Link>
-            <Link className={home.headerButton} href="/auth">
-              <span className={home.headerCtaDesktop}>Créer mon site</span>
-              <span className={home.headerCtaMobile}>Créer</span>
-              <Arrow />
-            </Link>
-          </div>
-          <MobileNavigation />
-        </div>
-      </header>
+      <SiteHeader current="exemples" />
 
       <main id="contenu">
         <section className={`${styles.wrap} ${styles.intro}`} aria-labelledby="examples-title">
@@ -259,7 +240,7 @@ export default function ExamplesPage() {
         </section>
 
         <section className={home.finalCta}>
-          <span className={home.orbit} aria-hidden="true">✦</span>
+          <span className={home.orbit} aria-hidden="true"><Icon name="sparkle" size={24} /></span>
           <p>À ton tour</p>
           <h2>Maintenant, imagine<br />ton activité ici.</h2>
           <Link href="/auth">Créer mon aperçu gratuit <Arrow /></Link>
@@ -267,15 +248,7 @@ export default function ExamplesPage() {
         </section>
       </main>
 
-      <footer className={home.footer}>
-        <div><Link href="/" className={home.logo}>lumio<span>.</span></Link><p>Ton activité. Ton style. Ton site.</p></div>
-        <nav aria-label="Liens de bas de page">
-          <Link href="/exemples">Exemples</Link><Link href="/pricing">Tarifs</Link><Link href="/auth">Connexion</Link>
-          <Link href="/mentions-legales">Mentions légales</Link><Link href="/confidentialite">Confidentialité</Link>
-          <Link href="/cgu">CGU</Link><Link href="/cgv">CGV</Link>
-        </nav>
-        <span>© 2026 Lumio</span>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
