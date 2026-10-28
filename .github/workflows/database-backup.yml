@@ -210,6 +210,8 @@ jobs:
 
           # Mode smoke-only : base 100 % fictive, aucun secret ni artefact réel.
           # En cas d'échec, les journaux du conteneur sont donc publiables sans risque.
+          SMOKE_DUMP_DIR="/dev/shm/lumio-stdin-smoke-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          SMOKE_DUMP_FILE="$SMOKE_DUMP_DIR/fictitious.dump"
           STAGE="init"
           cleanup() {
             STATUS=$?
@@ -222,8 +224,10 @@ jobs:
                 echo "::endgroup::"
               fi
             fi
+            docker rm -fv "$CLIENT_CONTAINER_NAME" >/dev/null 2>&1 || true
             docker rm -fv "$CONTAINER_NAME" >/dev/null 2>&1 || true
             docker network rm "$NETWORK_NAME" >/dev/null 2>&1 || true
+            rm -rf -- "$SMOKE_DUMP_DIR"
             exit "$STATUS"
           }
           trap cleanup EXIT
@@ -231,6 +235,7 @@ jobs:
 
           STAGE="pull image"
           docker pull "$RESTORE_SERVER_IMAGE" >/dev/null
+          docker pull "$PG_IMAGE" >/dev/null
 
           STAGE="uid/gid postgres"
           SERVER_UID="$(docker run --rm --network none \
@@ -239,6 +244,12 @@ jobs:
           SERVER_GID="$(docker run --rm --network none \
             --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=8m \
             --entrypoint id "$RESTORE_SERVER_IMAGE" -g postgres)"
+          CLIENT_UID="$(docker run --rm --network none \
+            --tmpfs /var/lib/postgresql:rw,nosuid,nodev,noexec,size=8m \
+            "$PG_IMAGE" id -u postgres)"
+          CLIENT_GID="$(docker run --rm --network none \
+            --tmpfs /var/lib/postgresql:rw,nosuid,nodev,noexec,size=8m \
+            "$PG_IMAGE" id -g postgres)"
 
           STAGE="réseau interne"
           docker network create --internal "$NETWORK_NAME" >/dev/null
@@ -373,8 +384,68 @@ jobs:
               -d lumio_smoke -c 'SELECT count(*) FROM restore_smoke_test')"
           test "$TEST_ROWS" = "1"
 
+          STAGE="création du dump fictif en mémoire avec permissions 0600"
+          mkdir -p "$SMOKE_DUMP_DIR"
+          chmod 700 "$SMOKE_DUMP_DIR"
+          docker run --rm \
+            --name "$CLIENT_CONTAINER_NAME" \
+            --network "$NETWORK_NAME" \
+            --read-only \
+            --user "$CLIENT_UID:$CLIENT_GID" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
+            --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
+            "$PG_IMAGE" pg_dump --format=custom --no-owner --no-acl \
+              --host "$CONTAINER_NAME" --username "$RESTORE_DB_USER" \
+              --dbname lumio_smoke --table public.restore_smoke_test \
+              >"$SMOKE_DUMP_FILE"
+          chmod 600 "$SMOKE_DUMP_FILE"
+          test -s "$SMOKE_DUMP_FILE"
+          test "$(stat -c %a "$SMOKE_DUMP_FILE")" = 600
+
+          STAGE="lecture du dump fictif via stdin"
+          docker run --rm --interactive \
+            --name "$CLIENT_CONTAINER_NAME" \
+            --network none \
+            --read-only \
+            --user "$CLIENT_UID:$CLIENT_GID" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
+            --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
+            "$PG_IMAGE" pg_restore --list \
+            <"$SMOKE_DUMP_FILE" >/dev/null
+
+          docker exec --user "$SERVER_UID:$SERVER_GID" "$CONTAINER_NAME" \
+            psql -X -q -v ON_ERROR_STOP=1 -h 127.0.0.1 \
+              -U "$RESTORE_DB_USER" -d lumio_smoke \
+              -c 'DROP TABLE public.restore_smoke_test' >/dev/null
+
+          STAGE="restauration du dump fictif via stdin"
+          docker run --rm --interactive \
+            --name "$CLIENT_CONTAINER_NAME" \
+            --network "$NETWORK_NAME" \
+            --read-only \
+            --user "$CLIENT_UID:$CLIENT_GID" \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
+            --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
+            "$PG_IMAGE" pg_restore --no-owner --no-acl \
+              --single-transaction --host "$CONTAINER_NAME" \
+              --username "$RESTORE_DB_USER" --dbname lumio_smoke \
+            <"$SMOKE_DUMP_FILE" >/dev/null
+
+          RESTORED_TEST_ROWS="$(docker exec --user "$SERVER_UID:$SERVER_GID" \
+            "$CONTAINER_NAME" psql -X -qAt -h 127.0.0.1 \
+              -U "$RESTORE_DB_USER" -d lumio_smoke \
+              -c 'SELECT count(*) FROM public.restore_smoke_test')"
+          test "$RESTORED_TEST_ROWS" = 1
+
           echo "SUPABASE_IMAGE_SMOKE_STATUS=SUCCESS"
           echo "SUPABASE_EXTENSION_COMPATIBILITY=SUCCESS"
+          echo "STDIN_DUMP_TRANSFER_SMOKE_STATUS=SUCCESS"
           echo "SUPABASE_PGDATA_STORAGE=tmpfs"
           echo "SUPABASE_ANONYMOUS_VOLUME_COUNT=0"
           echo "SUPABASE_PUBLIC_PORT_COUNT=0"
@@ -549,7 +620,7 @@ jobs:
           unset BACKUP_ENCRYPTION_KEY
           test -s "$DUMP_FILE"
 
-          docker run --rm \
+          docker run --rm --interactive \
             --name "$CLIENT_CONTAINER_NAME" \
             --network none \
             --read-only \
@@ -558,9 +629,8 @@ jobs:
             --security-opt no-new-privileges \
             --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
             --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
-            --mount "type=bind,src=$DUMP_FILE,dst=/restore/backup.dump,readonly" \
-            "$PG_IMAGE" pg_restore --list /restore/backup.dump \
-            >"$RAM_DIR/toc.list"
+            "$PG_IMAGE" pg_restore --list \
+            <"$DUMP_FILE" >"$RAM_DIR/toc.list"
 
           sed -nE 's/^.* EXTENSION - ([^ ]+).*$/\1/p' \
             "$RAM_DIR/toc.list" | sort -u >"$RAM_DIR/required-extensions.txt"
@@ -626,7 +696,7 @@ jobs:
             exit 1
           fi
 
-          if ! docker run --rm \
+          if ! docker run --rm --interactive \
             --name "$CLIENT_CONTAINER_NAME" \
             --network "$NETWORK_NAME" \
             --read-only \
@@ -635,12 +705,11 @@ jobs:
             --security-opt no-new-privileges \
             --tmpfs "/var/lib/postgresql:rw,nosuid,nodev,noexec,mode=0700,uid=$CLIENT_UID,gid=$CLIENT_GID,size=8m" \
             --tmpfs "/tmp:rw,nosuid,nodev,noexec,mode=1777,size=32m" \
-            --mount "type=bind,src=$DUMP_FILE,dst=/restore/backup.dump,readonly" \
             "$PG_IMAGE" pg_restore \
               --no-owner --no-acl --no-publications --no-subscriptions \
               --single-transaction --username "$RESTORE_DB_USER" \
               --host lumio-db --dbname lumio_restore_check \
-              /restore/backup.dump \
+              <"$DUMP_FILE" \
               >/dev/null 2>"$RAM_DIR/restore-error.log"; then
             if grep -Eqi \
               'extension .* is not available|could not open extension control file' \
