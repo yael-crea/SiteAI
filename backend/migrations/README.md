@@ -31,3 +31,18 @@ snapshot from its draft. Identify its legitimate owner from an external,
 trusted record first. Once ownership is confirmed, update the site and its
 version in one transaction, validate the result, and only then consider making
 `sites.user_id` non-null.
+
+## 20261029 Stripe webhook events
+
+`20261029_stripe_webhook_events.sql` creates `stripe_webhook_events`, one row
+per Stripe event (`evt_...`) whose effects were committed. The backend inserts
+the row in the same transaction as the billing update, so a duplicate delivery
+is ignored and a failed one is retried by Stripe from scratch.
+
+Subscription webhooks never apply the payload directly: under a per-customer
+PostgreSQL advisory lock, the backend reads the subscription's current state
+from Stripe, so an old event arriving late cannot reactivate a cancellation.
+
+The table is backend-only (RLS enabled, no policy, privileges revoked from
+`anon` and `authenticated`). It is applied after the security baseline because
+the baseline only revokes privileges on tables that already exist.

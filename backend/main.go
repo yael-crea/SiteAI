@@ -463,6 +463,14 @@ type StripeSubscription struct {
 
 type StripeInvoice struct {
 	Customer string `json:"customer"`
+	// Subscription is filled by older Stripe API versions only; newer ones
+	// expose the same ID under parent.subscription_details.subscription.
+	Subscription string `json:"subscription"`
+	Parent       struct {
+		SubscriptionDetails struct {
+			Subscription string `json:"subscription"`
+		} `json:"subscription_details"`
+	} `json:"parent"`
 }
 
 type StripeEvent struct {
@@ -1260,6 +1268,10 @@ func createTables(ctx context.Context) error {
 	}
 
 	if err := applySupabaseSecurityBaseline(ctx); err != nil {
+		return err
+	}
+
+	if err := applyStripeWebhookEventsMigration(ctx); err != nil {
 		return err
 	}
 
@@ -8570,7 +8582,7 @@ func stripeWebhookHandler(
 		return
 	}
 
-	if err := processStripeEvent(r.Context(), event); err != nil {
+	if err := handleStripeEventOnce(r.Context(), event); err != nil {
 		log.Println("Erreur traitement webhook Stripe :", event.Type, err)
 		http.Error(w, "Erreur traitement webhook", http.StatusInternalServerError)
 		return
@@ -8638,137 +8650,6 @@ func verifyStripeSignature(
 	return errors.New("aucune signature v1 valide")
 }
 
-func processStripeEvent(
-	ctx context.Context,
-	event StripeEvent,
-) error {
-	switch event.Type {
-	case "checkout.session.completed":
-		var session StripeCheckoutSession
-		if err := json.Unmarshal(event.Data.Object, &session); err != nil {
-			return err
-		}
-		return syncCheckoutSession(ctx, session)
-
-	case "customer.subscription.created",
-		"customer.subscription.updated",
-		"customer.subscription.deleted":
-		var subscription StripeSubscription
-		if err := json.Unmarshal(event.Data.Object, &subscription); err != nil {
-			return err
-		}
-		return syncStripeSubscription(ctx, subscription)
-
-	case "invoice.paid",
-		"invoice.payment_failed":
-		var invoice StripeInvoice
-		if err := json.Unmarshal(event.Data.Object, &invoice); err != nil {
-			return err
-		}
-
-		if invoice.Customer == "" {
-			return nil
-		}
-
-		var subscriptionID string
-		err := db.QueryRow(
-			ctx,
-			`
-			SELECT COALESCE(stripe_subscription_id, '')
-			FROM user_billing
-			WHERE stripe_customer_id = $1;
-			`,
-			invoice.Customer,
-		).Scan(&subscriptionID)
-
-		if errors.Is(err, pgx.ErrNoRows) || subscriptionID == "" {
-			return nil
-		}
-
-		if err != nil {
-			return err
-		}
-
-		subscription, err := retrieveStripeSubscription(ctx, subscriptionID)
-		if err != nil {
-			return err
-		}
-
-		return syncStripeSubscription(ctx, subscription)
-
-	default:
-		return nil
-	}
-}
-
-func syncCheckoutSession(
-	ctx context.Context,
-	session StripeCheckoutSession,
-) error {
-	userID := strings.TrimSpace(session.Metadata["user_id"])
-	plan := strings.TrimSpace(session.Metadata["plan"])
-
-	if userID == "" {
-		userID = strings.TrimSpace(session.Metadata["userid"])
-	}
-
-	if userID == "" || session.Customer == "" {
-		return nil
-	}
-
-	if plan == "" {
-		plan = "free"
-	}
-
-	_, err := db.Exec(
-		ctx,
-		`
-		INSERT INTO user_billing (
-			user_id,
-			stripe_customer_id,
-			stripe_subscription_id,
-			plan,
-			subscription_status,
-			updated_at
-		)
-		VALUES (
-			$1::uuid,
-			$2,
-			NULLIF($3, ''),
-			$4,
-			CASE WHEN $3 = '' THEN 'inactive' ELSE 'incomplete' END,
-			NOW()
-		)
-		ON CONFLICT (user_id)
-		DO UPDATE SET
-			stripe_customer_id = EXCLUDED.stripe_customer_id,
-			stripe_subscription_id = COALESCE(EXCLUDED.stripe_subscription_id, user_billing.stripe_subscription_id),
-			plan = CASE
-				WHEN EXCLUDED.plan = 'free' THEN user_billing.plan
-				ELSE EXCLUDED.plan
-			END,
-			updated_at = NOW();
-		`,
-		userID,
-		session.Customer,
-		session.Subscription,
-		plan,
-	)
-	if err != nil {
-		return err
-	}
-
-	if session.Subscription != "" {
-		subscription, err := retrieveStripeSubscription(ctx, session.Subscription)
-		if err != nil {
-			return err
-		}
-		return syncStripeSubscription(ctx, subscription)
-	}
-
-	return nil
-}
-
 func retrieveStripeSubscription(
 	ctx context.Context,
 	subscriptionID string,
@@ -8784,155 +8665,6 @@ func retrieveStripeSubscription(
 	)
 
 	return subscription, err
-}
-
-func syncStripeSubscription(
-	ctx context.Context,
-	subscription StripeSubscription,
-) error {
-	if subscription.ID == "" || subscription.Customer == "" {
-		return nil
-	}
-
-	userID := strings.TrimSpace(subscription.Metadata["user_id"])
-	plan := strings.TrimSpace(subscription.Metadata["plan"])
-
-	var priceID string
-	var periodEndUnix int64
-
-	if len(subscription.Items.Data) > 0 {
-		priceID = strings.TrimSpace(subscription.Items.Data[0].Price.ID)
-
-		for _, item := range subscription.Items.Data {
-			if item.CurrentPeriodEnd > periodEndUnix {
-				periodEndUnix = item.CurrentPeriodEnd
-			}
-		}
-	}
-
-	if plan == "" {
-		plan = planFromStripePrice(priceID)
-	}
-
-	if userID == "" {
-		err := db.QueryRow(
-			ctx,
-			`
-			SELECT user_id::text
-			FROM user_billing
-			WHERE
-				stripe_customer_id = $1
-				OR stripe_subscription_id = $2
-			LIMIT 1;
-			`,
-			subscription.Customer,
-			subscription.ID,
-		).Scan(&userID)
-
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
-		}
-
-		if err != nil {
-			return err
-		}
-	}
-
-	if plan == "" {
-		plan = "free"
-	}
-
-	var currentPeriodEnd any
-	if periodEndUnix > 0 {
-		currentPeriodEnd = time.Unix(periodEndUnix, 0).UTC()
-	}
-
-	if subscription.Status == "canceled" ||
-		subscription.Status == "incomplete_expired" {
-		if plan == "" {
-			plan = "free"
-		}
-	}
-
-	_, err := db.Exec(
-		ctx,
-		`
-		INSERT INTO user_billing (
-			user_id,
-			stripe_customer_id,
-			stripe_subscription_id,
-			stripe_price_id,
-			plan,
-			subscription_status,
-			current_period_end,
-			cancel_at_period_end,
-			updated_at
-		)
-		VALUES (
-			$1::uuid,
-			$2,
-			$3,
-			NULLIF($4, ''),
-			$5,
-			$6,
-			$7,
-			$8,
-			NOW()
-		)
-		ON CONFLICT (user_id)
-		DO UPDATE SET
-			stripe_customer_id = EXCLUDED.stripe_customer_id,
-			stripe_subscription_id = EXCLUDED.stripe_subscription_id,
-			stripe_price_id = EXCLUDED.stripe_price_id,
-			plan = EXCLUDED.plan,
-			subscription_status = EXCLUDED.subscription_status,
-			current_period_end = EXCLUDED.current_period_end,
-			cancel_at_period_end = EXCLUDED.cancel_at_period_end,
-			updated_at = NOW();
-		`,
-		userID,
-		subscription.Customer,
-		subscription.ID,
-		priceID,
-		plan,
-		subscription.Status,
-		currentPeriodEnd,
-		subscription.CancelAtPeriodEnd,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	subscriptionStatus := strings.ToLower(strings.TrimSpace(subscription.Status))
-	shouldUnpublish := subscriptionStatus == "canceled" ||
-		subscriptionStatus == "incomplete_expired" ||
-		subscriptionStatus == "unpaid"
-
-	if shouldUnpublish {
-		isAdmin, adminErr := isAdminUser(ctx, userID)
-		if adminErr != nil {
-			return adminErr
-		}
-
-		if !isAdmin {
-			_, err = db.Exec(
-				ctx,
-				`UPDATE sites
-				 SET published = FALSE,
-				     published_at = NULL,
-				     updated_at = NOW()
-				 WHERE user_id = $1::uuid
-				   AND published = TRUE;`,
-				userID,
-			)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 func normalizeGrowthFields(site *GeneratedSite) {
