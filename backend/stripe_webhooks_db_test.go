@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -278,5 +279,40 @@ func TestStripeWebhookEndedOldSubscriptionKeepsNewOne(t *testing.T) {
 
 	if got := billingStatus(t); got != "active" {
 		t.Fatalf("ending the old subscription overwrote the new one: %q", got)
+	}
+}
+
+func TestStripeWebhookPurgeKeepsRecentEvents(t *testing.T) {
+	setupStripeWebhookTestDB(t)
+
+	ctx := context.Background()
+	now := time.Now()
+
+	if _, err := db.Exec(ctx, `
+		INSERT INTO stripe_webhook_events (event_id, event_type, processed_at)
+		VALUES
+			('evt_old', 'invoice.paid', $1),
+			('evt_recent', 'invoice.paid', $2);`,
+		now.Add(-stripeWebhookEventRetention-time.Hour),
+		now.Add(-stripeWebhookEventRetention+time.Hour),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	deleted, err := purgeStripeWebhookEvents(ctx, db, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if deleted != 1 || processedEvents(t) != 1 {
+		t.Fatalf("deleted %d, %d left; want only evt_old removed", deleted, processedEvents(t))
+	}
+
+	var remaining string
+	if err := db.QueryRow(ctx, "SELECT event_id FROM stripe_webhook_events;").Scan(&remaining); err != nil {
+		t.Fatal(err)
+	}
+	if remaining != "evt_recent" {
+		t.Fatalf("got %q, want evt_recent", remaining)
 	}
 }

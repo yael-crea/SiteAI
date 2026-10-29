@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -24,6 +26,16 @@ var fetchStripeSubscription = retrieveStripeSubscription
 // Stripe gives up on a delivery after a few seconds; failing fast lets it
 // retry instead of piling up blocked requests behind a stuck lock.
 const stripeWebhookLockTimeout = 15 * time.Second
+
+// Stripe stops retrying a delivery after three days; past that, an evt_ row
+// no longer protects against anything.
+const (
+	stripeWebhookEventRetention = 30 * 24 * time.Hour
+	stripeWebhookPurgeInterval  = time.Hour
+)
+
+// lastStripeWebhookPurge holds the UnixNano time of the last purge attempt.
+var lastStripeWebhookPurge atomic.Int64
 
 // handleStripeEventOnce applies a Stripe event at most once.
 //
@@ -68,7 +80,47 @@ func handleStripeEventOnce(
 		return err
 	}
 
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	maybePurgeStripeWebhookEvents(ctx, time.Now())
+	return nil
+}
+
+// maybePurgeStripeWebhookEvents removes old evt_ rows at most once per
+// interval and per process. A failure is only logged: the event itself has
+// already been committed and must not be reported to Stripe as failed.
+func maybePurgeStripeWebhookEvents(ctx context.Context, now time.Time) {
+	last := lastStripeWebhookPurge.Load()
+	if now.Sub(time.Unix(0, last)) < stripeWebhookPurgeInterval {
+		return
+	}
+
+	if !lastStripeWebhookPurge.CompareAndSwap(last, now.UnixNano()) {
+		return
+	}
+
+	if _, err := purgeStripeWebhookEvents(ctx, db, now); err != nil {
+		log.Println("Purge des événements Stripe impossible :", err)
+	}
+}
+
+func purgeStripeWebhookEvents(
+	ctx context.Context,
+	q stripeDB,
+	now time.Time,
+) (int64, error) {
+	tag, err := q.Exec(
+		ctx,
+		"DELETE FROM stripe_webhook_events WHERE processed_at < $1;",
+		now.Add(-stripeWebhookEventRetention),
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return tag.RowsAffected(), nil
 }
 
 func claimStripeEvent(

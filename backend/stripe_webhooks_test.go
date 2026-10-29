@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"time"
 )
 
 func TestInvoiceSubscriptionIDPrefersParentDetails(t *testing.T) {
@@ -105,5 +106,26 @@ func TestHandleStripeEventOnceRejectsEventWithoutID(t *testing.T) {
 	err := handleStripeEventOnce(context.Background(), StripeEvent{Type: "invoice.paid"})
 	if err == nil {
 		t.Fatal("an event without evt_ identifier must be rejected")
+	}
+}
+
+func TestStripeWebhookRetentionOutlivesStripeRetries(t *testing.T) {
+	// Stripe retries a failed delivery for up to three days.
+	if stripeWebhookEventRetention < 3*24*time.Hour {
+		t.Fatalf("retention %s is shorter than Stripe's retry window", stripeWebhookEventRetention)
+	}
+}
+
+func TestMaybePurgeStripeWebhookEventsIsThrottled(t *testing.T) {
+	now := time.Now()
+	previous := lastStripeWebhookPurge.Load()
+	lastStripeWebhookPurge.Store(now.UnixNano())
+	t.Cleanup(func() { lastStripeWebhookPurge.Store(previous) })
+
+	// db is nil here: reaching the purge would panic.
+	maybePurgeStripeWebhookEvents(context.Background(), now.Add(stripeWebhookPurgeInterval-time.Second))
+
+	if got := lastStripeWebhookPurge.Load(); got != now.UnixNano() {
+		t.Fatal("a purge was started before the interval elapsed")
 	}
 }
