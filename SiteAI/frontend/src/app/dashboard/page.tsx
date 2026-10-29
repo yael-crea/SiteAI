@@ -97,6 +97,8 @@ type SiteAnalyticsSummary = {
   views30d: number;
   visitors30d: number;
   leads30d: number;
+  phoneClicks30d: number;
+  emailClicks30d: number;
   conversionRate: number;
 };
 
@@ -104,6 +106,8 @@ type AnalyticsSummary = {
   views30d: number;
   visitors30d: number;
   leads30d: number;
+  phoneClicks30d: number;
+  emailClicks30d: number;
   conversionRate: number;
   sites: SiteAnalyticsSummary[];
 };
@@ -1963,7 +1967,7 @@ export default function DashboardPage() {
               </h2>
 
               <p className="mt-2 text-sm text-slate-500">
-                Visiteurs, pages vues, prospects et taux de conversion de tes sites publiés.
+                Visiteurs, pages vues, appels, e-mails, prospects et taux de conversion de tes sites publiés.
               </p>
             </div>
 
@@ -1983,7 +1987,7 @@ export default function DashboardPage() {
             </div>
           ) : analytics ? (
             <>
-              <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
                   <p className="text-sm text-slate-400">
                     Visiteurs uniques
@@ -2009,6 +2013,34 @@ export default function DashboardPage() {
 
                   <p className="mt-2 text-xs text-slate-500">
                     Toutes visites confondues
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+                  <p className="text-sm text-slate-400">
+                    Appels
+                  </p>
+
+                  <p className="mt-1 text-3xl font-black text-amber-400">
+                    {analytics.phoneClicks30d}
+                  </p>
+
+                  <p className="mt-2 text-xs text-slate-500">
+                    Clics sur ton numéro, 30 jours
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-3 sm:p-4">
+                  <p className="text-sm text-slate-400">
+                    E-mails
+                  </p>
+
+                  <p className="mt-1 text-3xl font-black text-sky-400">
+                    {analytics.emailClicks30d}
+                  </p>
+
+                  <p className="mt-2 text-xs text-slate-500">
+                    Clics sur ton e-mail, 30 jours
                   </p>
                 </div>
 
@@ -2053,7 +2085,7 @@ export default function DashboardPage() {
                     {analytics.sites.map((siteStats) => (
                       <div
                         key={siteStats.siteId}
-                        className="grid grid-cols-2 gap-3 px-5 py-4 md:grid-cols-[1.5fr_repeat(4,minmax(90px,1fr))] md:items-center"
+                        className="grid grid-cols-2 gap-3 px-5 py-4 md:grid-cols-[1.5fr_repeat(6,minmax(80px,1fr))] md:items-center"
                       >
                         <div className="col-span-2 md:col-span-1">
                           <p className="font-bold">
@@ -2080,6 +2112,24 @@ export default function DashboardPage() {
                           </p>
                           <p className="mt-1 font-black">
                             {siteStats.views30d}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-slate-500">
+                            Appels
+                          </p>
+                          <p className="mt-1 font-black text-amber-400">
+                            {siteStats.phoneClicks30d}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-slate-500">
+                            E-mails
+                          </p>
+                          <p className="mt-1 font-black text-sky-400">
+                            {siteStats.emailClicks30d}
                           </p>
                         </div>
 

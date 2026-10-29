@@ -599,6 +599,8 @@ type SiteAnalyticsSummary struct {
 	Views30d       int64   `json:"views30d"`
 	Visitors30d    int64   `json:"visitors30d"`
 	Leads30d       int64   `json:"leads30d"`
+	PhoneClicks30d int64   `json:"phoneClicks30d"`
+	EmailClicks30d int64   `json:"emailClicks30d"`
 	ConversionRate float64 `json:"conversionRate"`
 }
 
@@ -606,6 +608,8 @@ type AnalyticsSummary struct {
 	Views30d       int64                  `json:"views30d"`
 	Visitors30d    int64                  `json:"visitors30d"`
 	Leads30d       int64                  `json:"leads30d"`
+	PhoneClicks30d int64                  `json:"phoneClicks30d"`
+	EmailClicks30d int64                  `json:"emailClicks30d"`
 	ConversionRate float64                `json:"conversionRate"`
 	Sites          []SiteAnalyticsSummary `json:"sites"`
 }
@@ -713,6 +717,7 @@ func main() {
 	http.HandleFunc("/quotes/", quoteByIDHandler)
 
 	http.HandleFunc("/analytics/pageview", analyticsPageViewHandler)
+	http.HandleFunc("/analytics/event", analyticsEventHandler)
 	http.HandleFunc("/analytics/summary", analyticsSummaryHandler)
 
 	http.HandleFunc("/stripe/checkout", stripeCheckoutHandler)
@@ -1273,6 +1278,10 @@ func createTables(ctx context.Context) error {
 	}
 
 	if _, err := db.Exec(ctx, versionMigrationSQL); err != nil {
+		return err
+	}
+
+	if _, err := db.Exec(ctx, siteContactClicksSQL); err != nil {
 		return err
 	}
 
@@ -1993,7 +2002,23 @@ func analyticsSummaryHandler(
 				WHERE
 					l.site_id = s.id
 					AND l.created_at >= NOW() - INTERVAL '30 days'
-			), 0) AS leads_30d
+			), 0) AS leads_30d,
+			COALESCE((
+				SELECT COUNT(*)
+				FROM site_contact_clicks c
+				WHERE
+					c.site_id = s.id
+					AND c.event_type = 'phone_click'
+					AND c.created_at >= NOW() - INTERVAL '30 days'
+			), 0) AS phone_clicks_30d,
+			COALESCE((
+				SELECT COUNT(*)
+				FROM site_contact_clicks c
+				WHERE
+					c.site_id = s.id
+					AND c.event_type = 'email_click'
+					AND c.created_at >= NOW() - INTERVAL '30 days'
+			), 0) AS email_clicks_30d
 		FROM sites s
 		WHERE s.user_id = $1::uuid
 		ORDER BY s.updated_at DESC;
@@ -2034,6 +2059,8 @@ func analyticsSummaryHandler(
 			&site.Views30d,
 			&site.Visitors30d,
 			&site.Leads30d,
+			&site.PhoneClicks30d,
+			&site.EmailClicks30d,
 		); err != nil {
 			log.Println(
 				"Erreur lecture analytics :",
@@ -2063,6 +2090,10 @@ func analyticsSummaryHandler(
 
 		summary.Leads30d +=
 			site.Leads30d
+		summary.PhoneClicks30d +=
+			site.PhoneClicks30d
+		summary.EmailClicks30d +=
+			site.EmailClicks30d
 
 		summary.Sites = append(
 			summary.Sites,

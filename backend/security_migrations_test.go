@@ -17,6 +17,7 @@ func TestSupabaseSecurityBaselineProtectsEveryBusinessTable(t *testing.T) {
 		"leads",
 		"legal_acceptances",
 		"quotes",
+		"site_contact_clicks",
 		"site_events",
 		"site_pageviews",
 		"site_versions",

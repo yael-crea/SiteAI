@@ -35,11 +35,13 @@ func maybePurgeOldPageviews(ctx context.Context, now time.Time) {
 		return
 	}
 
-	if _, err := db.Exec(
-		ctx,
+	cutoff := pageviewRetentionCutoff(now)
+	for _, query := range []string{
 		"DELETE FROM site_pageviews WHERE created_at < $1;",
-		pageviewRetentionCutoff(now),
-	); err != nil {
-		log.Println("Purge des visites expirées impossible :", err)
+		"DELETE FROM site_contact_clicks WHERE created_at < $1;",
+	} {
+		if _, err := db.Exec(ctx, query, cutoff); err != nil {
+			log.Println("Purge des statistiques expirées impossible :", err)
+		}
 	}
 }
