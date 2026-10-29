@@ -1,6 +1,8 @@
 "use client";
 import "../app-theme.css";
-import LumioAssistant from "@/components/LumioAssistant";
+import dynamic from "next/dynamic";
+// Assistant fermé au départ : chargé après l'affichage de la page.
+const LumioAssistant = dynamic(() => import("@/components/LumioAssistant"), { ssr: false });
 import { notificationLabel } from "@/lib/actionErrors";
 
 

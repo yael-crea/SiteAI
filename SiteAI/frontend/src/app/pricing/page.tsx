@@ -7,7 +7,9 @@ import {
 
 import Link from "next/link";
 import "../app-theme.css";
-import LumioAssistant from "@/components/LumioAssistant";
+import dynamic from "next/dynamic";
+// Assistant fermé au départ : chargé après l'affichage de la page.
+const LumioAssistant = dynamic(() => import("@/components/LumioAssistant"), { ssr: false });
 import { plans, CGV_VERSION, freePreviewText, domainText, aiUsageText, cancellationText, priceSuffix, priceTaxText, type PlanName } from "@/lib/commercialPlans";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";

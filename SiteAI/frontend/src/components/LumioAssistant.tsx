@@ -64,12 +64,12 @@ type LumioAssistantProps = {
   starterSuggestions?: string[];
 };
 
-export const OPEN_ASSISTANT_EVENT = "lumio-assistant:open";
+import { OPEN_ASSISTANT_EVENT, takePendingAssistantOpen } from "./assistantEvents";
+
+// Conservé pour les imports existants ; l'événement vit dans assistantEvents.ts.
+export { OPEN_ASSISTANT_EVENT, openLumioAssistant } from "./assistantEvents";
 
 /** Ouvre l'assistant depuis n'importe quel bouton, avec un message pré-rempli. */
-export function openLumioAssistant(prompt?: string) {
-  window.dispatchEvent(new CustomEvent(OPEN_ASSISTANT_EVENT, { detail: { prompt } }));
-}
 
 const defaultSuggestions = [
   "Comment publier mon site ?",
@@ -264,13 +264,22 @@ export default function LumioAssistant({
   }, [open]);
 
   useEffect(() => {
-    function handleOpen(event: Event) {
-      const prompt = (event as CustomEvent<{ prompt?: string }>).detail?.prompt;
+    function openWith(prompt?: string) {
+      takePendingAssistantOpen();
       setOpen(true);
       if (prompt) setDraft(prompt);
     }
+    function handleOpen(event: Event) {
+      openWith((event as CustomEvent<{ prompt?: string }>).detail?.prompt);
+    }
     window.addEventListener(OPEN_ASSISTANT_EVENT, handleOpen);
-    return () => window.removeEventListener(OPEN_ASSISTANT_EVENT, handleOpen);
+    // L'assistant est chargé à la demande : on rejoue une ouverture demandée avant son arrivée.
+    const pending = takePendingAssistantOpen();
+    const timer = pending ? window.setTimeout(() => openWith(pending.prompt), 0) : undefined;
+    return () => {
+      window.removeEventListener(OPEN_ASSISTANT_EVENT, handleOpen);
+      if (timer) window.clearTimeout(timer);
+    };
   }, []);
 
   // Sur mobile, le panneau occupe tout l'écran : on bloque le défilement derrière.

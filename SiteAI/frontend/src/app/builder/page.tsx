@@ -9,15 +9,17 @@ import { useConfirm } from "@/components/ui/ConfirmDialog";
 import Icon from "@/components/ui/Icon";
 
 import PublicationPanel from "@/components/builder/PublicationPanel";
-import AppearancePanel from "@/components/builder/AppearancePanel";
-import ContentMediaPanel from "@/components/builder/ContentMediaPanel";
+import dynamic from "next/dynamic";
+// Panneaux « Contenu » et « Apparence » : cachés à l'ouverture (panneau Aperçu), chargés quand on les affiche.
+const AppearancePanel = dynamic(() => import("@/components/builder/AppearancePanel"));
+const ContentMediaPanel = dynamic(() => import("@/components/builder/ContentMediaPanel"));
 
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import SitePreview, { type PreviewEditTarget } from "@/components/SitePreview";
+import type { PreviewEditTarget } from "@/components/SitePreview";
 import AccountVersions, {
   type AccountVersion,
 } from "@/components/AccountVersions";
@@ -29,10 +31,14 @@ import { useBuilderDraft } from "@/lib/useBuilderDraft";
 import AIUsage from "@/components/AIUsage";
 import { activityExamples } from "@/lib/activityExamples";
 import "./editor-theme.css";
-import LumioAssistant, {
-  openLumioAssistant,
-  type AssistantModification,
-} from "@/components/LumioAssistant";
+import type { AssistantModification } from "@/components/LumioAssistant";
+import { openLumioAssistant } from "@/components/assistantEvents";
+// Assistant fermé au départ : chargé après l'affichage de l'éditeur.
+const LumioAssistant = dynamic(() => import("@/components/LumioAssistant"), { ssr: false });
+// Moteur d'aperçu des sites (le plus gros composant) : téléchargé pendant la vérification de session,
+// il n'est affiché qu'une fois le site chargé.
+const loadSitePreview = () => import("@/components/SitePreview");
+const SitePreview = dynamic(loadSitePreview);
 import SiteGoalPicker from "@/components/SiteGoalPicker";
 import { type SiteGoal } from "@/lib/siteGoal";
 import { normalizeDesignExtras } from "@/lib/appearanceSettings";
@@ -586,6 +592,9 @@ function isBuilderSnapshot(value: unknown): value is BuilderSnapshot {
 }
 
 export default function Home() {
+  useEffect(() => {
+    void loadSitePreview();
+  }, []);
   const router = useRouter();
   const mobileSteps = [
     "Infos",
