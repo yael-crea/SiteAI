@@ -41,9 +41,8 @@ export default function CGVPage() {
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Cette version est un brouillon de préparation. Les champs
-            [À COMPLÉTER] restants devront être finalisés avant la
-            commercialisation.
+            ⚠️ Version provisoire : ces conditions devront être relues et
+            finalisées avant la commercialisation de Lumio.
           </div>
         </div>
 
@@ -79,11 +78,12 @@ TVA non applicable, article 293 B du Code général des impôts.`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Les présentes CGV s&apos;appliquent à tous les clients de
-              Lumio, qu&apos;ils agissent dans le cadre de leur activité
-              professionnelle ou en tant que consommateurs. Les dispositions
-              réservées aux consommateurs sont signalées comme telles. La
-              souscription à une offre payante implique
+              Les offres payantes de Lumio sont réservées aux
+              professionnels : entreprises, indépendants, associations et
+              autres clients agissant pour les besoins de leur activité
+              professionnelle. Elles ne sont pas proposées aux consommateurs.
+              Lors de la souscription, le client déclare agir pour les besoins
+              de son activité professionnelle. La souscription à une offre payante implique
               l&apos;acceptation des CGV dans leur version applicable au jour
               de la commande.
             </p>
@@ -306,41 +306,13 @@ TVA non applicable, article 293 B du Code général des impôts.`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Le client consommateur dispose d&apos;un délai de 14 jours à
-              compter de la souscription pour se rétracter, sans avoir à
-              justifier de motif (article L221-18 du Code de la
-              consommation). Ce droit ne s&apos;applique pas aux clients
-              professionnels.
+              Les offres Lumio étant réservées aux professionnels, le droit
+              de rétractation prévu par le Code de la consommation pour les
+              contrats conclus à distance avec des consommateurs ne
+              s&apos;applique pas. L&apos;abonnement démarre dès la
+              confirmation du paiement et peut être résilié dans les
+              conditions prévues par les présentes CGV.
             </p>
-
-            <p className="mt-3 text-sm leading-7 text-slate-400">
-              Pour l&apos;exercer, le client adresse avant l&apos;expiration
-              du délai une déclaration dénuée d&apos;ambiguïté, par exemple à
-              l&apos;aide du modèle ci-dessous, à castanyael@gmail.com ou par
-              courrier au 3 rue de l&apos;Opale, 34070 Montpellier. Lumio
-              rembourse les sommes versées au plus tard 14 jours après
-              réception de la demande, par le même moyen de paiement.
-            </p>
-
-            <p className="mt-3 text-sm leading-7 text-slate-400">
-              Lors de la souscription, le client demande expressément, en
-              cochant la case prévue à cet effet, que le service commence
-              avant la fin du délai de rétractation. En cas de rétractation,
-              il reste donc redevable d&apos;un
-              montant proportionnel au service fourni jusqu&apos;à sa
-              rétractation (article L221-25 du Code de la consommation).
-            </p>
-
-            <div className="mt-3 whitespace-pre-line rounded-xl border border-slate-800 p-4 text-sm leading-7 text-slate-400">
-              {`Modèle de formulaire de rétractation
-À l’attention de Yael Castan Gleizes EI (Lumio), 3 rue de l’Opale, 34070 Montpellier, castanyael@gmail.com :
-Je vous notifie par la présente ma rétractation du contrat portant sur la prestation de services ci-dessous :
-Formule souscrite et date de souscription :
-Nom du client :
-Adresse e-mail du compte Lumio :
-Adresse du client :
-Date et signature (uniquement en cas d’envoi papier) :`}
-            </div>
           </section>
 
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
@@ -406,8 +378,7 @@ Date et signature (uniquement en cas d’envoi papier) :`}
 
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
               {`Droit applicable : droit français.
-Juridiction compétente : En cas de litige, les parties recherchent d’abord une solution amiable. À défaut, le litige est porté devant les tribunaux compétents ; lorsque le client est un professionnel, compétence est attribuée aux tribunaux du ressort de Montpellier. Le client consommateur peut saisir, à son choix, la juridiction du lieu où il demeurait au moment de la conclusion du contrat ou de la survenance du fait dommageable.
-Médiation de la consommation : après une réclamation écrite adressée à Lumio restée sans réponse satisfaisante, le client consommateur peut recourir gratuitement au médiateur de la consommation suivant : [À COMPLÉTER : nom, site web et adresse du médiateur].`}
+Juridiction compétente : En cas de litige, les parties recherchent d’abord une solution amiable. À défaut, compétence est attribuée aux tribunaux du ressort de Montpellier.`}
             </div>
           </section>
 

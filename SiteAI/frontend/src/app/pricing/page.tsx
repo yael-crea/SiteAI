@@ -106,8 +106,8 @@ export default function PricingPage() {
   ] = useState(false);
 
   const [
-    immediateStartAccepted,
-    setImmediateStartAccepted,
+    professionalUseAccepted,
+    setProfessionalUseAccepted,
   ] = useState(false);
 
   const [
@@ -362,9 +362,9 @@ export default function PricingPage() {
       return;
     }
 
-    if (!immediateStartAccepted) {
+    if (!professionalUseAccepted) {
       setError(
-        "Tu dois demander le démarrage immédiat de l'abonnement avant de continuer vers le paiement.",
+        "Lumio est réservé aux professionnels : coche la déclaration d'usage professionnel avant de continuer.",
       );
       return;
     }
@@ -386,7 +386,7 @@ export default function PricingPage() {
               {
                 plan,
                 version: CGV_VERSION,
-                immediateStart: immediateStartAccepted,
+                professionalUse: professionalUseAccepted,
               },
             ),
           },
@@ -724,18 +724,18 @@ export default function PricingPage() {
             <label className="mt-4 flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
-                checked={immediateStartAccepted}
+                checked={professionalUseAccepted}
                 onChange={(event) => {
-                  setImmediateStartAccepted(event.target.checked);
+                  setProfessionalUseAccepted(event.target.checked);
                   setError("");
                 }}
                 className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-950"
               />
 
               <span className="text-sm leading-6 text-slate-300">
-                Je demande que mon abonnement démarre immédiatement, avant la
-                fin du délai de rétractation de 14 jours. Si je me rétracte,
-                je paierai le montant correspondant au service déjà fourni.
+                Je souscris pour les besoins de mon activité professionnelle
+                (entreprise, indépendant, association). Je reconnais que les
+                offres Lumio sont réservées aux professionnels.
               </span>
             </label>
 
@@ -854,7 +854,7 @@ export default function PricingPage() {
                       disabled={
                         checkoutLoading !== null ||
                         !cgvAccepted ||
-                        !immediateStartAccepted
+                        !professionalUseAccepted
                       }
                       onClick={() =>
                         startCheckout(

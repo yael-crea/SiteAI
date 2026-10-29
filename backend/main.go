@@ -51,14 +51,14 @@ import (
 
 var db *pgxpool.Pool
 
-const currentCGVVersion = "2026-10-29"
+const currentCGVVersion = "2026-10-29-pro"
 
 // Types de documents enregistrés dans legal_acceptances.
 const (
 	legalDocumentCGV = "cgv"
-	// Demande expresse de démarrage avant la fin du délai de rétractation
-	// (article L221-25 du Code de la consommation).
-	legalDocumentImmediateStart = "immediate_start"
+	// Déclaration du client qu'il souscrit pour son activité professionnelle :
+	// les offres Lumio sont réservées aux professionnels.
+	legalDocumentProfessionalUse = "professional_use"
 )
 const aiHourlyLimit = 20
 
@@ -405,9 +405,9 @@ type StripeCheckoutInput struct {
 }
 
 type CGVAcceptanceInput struct {
-	Plan           string `json:"plan"`
-	Version        string `json:"version"`
-	ImmediateStart bool   `json:"immediateStart"`
+	Plan            string `json:"plan"`
+	Version         string `json:"version"`
+	ProfessionalUse bool   `json:"professionalUse"`
 }
 
 type CGVAcceptanceResponse struct {
@@ -8261,10 +8261,10 @@ func cgvAcceptanceHandler(
 		return
 	}
 
-	if !input.ImmediateStart {
+	if !input.ProfessionalUse {
 		http.Error(
 			w,
-			"Tu dois demander le démarrage immédiat de l'abonnement avant le paiement.",
+			"Lumio est réservé aux professionnels : la déclaration d'usage professionnel est requise.",
 			http.StatusBadRequest,
 		)
 		return
@@ -8280,7 +8280,7 @@ func cgvAcceptanceHandler(
 		_, err = recordLegalAcceptance(
 			r.Context(),
 			user.ID,
-			legalDocumentImmediateStart,
+			legalDocumentProfessionalUse,
 			plan,
 		)
 	}
@@ -8354,13 +8354,13 @@ func stripeCheckoutHandler(
 		legalDocumentCGV,
 		plan,
 	)
-	var immediateStartAt time.Time
-	immediateStartRequested := false
+	var professionalUseAt time.Time
+	professionalUseDeclared := false
 	if err == nil && accepted {
-		immediateStartAt, immediateStartRequested, err = getCurrentLegalAcceptance(
+		professionalUseAt, professionalUseDeclared, err = getCurrentLegalAcceptance(
 			r.Context(),
 			user.ID,
-			legalDocumentImmediateStart,
+			legalDocumentProfessionalUse,
 			plan,
 		)
 	}
@@ -8374,10 +8374,10 @@ func stripeCheckoutHandler(
 		return
 	}
 
-	if !accepted || !immediateStartRequested {
+	if !accepted || !professionalUseDeclared {
 		http.Error(
 			w,
-			"Tu dois accepter la version actuelle des CGV et demander le démarrage immédiat avant le paiement.",
+			"Tu dois accepter la version actuelle des CGV et déclarer un usage professionnel avant le paiement.",
 			http.StatusPreconditionRequired,
 		)
 		return
@@ -8431,8 +8431,8 @@ func stripeCheckoutHandler(
 		acceptedAt.UTC().Format(time.RFC3339),
 	)
 	values.Set(
-		"subscription_data[metadata][immediate_start_requested_at]",
-		immediateStartAt.UTC().Format(time.RFC3339),
+		"subscription_data[metadata][professional_use_declared_at]",
+		professionalUseAt.UTC().Format(time.RFC3339),
 	)
 
 	var session StripeCheckoutSession
