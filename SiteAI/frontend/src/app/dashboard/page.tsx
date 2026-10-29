@@ -4,7 +4,7 @@ import "../app-theme.css";
 import dynamic from "next/dynamic";
 // Assistant fermé au départ : chargé après l'affichage de la page.
 const LumioAssistant = dynamic(() => import("@/components/LumioAssistant"), { ssr: false });
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
@@ -184,6 +184,17 @@ function formatCurrency(
     },
   ).format(
     (cents || 0) / 100,
+  );
+}
+
+// Date du jour : vide dans le HTML envoyé par le serveur (préparé à l'avance),
+// écrite dans le navigateur, pour ne jamais afficher une date périmée.
+const noSubscription = () => () => {};
+function TodayLabel() {
+  return useSyncExternalStore(
+    noSubscription,
+    () => new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date()),
+    () => "",
   );
 }
 
@@ -1029,20 +1040,12 @@ export default function DashboardPage() {
   const customDomainAllowed =
     subscriptionActive && billing?.customDomainAllowed === true;
 
-  if (authLoading) {
-    return (
-      <main className="lumio-app flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <div className="lumio-loading">
-          <strong>lumio<span>.</span></strong>
-          <p>Chargement de ton espace…</p>
-        </div>
-      </main>
-    );
-  }
+  // Pas d'écran de chargement : la structure et le titre partent dans le HTML de la page
+  // (affichage plus rapide), les chiffres arrivent ensuite avec leurs squelettes.
 
   return (
     <>
-    <main className="lumio-app has-sidebar min-h-screen overflow-x-hidden bg-slate-950 text-white">
+    <main className="lumio-app has-sidebar min-h-screen overflow-x-hidden bg-slate-950 text-white" aria-busy={authLoading || undefined}>
       {confirmDialog}
       <AppSidebar
         className="hidden lg:flex"
@@ -1191,8 +1194,8 @@ export default function DashboardPage() {
       <section id="dashboard-top" className="mx-auto max-w-7xl px-4 py-7 pb-28 sm:px-6 sm:py-9 md:pb-12">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
-            <p className="text-sm text-slate-400 first-letter:uppercase">
-              {new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}
+            <p className="min-h-5 text-sm text-slate-400 first-letter:uppercase">
+              <TodayLabel />
             </p>
 
             <h1 className="mt-2 text-4xl font-semibold tracking-tight md:text-5xl">
