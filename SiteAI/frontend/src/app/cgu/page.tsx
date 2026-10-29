@@ -30,9 +30,8 @@ export default function LegalPage() {
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : Lumio n&apos;est pas encore rattaché à une
-            entreprise immatriculée. Tous les champs marqués [À COMPLÉTER]
-            devront être renseignés avant une mise en ligne commerciale.
+            ⚠️ Version provisoire : ces conditions devront être relues et
+            finalisées avant la commercialisation de Lumio.
           </div>
         </div>
 
@@ -113,8 +112,8 @@ Aucune clause définitive de limitation de responsabilité n’est insérée dan
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">10. Droit applicable et litiges</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Droit applicable : [À COMPLÉTER]
-Juridiction / mécanisme de règlement des litiges : [À COMPLÉTER selon le statut de l’entreprise et le type de clientèle].
+              Droit applicable : droit français.
+Règlement des litiges : En cas de litige, les parties recherchent d’abord une solution amiable. À défaut, le litige est porté devant les tribunaux compétents ; lorsque l’utilisateur est un professionnel, compétence est attribuée aux tribunaux du ressort de Montpellier.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">

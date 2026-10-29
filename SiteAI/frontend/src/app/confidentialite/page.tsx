@@ -30,9 +30,8 @@ export default function LegalPage() {
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : Lumio n&apos;est pas encore rattaché à une
-            entreprise immatriculée. Tous les champs marqués [À COMPLÉTER]
-            devront être renseignés avant une mise en ligne commerciale.
+            ⚠️ Version provisoire : cette politique devra être relue et
+            finalisée avant la commercialisation de Lumio.
           </div>
         </div>
 
@@ -40,9 +39,9 @@ export default function LegalPage() {
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">1. Responsable du traitement</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Responsable du traitement : [À COMPLÉTER après création de l’entreprise]
-Adresse : [À COMPLÉTER]
-E-mail relatif aux données personnelles : [À COMPLÉTER]
+              Responsable du traitement : Yael Castan Gleizes EI (SIREN 131 781 932)
+Adresse : 3 rue de l’Opale, 34070 Montpellier, France
+E-mail relatif aux données personnelles : castanyael@gmail.com
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">

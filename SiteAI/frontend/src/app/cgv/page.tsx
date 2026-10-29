@@ -41,9 +41,8 @@ export default function CGVPage() {
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Cette version est un brouillon de préparation. Lumio
-            n&apos;est pas encore rattaché à une entreprise immatriculée.
-            Les champs [À COMPLÉTER] devront être finalisés avant la
+            ⚠️ Cette version est un brouillon de préparation. Les champs
+            [À COMPLÉTER] restants devront être finalisés avant la
             commercialisation. Cette version est pensée principalement pour
             une clientèle professionnelle TPE/PME [À CONFIRMER].
           </div>
@@ -54,12 +53,12 @@ export default function CGVPage() {
             <h2 className="text-xl font-black">1. Identité du prestataire</h2>
 
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              {`Dénomination / nom : [À COMPLÉTER]
-Forme juridique : [À COMPLÉTER]
-SIREN / SIRET : [À COMPLÉTER]
-Adresse : [À COMPLÉTER]
-E-mail : [À COMPLÉTER]
-Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
+              {`Nom : Yael Castan Gleizes EI
+Forme juridique : entrepreneur individuel (micro-entreprise)
+SIREN : 131 781 932
+Adresse : 3 rue de l’Opale, 34070 Montpellier, France
+E-mail : castanyael@gmail.com
+TVA non applicable, article 293 B du Code général des impôts.`}
             </div>
           </section>
 
@@ -386,8 +385,8 @@ Numéro de TVA intracommunautaire : [À COMPLÉTER si applicable]`}
             </h2>
 
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              {`Droit applicable : [À COMPLÉTER]
-Juridiction compétente : [À COMPLÉTER]
+              {`Droit applicable : droit français.
+Juridiction compétente : En cas de litige, les parties recherchent d’abord une solution amiable. À défaut, le litige est porté devant les tribunaux compétents ; lorsque le client est un professionnel, compétence est attribuée aux tribunaux du ressort de Montpellier.
 Médiation de la consommation : [À COMPLÉTER si une offre B2C est proposée]`}
             </div>
           </section>
@@ -402,7 +401,7 @@ Médiation de la consommation : [À COMPLÉTER si une offre B2C est proposée]`}
                   support@lumio.business
                 </a>
               </p>
-              <p>Adresse postale : [À COMPLÉTER]</p>
+              <p>Adresse postale : 3 rue de l’Opale, 34070 Montpellier, France</p>
             </div>
           </section>
         </div>

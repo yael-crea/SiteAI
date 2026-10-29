@@ -30,9 +30,8 @@ export default function LegalPage() {
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : Lumio n&apos;est pas encore rattaché à une
-            entreprise immatriculée. Tous les champs marqués [À COMPLÉTER]
-            devront être renseignés avant une mise en ligne commerciale.
+            ⚠️ Version provisoire : le champ [À COMPLÉTER] restant devra
+            être renseigné avant la commercialisation de Lumio.
           </div>
         </div>
 
@@ -40,31 +39,30 @@ export default function LegalPage() {
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">1. Éditeur du site</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Nom / dénomination : [À COMPLÉTER]
-Statut juridique : [À COMPLÉTER après création de l’entreprise]
-SIREN / SIRET : [À COMPLÉTER]
-Adresse du siège : [À COMPLÉTER]
-E-mail de contact : [À COMPLÉTER]
-Téléphone : [À COMPLÉTER si applicable]
+              Nom : Yael Castan Gleizes EI
+Statut juridique : entrepreneur individuel (micro-entreprise)
+SIREN : 131 781 932
+Immatriculation : Registre national des entreprises (RNE)
+Adresse : 3 rue de l’Opale, 34070 Montpellier, France
+E-mail de contact : castanyael@gmail.com
+Téléphone : [À COMPLÉTER]
+TVA non applicable, article 293 B du Code général des impôts.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">2. Directeur de la publication</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Directeur de la publication : [À COMPLÉTER]
-Cette information devra correspondre à la personne juridiquement responsable de la publication du service.
+              Directeur de la publication : Yael Castan Gleizes
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">3. Hébergement et infrastructure</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Le service Lumio utilise actuellement plusieurs prestataires techniques.
+              Le service Lumio s’appuie sur les prestataires techniques suivants.
 
-Frontend / déploiement : Vercel
-Backend : Railway
-Base de données et authentification : Supabase
-
-Les coordonnées légales complètes des prestataires devront être ajoutées ou vérifiées avant la mise en production commerciale : [À COMPLÉTER].
+Site web (frontend) : Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis — vercel.com
+Serveur applicatif (backend) : Railway Corporation, 548 Market St PMB 68956, San Francisco, CA 94104, États-Unis — railway.com
+Base de données et authentification : Supabase Pte. Ltd., 65 Chulia Street #38-02/03, OCBC Centre, Singapour 049513 — supabase.com
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
