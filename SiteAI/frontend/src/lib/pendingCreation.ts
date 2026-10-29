@@ -19,6 +19,8 @@ export type PendingCreation = {
   goal: string;
   bookingUrl: string;
   templateServices: string[] | null;
+  services?: string[];
+  tone?: string;
 };
 
 const STORAGE_KEY = "lumio_pending_creation";
@@ -50,6 +52,8 @@ export function readPendingCreation(): PendingCreation | null {
       goal: data.goal ?? "",
       bookingUrl: data.bookingUrl ?? "",
       templateServices: Array.isArray(data.templateServices) ? data.templateServices : null,
+      services: Array.isArray(data.services) ? data.services.filter((item) => typeof item === "string") : [],
+      tone: data.tone ?? "",
     };
   } catch {
     return null;

@@ -85,10 +85,11 @@
 
 /* ---------- Choix du métier : contrôle segmenté ---------- */
 
+/* Plus de position fixe : la barre recouvrait le haut de l'aperçu au défilement.
+   L'aperçu défile dans sa propre fenêtre, les onglets restent juste au-dessus. */
 .audience {
-  position: sticky;
+  position: relative;
   z-index: 30;
-  top: 76px;
   padding-block: 8px;
 }
 
@@ -394,10 +395,6 @@
 
   .intro h1 {
     font-size: clamp(40px, 12vw, 54px);
-  }
-
-  .audience {
-    top: 66px;
   }
 
   .audience > div {

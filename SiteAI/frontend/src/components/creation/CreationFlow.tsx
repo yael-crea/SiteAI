@@ -14,7 +14,7 @@ import type { SiteGoal } from "@/lib/siteGoal";
 import type { GeneratedSite } from "@/lib/builderTypes";
 import styles from "./CreationFlow.module.css";
 
-type Step = "activity" | "business" | "goal" | "generating" | "style";
+type Step = "activity" | "business" | "services" | "goal" | "generating" | "style";
 type Goal = Exclude<SiteGoal, "legacy">;
 
 type CreationFlowProps = {
@@ -45,6 +45,42 @@ const goals: { id: Goal; title: string; text: string; goal: string; action: stri
     action: "réserver",
   },
 ];
+
+// Ton des textes : envoyé tel quel à la génération (le premier reprend l'ancien réglage par défaut).
+const tones = [
+  {
+    id: "expert",
+    title: "Professionnel",
+    text: "Clair et rassurant, pour inspirer confiance.",
+    tone: "professionnel, sobre et chaleureux",
+    style: "clair et concis",
+  },
+  {
+    id: "warm",
+    title: "Chaleureux",
+    text: "Proche et simple, comme on parle à un voisin.",
+    tone: "chaleureux, proche et bienveillant",
+    style: "simple et convivial",
+  },
+  {
+    id: "premium",
+    title: "Haut de gamme",
+    text: "Élégant et sobre, pour une clientèle exigeante.",
+    tone: "élégant, sobre et raffiné",
+    style: "soigné et concis",
+  },
+  {
+    id: "dynamic",
+    title: "Dynamique",
+    text: "Direct et énergique, qui donne envie d'agir.",
+    tone: "dynamique, direct et motivant",
+    style: "court et percutant",
+  },
+] as const;
+
+type ToneId = (typeof tones)[number]["id"];
+
+const MAX_SERVICES = 6;
 
 const generatingMessages = [
   "J'analyse ton métier…",
@@ -106,6 +142,10 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
   const [phone, setPhone] = useState("");
   const [bookingUrl, setBookingUrl] = useState("");
   const [templateServices, setTemplateServices] = useState<string[] | null>(null);
+  const [services, setServices] = useState<string[]>([]);
+  const [servicesActivity, setServicesActivity] = useState("");
+  const [customService, setCustomService] = useState("");
+  const [tone, setTone] = useState<ToneId>("expert");
   const [error, setError] = useState("");
   const [generated, setGenerated] = useState<GeneratedSite | null>(null);
   const [styleChoices, setStyleChoices] = useState<DesignStyle[]>([]);
@@ -151,6 +191,12 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
         setPhone(pending.phone);
         setBookingUrl(pending.bookingUrl);
         if (pending.templateServices) setTemplateServices(pending.templateServices);
+        if (pending.services?.length) {
+          setServices(pending.services.slice(0, MAX_SERVICES));
+          setServicesActivity(pending.activity);
+        }
+        const savedTone = tones.find((item) => item.id === pending.tone);
+        if (savedTone) setTone(savedTone.id);
         const savedGoal = goals.find((item) => item.id === pending.goal);
         if (savedGoal) setGoal(savedGoal.id);
         setResumed(true);
@@ -191,7 +237,37 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
     return list.slice(0, query ? 6 : 8).map((item) => item.label);
   }, [activity]);
 
-  const stepNumber = step === "activity" ? 1 : step === "business" ? 2 : step === "goal" ? 3 : 3;
+  const stepNumber = step === "activity" ? 1 : step === "business" ? 2 : step === "services" ? 3 : 4;
+
+  // Services proposés : ceux du modèle choisi, sinon ceux du métier ; les services ajoutés à la main restent en tête.
+  const serviceOptions = useMemo(() => {
+    const suggested: string[] = [...(templateServices ?? findActivityExample(activity)?.services ?? [])];
+    const custom = services.filter((item) => !suggested.includes(item));
+    return [...custom, ...suggested.slice(0, 12)];
+  }, [templateServices, activity, services]);
+
+  function toggleService(label: string) {
+    setError("");
+    setServices((current) =>
+      current.includes(label)
+        ? current.filter((item) => item !== label)
+        : current.length >= MAX_SERVICES
+          ? current
+          : [...current, label],
+    );
+  }
+
+  function addCustomService() {
+    const label = customService.trim().replace(/\s+/g, " ");
+    if (!label) return;
+    if (services.length >= MAX_SERVICES) {
+      setError(`Garde ${MAX_SERVICES} services au maximum : tu pourras en ajouter d'autres dans l'éditeur.`);
+      return;
+    }
+    setError("");
+    if (!services.some((item) => normalize(item) === normalize(label))) setServices((current) => [...current, label]);
+    setCustomService("");
+  }
 
   async function accessToken() {
     const { data } = await supabase.auth.getSession();
@@ -224,6 +300,18 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
       return;
     }
     setError("");
+    // Nouveau métier : on repart des services proposés pour ce métier (les quatre premiers).
+    if (servicesActivity !== activity) {
+      setServices((templateServices ?? findActivityExample(activity)?.services ?? []).slice(0, 4));
+      setServicesActivity(activity);
+    }
+    setStep("services");
+  }
+
+  function submitServices(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    // Aucun service n'est obligatoire : sans choix, la génération part des services généraux du métier.
+    setError("");
     setStep("goal");
   }
 
@@ -231,7 +319,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
     event?.preventDefault();
     if (!signedIn) {
       // Les réponses sont gardées pendant l'inscription, puis le parcours reprend ici.
-      savePendingCreation({ activity, businessName, city, phone, goal, bookingUrl, templateServices });
+      savePendingCreation({ activity, businessName, city, phone, goal, bookingUrl, templateServices, services, tone });
       router.push("/auth?compte=nouveau");
       return;
     }
@@ -240,7 +328,8 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
     setStep("generating");
 
     const example = findActivityExample(activity);
-    const services = templateServices ?? example?.services.slice(0, 4) ?? [];
+    const chosenServices = services.length ? services : templateServices ?? example?.services.slice(0, 4) ?? [];
+    const selectedTone = tones.find((item) => item.id === tone) ?? tones[0];
     const selectedGoal = goals.find((item) => item.id === goal) ?? goals[0];
 
     try {
@@ -256,10 +345,10 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
           activity: activity.trim(),
           city: city.trim(),
           phone: phone.trim(),
-          services,
+          services: chosenServices,
           goal: selectedGoal.goal,
-          tone: "professionnel, sobre et chaleureux",
-          communicationStyle: "clair et concis",
+          tone: selectedTone.tone,
+          communicationStyle: selectedTone.style,
           primaryAction: selectedGoal.action,
         }),
       });
@@ -340,7 +429,8 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
   function back() {
     setError("");
     if (step === "business") setStep("activity");
-    else if (step === "goal") setStep("business");
+    else if (step === "services") setStep("business");
+    else if (step === "goal") setStep("services");
     else if (step === "style") setStep("goal");
   }
 
@@ -363,8 +453,8 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
           lumio<span>.</span>
         </Link>
         {step !== "generating" && step !== "style" && (
-          <div className={styles.progress} aria-label={`Question ${stepNumber} sur 3`}>
-            {[1, 2, 3].map((index) => (
+          <div className={styles.progress} aria-label={`Question ${stepNumber} sur 4`}>
+            {[1, 2, 3, 4].map((index) => (
               <i key={index} className={index <= stepNumber ? styles.progressDone : undefined} />
             ))}
           </div>
@@ -376,7 +466,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
 
       {step === "activity" && (
         <form className={styles.question} onSubmit={submitActivity}>
-          <p className={styles.eyebrow}>Question 1 sur 3</p>
+          <p className={styles.eyebrow}>Question 1 sur 4</p>
           <h1>
             Quel est <em>ton métier ?</em>
           </h1>
@@ -418,7 +508,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
 
       {step === "business" && (
         <form className={styles.question} onSubmit={submitBusiness}>
-          <p className={styles.eyebrow}>Question 2 sur 3</p>
+          <p className={styles.eyebrow}>Question 2 sur 4</p>
           <h1>
             Ton entreprise, <em>et où tu travailles.</em>
           </h1>
@@ -457,9 +547,84 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
         </form>
       )}
 
+      {step === "services" && (
+        <form className={styles.question} onSubmit={submitServices}>
+          <p className={styles.eyebrow}>Question 3 sur 4</p>
+          <h1>
+            Tes services, <em>et ta façon de parler.</em>
+          </h1>
+          <p className={styles.lead}>
+            {serviceOptions.length > 0
+              ? `Choisis jusqu’à ${MAX_SERVICES} services à mettre en avant. Lumio écrit une présentation pour chacun.`
+              : "Ajoute tes principaux services, ou continue : Lumio proposera des services adaptés à ton métier."}
+          </p>
+          {serviceOptions.length > 0 && (
+          <div className={styles.chips} role="group" aria-label="Services à mettre en avant">
+            {serviceOptions.map((label) => (
+              <button
+                key={label}
+                type="button"
+                aria-pressed={services.includes(label)}
+                className={services.includes(label) ? styles.chipActive : undefined}
+                onClick={() => toggleService(label)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          )}
+          <label className={`${styles.field} ${styles.addService}`}>
+            <span>Un autre service ?</span>
+            <div>
+              <input
+                ref={inputRef}
+                value={customService}
+                onChange={(event) => setCustomService(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addCustomService();
+                  }
+                }}
+                placeholder="Ex. : Remplacement de cumulus"
+                maxLength={60}
+              />
+              <button type="button" className={styles.ghost} onClick={addCustomService} disabled={!customService.trim()}>
+                Ajouter
+              </button>
+            </div>
+          </label>
+          <p className={styles.subhead}>Le ton de tes textes</p>
+          <div className={`${styles.goalGrid} ${styles.toneGrid}`} role="radiogroup" aria-label="Ton des textes">
+            {tones.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="radio"
+                aria-checked={tone === item.id}
+                className={`${styles.goal} ${tone === item.id ? styles.goalActive : ""}`}
+                onClick={() => setTone(item.id)}
+              >
+                <strong>{item.title}</strong>
+                <span>{item.text}</span>
+              </button>
+            ))}
+          </div>
+          {error && <p className={styles.error} role="alert">{error}</p>}
+          <div className={styles.actions}>
+            <button type="button" className={styles.ghost} onClick={back}>
+              Retour
+            </button>
+            <button type="submit" className={styles.primary}>
+              Continuer <Arrow />
+            </button>
+          </div>
+        </form>
+      )}
+
       {step === "goal" && (
         <form className={styles.question} onSubmit={generate}>
-          <p className={styles.eyebrow}>Question 3 sur 3</p>
+          <p className={styles.eyebrow}>Question 4 sur 4</p>
           <h1>
             Que doivent faire <em>tes visiteurs ?</em>
           </h1>
