@@ -51,7 +51,15 @@ import (
 
 var db *pgxpool.Pool
 
-const currentCGVVersion = "2026-09-27"
+const currentCGVVersion = "2026-10-29"
+
+// Types de documents enregistrés dans legal_acceptances.
+const (
+	legalDocumentCGV = "cgv"
+	// Demande expresse de démarrage avant la fin du délai de rétractation
+	// (article L221-25 du Code de la consommation).
+	legalDocumentImmediateStart = "immediate_start"
+)
 const aiHourlyLimit = 20
 
 const leadRateLimit = 5
@@ -397,8 +405,9 @@ type StripeCheckoutInput struct {
 }
 
 type CGVAcceptanceInput struct {
-	Plan    string `json:"plan"`
-	Version string `json:"version"`
+	Plan           string `json:"plan"`
+	Version        string `json:"version"`
+	ImmediateStart bool   `json:"immediateStart"`
 }
 
 type CGVAcceptanceResponse struct {
@@ -8114,9 +8123,10 @@ func normalizePaidPlan(plan string) (string, error) {
 	}
 }
 
-func recordCGVAcceptance(
+func recordLegalAcceptance(
 	ctx context.Context,
 	userID string,
+	documentType string,
 	plan string,
 ) (time.Time, error) {
 	var acceptedAt time.Time
@@ -8133,7 +8143,7 @@ func recordCGVAcceptance(
 		)
 		VALUES (
 			$1::uuid,
-			'cgv',
+			$4,
 			$2,
 			$3,
 			NOW()
@@ -8151,6 +8161,7 @@ func recordCGVAcceptance(
 		userID,
 		currentCGVVersion,
 		plan,
+		documentType,
 	).Scan(&acceptedAt)
 
 	if err != nil {
@@ -8160,9 +8171,10 @@ func recordCGVAcceptance(
 	return acceptedAt, nil
 }
 
-func getCurrentCGVAcceptance(
+func getCurrentLegalAcceptance(
 	ctx context.Context,
 	userID string,
+	documentType string,
 	plan string,
 ) (time.Time, bool, error) {
 	var acceptedAt time.Time
@@ -8173,7 +8185,7 @@ func getCurrentCGVAcceptance(
 		SELECT accepted_at
 		FROM legal_acceptances
 		WHERE user_id = $1::uuid
-		  AND document_type = 'cgv'
+		  AND document_type = $4
 		  AND document_version = $2
 		  AND plan = $3
 		LIMIT 1;
@@ -8181,6 +8193,7 @@ func getCurrentCGVAcceptance(
 		userID,
 		currentCGVVersion,
 		plan,
+		documentType,
 	).Scan(&acceptedAt)
 
 	if err != nil {
@@ -8248,11 +8261,29 @@ func cgvAcceptanceHandler(
 		return
 	}
 
-	acceptedAt, err := recordCGVAcceptance(
+	if !input.ImmediateStart {
+		http.Error(
+			w,
+			"Tu dois demander le démarrage immédiat de l'abonnement avant le paiement.",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	acceptedAt, err := recordLegalAcceptance(
 		r.Context(),
 		user.ID,
+		legalDocumentCGV,
 		plan,
 	)
+	if err == nil {
+		_, err = recordLegalAcceptance(
+			r.Context(),
+			user.ID,
+			legalDocumentImmediateStart,
+			plan,
+		)
+	}
 	if err != nil {
 		log.Println(
 			"Erreur enregistrement acceptation CGV :",
@@ -8317,11 +8348,22 @@ func stripeCheckoutHandler(
 		return
 	}
 
-	acceptedAt, accepted, err := getCurrentCGVAcceptance(
+	acceptedAt, accepted, err := getCurrentLegalAcceptance(
 		r.Context(),
 		user.ID,
+		legalDocumentCGV,
 		plan,
 	)
+	var immediateStartAt time.Time
+	immediateStartRequested := false
+	if err == nil && accepted {
+		immediateStartAt, immediateStartRequested, err = getCurrentLegalAcceptance(
+			r.Context(),
+			user.ID,
+			legalDocumentImmediateStart,
+			plan,
+		)
+	}
 	if err != nil {
 		log.Println("Erreur vérification acceptation CGV :", err)
 		http.Error(
@@ -8332,10 +8374,10 @@ func stripeCheckoutHandler(
 		return
 	}
 
-	if !accepted {
+	if !accepted || !immediateStartRequested {
 		http.Error(
 			w,
-			"Tu dois accepter la version actuelle des CGV avant le paiement.",
+			"Tu dois accepter la version actuelle des CGV et demander le démarrage immédiat avant le paiement.",
 			http.StatusPreconditionRequired,
 		)
 		return
@@ -8387,6 +8429,10 @@ func stripeCheckoutHandler(
 	values.Set(
 		"subscription_data[metadata][cgv_accepted_at]",
 		acceptedAt.UTC().Format(time.RFC3339),
+	)
+	values.Set(
+		"subscription_data[metadata][immediate_start_requested_at]",
+		immediateStartAt.UTC().Format(time.RFC3339),
 	)
 
 	var session StripeCheckoutSession

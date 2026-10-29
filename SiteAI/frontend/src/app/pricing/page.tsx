@@ -106,6 +106,11 @@ export default function PricingPage() {
   ] = useState(false);
 
   const [
+    immediateStartAccepted,
+    setImmediateStartAccepted,
+  ] = useState(false);
+
+  const [
     userEmail,
     setUserEmail,
   ] = useState("");
@@ -357,6 +362,13 @@ export default function PricingPage() {
       return;
     }
 
+    if (!immediateStartAccepted) {
+      setError(
+        "Tu dois demander le démarrage immédiat de l'abonnement avant de continuer vers le paiement.",
+      );
+      return;
+    }
+
     setCheckoutLoading(
       plan,
     );
@@ -374,6 +386,7 @@ export default function PricingPage() {
               {
                 plan,
                 version: CGV_VERSION,
+                immediateStart: immediateStartAccepted,
               },
             ),
           },
@@ -708,9 +721,27 @@ export default function PricingPage() {
               </span>
             </label>
 
+            <label className="mt-4 flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={immediateStartAccepted}
+                onChange={(event) => {
+                  setImmediateStartAccepted(event.target.checked);
+                  setError("");
+                }}
+                className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-950"
+              />
+
+              <span className="text-sm leading-6 text-slate-300">
+                Je demande que mon abonnement démarre immédiatement, avant la
+                fin du délai de rétractation de 14 jours. Si je me rétracte,
+                je paierai le montant correspondant au service déjà fourni.
+              </span>
+            </label>
+
             <p className="mt-3 text-xs leading-5 text-slate-500">
-              Tu dois accepter les CGV avant d&apos;être redirigé vers Stripe.
-              Version enregistrée : 27/09/2026.
+              Tu dois cocher les deux cases avant d&apos;être redirigé vers
+              Stripe. Version des CGV : 29/10/2026.
             </p>
           </div>
         )}
@@ -822,7 +853,8 @@ export default function PricingPage() {
                       type="button"
                       disabled={
                         checkoutLoading !== null ||
-                        !cgvAccepted
+                        !cgvAccepted ||
+                        !immediateStartAccepted
                       }
                       onClick={() =>
                         startCheckout(

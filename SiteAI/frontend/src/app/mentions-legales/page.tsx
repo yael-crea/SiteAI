@@ -30,8 +30,8 @@ export default function LegalPage() {
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : le champ [À COMPLÉTER] restant devra
-            être renseigné avant la commercialisation de Lumio.
+            ⚠️ Version provisoire : ces mentions devront être relues avant la
+            commercialisation de Lumio.
           </div>
         </div>
 
@@ -45,7 +45,7 @@ SIREN : 131 781 932
 Immatriculation : Registre national des entreprises (RNE)
 Adresse : 3 rue de l’Opale, 34070 Montpellier, France
 E-mail de contact : castanyael@gmail.com
-Téléphone : [À COMPLÉTER]
+Téléphone : 07 69 07 95 59
 TVA non applicable, article 293 B du Code général des impôts.
             </div>
           </section>
