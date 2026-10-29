@@ -5,7 +5,7 @@ export type StyleSettings = {
   buttonStyle: "square" | "soft" | "pill";
   cardStyle: "simple" | "bordered" | "shadow";
   logoSize: "small" | "medium" | "large";
-  heroLayout: "auto" | "left" | "center";
+  heroLayout: "auto" | "left" | "center" | "split" | "immersive";
   contentWidth: "normal" | "wide";
   spacing: "compact" | "normal" | "airy";
   background: "auto" | "light" | "dark";

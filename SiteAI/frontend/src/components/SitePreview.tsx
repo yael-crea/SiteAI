@@ -68,7 +68,7 @@ type DesignSettings = DesignExtras & {
   buttonStyle?: "square" | "soft" | "pill";
   cardStyle?: "simple" | "bordered" | "shadow";
   logoSize?: "small" | "medium" | "large";
-  heroLayout?: "auto" | "left" | "center";
+  heroLayout?: "auto" | "left" | "center" | "split" | "immersive";
   contentWidth?: "normal" | "wide";
   spacing?: "compact" | "normal" | "airy";
   background?: "auto" | "light" | "dark";
@@ -283,7 +283,9 @@ function normalizeDesignSettings(
         : "medium",
     heroLayout:
       value?.heroLayout === "left" ||
-      value?.heroLayout === "center"
+      value?.heroLayout === "center" ||
+      value?.heroLayout === "split" ||
+      value?.heroLayout === "immersive"
         ? value.heroLayout
         : "auto",
     contentWidth:
@@ -5777,7 +5779,7 @@ function SignatureTemplate({
   city,
   onEdit,
   heroLayout,
-}: Omit<SitePreviewProps, "designStyle"> & { heroLayout: "auto" | "left" | "center" }) {
+}: Omit<SitePreviewProps, "designStyle"> & { heroLayout: "auto" | "left" | "center" | "split" | "immersive" }) {
   const edit = (target: PreviewEditTarget) => previewEditProps(target, Boolean(onEdit));
   const sector = getSectorVisualTheme(activity, city);
   const action = goalAction(site);
@@ -5807,7 +5809,13 @@ function SignatureTemplate({
     `${site.businessName} présente son savoir-faire en ${getActivityTheme(activity).noun} à ${city}, avec une approche claire et adaptée à chaque besoin.`,
   );
   const initial = site.businessName.trim().charAt(0).toUpperCase() || "L";
-  const layout = heroLayout === "center" ? "center" : "left";
+  // « split » (photo à côté) et « immersive » (photo en fond) demandent une photo ; sans photo, mise en page à gauche.
+  const layout =
+    heroLayout === "center"
+      ? "center"
+      : (heroLayout === "split" || heroLayout === "immersive") && site.heroImageUrl
+        ? heroLayout
+        : "left";
   const showGallery = isLayoutBlockVisible(site, "gallery") && gallery.length > 0;
   const year = new Date().getFullYear();
 

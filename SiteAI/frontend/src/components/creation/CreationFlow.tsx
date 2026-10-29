@@ -8,7 +8,7 @@ import SitePreview from "@/components/SitePreview";
 import { activityExamples } from "@/lib/activityExamples";
 import { designStyles, getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { clearExampleTemplate, readExampleTemplate } from "@/lib/exampleTemplates";
-import { withTradePhotos } from "@/lib/tradePhotos";
+import { tradeHeroLayout, withTradePhotos } from "@/lib/tradePhotos";
 import { clearPendingCreation, readPendingCreation, savePendingCreation } from "@/lib/pendingCreation";
 import type { SiteGoal } from "@/lib/siteGoal";
 import type { GeneratedSite } from "@/lib/builderTypes";
@@ -402,7 +402,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
         body: JSON.stringify({
           site: {
             ...generated,
-            designSettings: { ...generated.designSettings, ...style.settings },
+            designSettings: designFor(style),
           },
           activity: activity.trim(),
           city: city.trim(),
@@ -424,6 +424,12 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
       setError(err instanceof Error ? err.message : "Impossible d'enregistrer ton site.");
       setSaving(false);
     }
+  }
+
+  // Réglages d'un style pour ce site : le haut de page suit le métier quand le site a une photo principale.
+  function designFor(style: ReturnType<typeof getDesignStyle>) {
+    const hero = generated?.heroImageUrl ? tradeHeroLayout(activity) : undefined;
+    return { ...generated?.designSettings, ...style.settings, ...(hero ? { heroLayout: hero } : {}) };
   }
 
   function back() {
@@ -751,7 +757,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
                   <PreviewThumb>
                     <SitePreview
                       previewOnly
-                      site={{ ...generated, designSettings: { ...generated.designSettings, ...style.settings } }}
+                      site={{ ...generated, designSettings: designFor(style) }}
                       designStyle={style.id}
                       accentColor={style.accent}
                       activity={activity.trim()}

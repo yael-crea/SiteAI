@@ -113,7 +113,10 @@ function normalizeDesignSettings(
         ? value.logoSize
         : "medium",
     heroLayout:
-      value?.heroLayout === "left" || value?.heroLayout === "center"
+      value?.heroLayout === "left" ||
+      value?.heroLayout === "center" ||
+      value?.heroLayout === "split" ||
+      value?.heroLayout === "immersive"
         ? value.heroLayout
         : "auto",
     contentWidth: value?.contentWidth === "wide" ? "wide" : "normal",

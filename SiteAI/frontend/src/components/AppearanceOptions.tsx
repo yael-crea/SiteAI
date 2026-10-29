@@ -16,7 +16,7 @@ const groups: {title: string; description: string; controls: Control[]}[] = [
   ]},
   {title: "Mise en page et boutons", description: "Organise l’espace et donne de la visibilité aux actions.", controls: [
     {key:"contentWidth",label:"Largeur",choices:[["normal","Normale"],["wide","Large"]]},
-    {key:"heroLayout",label:"Alignement de l’accueil",choices:[auto,["left","À gauche"],["center","Centré"]]},
+    {key:"heroLayout",label:"Mise en page de l’accueil",choices:[auto,["left","À gauche"],["center","Centré"],["split","Photo à côté"],["immersive","Photo en fond"]]},
     {key:"spacing",label:"Espace entre les sections",choices:[["compact","Compact"],["normal","Normal"],["airy","Aéré"]]},
     {key:"background",label:"Fond général",choices:[auto,["light","Clair"],["dark","Sombre"]]},
     {key:"logoSize",label:"Taille du logo",choices:[["small","Petit"],["medium","Moyen"],["large","Grand"]]},
