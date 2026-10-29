@@ -499,6 +499,7 @@ type BillingStatus struct {
 	CanManage           bool       `json:"canManage"`
 	MaxPublishedSites   int        `json:"maxPublishedSites"`
 	CustomDomainAllowed bool       `json:"customDomainAllowed"`
+	DetailedAnalytics   bool       `json:"detailedAnalytics"`
 	IsAdmin             bool       `json:"isAdmin"`
 	IsOwner             bool       `json:"isOwner"`
 }
@@ -506,6 +507,9 @@ type BillingStatus struct {
 type PlanEntitlements struct {
 	MaxPublishedSites   int
 	CustomDomainAllowed bool
+	// Statistiques détaillées (visiteurs, appels, e-mails, prospects) :
+	// réservées aux formules Pro et Agence.
+	DetailedAnalytics bool
 }
 
 type AdminStatsSummary struct {
@@ -1972,6 +1976,22 @@ func analyticsSummaryHandler(
 		requireUser(w, r)
 
 	if !authenticated {
+		return
+	}
+
+	billing, _, _, err := getBillingStatus(r.Context(), user.ID)
+	if err != nil {
+		log.Println("Erreur abonnement analytics :", err)
+		http.Error(w, "Impossible de vérifier l'abonnement", http.StatusInternalServerError)
+		return
+	}
+
+	if !billing.DetailedAnalytics {
+		http.Error(
+			w,
+			"Les statistiques détaillées sont incluses dans les formules Pro et Agence.",
+			http.StatusForbidden,
+		)
 		return
 	}
 
@@ -8005,6 +8025,7 @@ func billingEntitlements(status BillingStatus) PlanEntitlements {
 		return PlanEntitlements{
 			MaxPublishedSites:   1000000,
 			CustomDomainAllowed: true,
+			DetailedAnalytics:   true,
 		}
 	}
 
@@ -8023,12 +8044,14 @@ func billingEntitlements(status BillingStatus) PlanEntitlements {
 		return PlanEntitlements{
 			MaxPublishedSites:   3,
 			CustomDomainAllowed: true,
+			DetailedAnalytics:   true,
 		}
 
 	case "agence":
 		return PlanEntitlements{
 			MaxPublishedSites:   10,
 			CustomDomainAllowed: true,
+			DetailedAnalytics:   true,
 		}
 
 	default:
@@ -8044,6 +8067,7 @@ func applyBillingEntitlements(status *BillingStatus) {
 	entitlements := billingEntitlements(*status)
 	status.MaxPublishedSites = entitlements.MaxPublishedSites
 	status.CustomDomainAllowed = entitlements.CustomDomainAllowed
+	status.DetailedAnalytics = entitlements.DetailedAnalytics
 }
 
 func publishedSiteLimitMessage(plan string, maxSites int) string {

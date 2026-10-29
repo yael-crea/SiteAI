@@ -183,6 +183,7 @@ export default function DashboardPage() {
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [leads, setLeads] = useState<LeadSummary[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [analyticsLocked, setAnalyticsLocked] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -358,11 +359,18 @@ export default function DashboardPage() {
     try {
       const response = await authenticatedFetch("/analytics/summary");
 
+      if (response.status === 403) {
+        setAnalytics(null);
+        setAnalyticsLocked(true);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Impossible de récupérer les statistiques.");
       }
 
       const data = (await response.json()) as AnalyticsSummary;
+      setAnalyticsLocked(false);
       setAnalytics(data);
     } catch (err) {
       console.error(err);
@@ -1984,6 +1992,26 @@ export default function DashboardPage() {
           {analyticsLoading ? (
             <div className="mt-5 rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-500">
               Chargement des statistiques...
+            </div>
+          ) : analyticsLocked ? (
+            <div className="mt-5 rounded-3xl border border-slate-800 bg-slate-900 p-8 text-center">
+              <p className="font-black text-slate-200">
+                Statistiques détaillées avec la formule Pro
+              </p>
+
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+                Visiteurs, pages vues, appels, e-mails et taux de conversion de
+                tes sites sont inclus dans les formules Pro et Agence. Tes
+                demandes de devis restent disponibles dans Prospects.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => router.push("/pricing")}
+                className="mt-5 inline-flex rounded-xl bg-cyan-500 px-5 py-3 text-sm font-black text-slate-950 hover:bg-cyan-400"
+              >
+                Voir la formule Pro
+              </button>
             </div>
           ) : analytics ? (
             <>
