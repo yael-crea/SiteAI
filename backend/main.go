@@ -1928,6 +1928,8 @@ func analyticsPageViewHandler(
 		return
 	}
 
+	maybePurgeOldPageviews(r.Context(), time.Now())
+
 	writeJSON(
 		w,
 		http.StatusCreated,

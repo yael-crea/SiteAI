@@ -26,12 +26,12 @@ export default function LegalPage() {
           </p>
           <h1 className="mt-4 text-4xl font-black md:text-5xl">Politique de confidentialité</h1>
           <p className="mt-5 max-w-3xl leading-7 text-slate-400">
-            Cette politique décrit de manière provisoire les principales catégories de données utilisées par Lumio. Elle devra être adaptée aux traitements réellement déployés au moment du lancement.
+            Cette politique décrit les données personnelles traitées par Lumio, les raisons de ces traitements, les prestataires qui y participent et les droits des personnes concernées.
           </p>
 
           <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : cette politique devra être relue et
-            finalisée avant la commercialisation de Lumio.
+            ⚠️ Version provisoire : cette politique devra être relue avant
+            la commercialisation de Lumio.
           </div>
         </div>
 
@@ -42,6 +42,10 @@ export default function LegalPage() {
               Responsable du traitement : Yael Castan Gleizes EI (SIREN 131 781 932)
 Adresse : 3 rue de l’Opale, 34070 Montpellier, France
 E-mail relatif aux données personnelles : castanyael@gmail.com
+
+Lumio est responsable du traitement des données de ses propres clients et utilisateurs (compte, sites, abonnement, support).
+
+Pour les données des visiteurs des sites publiés avec Lumio (demandes de devis, statistiques de visite), le responsable du traitement est le propriétaire du site. Lumio agit alors en tant que sous-traitant, pour son compte et selon ses instructions, dans les conditions prévues par les CGV.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
@@ -77,57 +81,65 @@ Les données de carte bancaire ne sont pas destinées à être stockées directe
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">4. Bases juridiques</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Les bases juridiques exactes devront être validées avant le lancement.
-
-Selon le traitement, Lumio pourra notamment s’appuyer sur :
-• l’exécution du contrat pour fournir le service ;
-• le respect d’une obligation légale ;
-• l’intérêt légitime pour certaines opérations de sécurité et de prévention des abus ;
-• le consentement lorsque celui-ci est requis, notamment pour certains traceurs ou communications facultatives.
+              Chaque traitement repose sur l’une des bases suivantes :
+• l’exécution du contrat : création et gestion du compte, génération et publication des sites, abonnement, paiement, support ;
+• le respect d’une obligation légale : facturation, comptabilité, conservation des preuves de paiement ;
+• l’intérêt légitime de Lumio : sécurité du service, prévention des abus, journaux techniques, preuve de l’acceptation des CGV, mesure d’audience des sites publiés dans les conditions décrites à la section 8.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <h2 className="text-xl font-black">5. Prestataires techniques</h2>
+            <h2 className="text-xl font-black">5. Prestataires et transferts de données</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Lumio utilise actuellement ou prévoit d’utiliser notamment :
-• Supabase pour l’authentification, le stockage et la base de données ;
-• Stripe pour les paiements et abonnements ;
-• Vercel pour le frontend et le déploiement ;
-• Railway pour le backend ;
-• OpenAI pour certaines fonctions de génération assistée par intelligence artificielle.
+              Lumio fait appel aux prestataires suivants, qui traitent les données uniquement pour fournir leur service :
+• Supabase Pte. Ltd. : base de données, authentification et stockage des images. Les données sont hébergées dans l’Union européenne (Francfort, Allemagne) ;
+• Stripe Payments Europe, Ltd. (Irlande) : paiements et abonnements. Les données de carte bancaire sont traitées directement par Stripe et ne sont jamais stockées par Lumio ;
+• Vercel Inc. (États-Unis) : hébergement du site Lumio et des sites publiés ;
+• Railway Corporation (États-Unis) : hébergement du serveur applicatif ;
+• OpenAI (États-Unis) : génération et modification des textes par intelligence artificielle. Seules les informations saisies pour générer ou modifier un site lui sont transmises ; elles ne sont pas utilisées pour entraîner ses modèles ;
+• Resend, Inc. (États-Unis) : envoi des e-mails du service, notamment les notifications de demandes de devis ;
+• Google : uniquement si l’utilisateur choisit de se connecter avec son compte Google.
 
-La liste définitive, les rôles de chaque prestataire, les lieux de traitement et les éventuels mécanismes de transfert devront être vérifiés avant le lancement commercial.
+Lorsque des données sont transférées hors de l’Union européenne, ces transferts sont encadrés par les garanties prévues par le RGPD : décision d’adéquation de la Commission européenne (Data Privacy Framework UE–États-Unis) pour les prestataires certifiés, ou clauses contractuelles types de la Commission européenne.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">6. Durées de conservation</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Les durées précises devront être définies en fonction de chaque catégorie de données et des obligations légales applicables.
-
-Principe retenu : les données ne sont conservées que pendant la durée nécessaire aux finalités décrites, puis supprimées ou archivées lorsque la loi l’exige.
+              • Compte, sites et contenus : pendant toute la durée d’utilisation du compte, puis suppression dans un délai de 3 mois après la clôture du compte ou la demande de suppression ;
+• demandes de devis reçues sur les sites publiés : tant que le propriétaire du site les conserve dans son espace, et au plus tard jusqu’à la suppression de son compte ;
+• statistiques de visite des sites publiés : 25 mois au maximum, puis suppression automatique ;
+• factures et données de paiement nécessaires à la comptabilité : 10 ans, conformément au Code de commerce ;
+• preuves d’acceptation des CGV et déclarations faites lors de la souscription : pendant la durée de l’abonnement, puis 5 ans ;
+• journaux techniques : quelques semaines, selon les durées appliquées par les hébergeurs, et au maximum 12 mois ;
+• sauvegardes chiffrées de la base de données : 14 jours.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <h2 className="text-xl font-black">7. Droits des utilisateurs</h2>
-            <div className="mt-3 text-sm leading-7 text-slate-400">
-              <p>Sous réserve des conditions prévues par la réglementation applicable, les personnes concernées peuvent notamment demander l’accès, la rectification, l’effacement, la limitation ou la portabilité de leurs données, et s’opposer à certains traitements.</p>
-              <p className="mt-3">
-                Contact pour exercer ces droits :{" "}
-                <a href="mailto:support@lumio.business" className="text-blue-400 hover:text-blue-300">
-                  support@lumio.business
-                </a>
-              </p>
-              <p className="mt-3">Les utilisateurs peuvent également introduire une réclamation auprès de la CNIL.</p>
+            <h2 className="text-xl font-black">7. Droits des personnes concernées</h2>
+            <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
+              Toute personne concernée peut demander l’accès à ses données, leur rectification, leur effacement, la limitation du traitement ou leur portabilité, et s’opposer aux traitements fondés sur l’intérêt légitime.
+
+Pour exercer ces droits, il suffit d’écrire à castanyael@gmail.com. Une réponse est apportée dans un délai d’un mois. Un justificatif d’identité peut être demandé en cas de doute raisonnable sur l’identité du demandeur.
+
+Les visiteurs d’un site publié avec Lumio s’adressent en priorité au propriétaire de ce site ; Lumio l’aide à répondre à leur demande.
+
+Toute personne peut aussi introduire une réclamation auprès de la CNIL : 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07 — www.cnil.fr.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">8. Cookies et traceurs</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Les traceurs strictement nécessaires au fonctionnement, à l’authentification ou à la sécurité peuvent être utilisés lorsque la réglementation le permet.
+              Le site Lumio n’utilise aucun cookie publicitaire ni aucun traceur de réseau social.
 
-Sur les sites publiés, Lumio utilise un identifiant aléatoire enregistré dans le stockage local du navigateur afin de compter les visiteurs uniques et d’éviter les doublons. Lumio enregistre également les pages vues et les clics sur le téléphone ou l’e-mail. Ces mesures servent uniquement à fournir des statistiques au propriétaire du site ; elles ne sont pas utilisées pour la publicité ciblée.
+Sur le site Lumio, seuls des éléments strictement nécessaires sont enregistrés dans le navigateur : la session de connexion (Supabase), le brouillon du site en cours de création et quelques préférences de navigation. Ils ne nécessitent pas de consentement.
 
-La base juridique, la durée de conservation et la nécessité éventuelle d’un consentement devront être confirmées avant le lancement selon la configuration définitive. Si Lumio ajoute des outils publicitaires ou des traceurs tiers nécessitant un consentement, un mécanisme de consentement et de retrait devra être mis en place avant leur activation.
+Sur les sites publiés, Lumio mesure l’audience pour le compte du propriétaire du site : un identifiant aléatoire propre à chaque site est enregistré dans le stockage local du navigateur pour compter les visiteurs uniques. Cette mesure respecte les conditions de dispense de consentement fixées par la CNIL :
+• elle sert uniquement à produire des statistiques de fréquentation pour le propriétaire du site ;
+• les données ne sont ni croisées avec d’autres traitements, ni transmises à des tiers, ni utilisées pour la publicité ;
+• l’identifiant est remplacé par un nouveau au bout de 13 mois ;
+• les données de visite sont supprimées au bout de 25 mois.
+
+Si Lumio ajoute un jour des traceurs soumis au consentement, un bandeau permettant de les accepter ou de les refuser sera mis en place avant leur activation.
             </div>
           </section>
         </div>

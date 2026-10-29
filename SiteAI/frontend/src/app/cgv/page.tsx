@@ -326,6 +326,30 @@ TVA non applicable, article 293 B du Code général des impôts.`}
               séparément.
             </p>
 
+            <h3 className="mt-5 font-black text-slate-200">
+              Données traitées pour le compte du client (article 28 du RGPD)
+            </h3>
+
+            <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
+              {`Pour les données des visiteurs de ses sites publiés, le client est responsable du traitement et Lumio agit en tant que sous-traitant. Les présentes CGV valent accord de sous-traitance au sens de l’article 28 du RGPD.
+
+Objet et durée : héberger les sites du client, recevoir et lui transmettre les demandes de devis envoyées par ses visiteurs, et lui fournir des statistiques de fréquentation, pendant toute la durée d’utilisation du service.
+
+Données et personnes concernées : visiteurs des sites du client ; nom, adresse e-mail, téléphone et message des demandes de devis ; identifiant aléatoire de visite, pages vues et date de visite.
+
+Engagements de Lumio :
+• traiter ces données uniquement pour fournir le service et selon les instructions du client, matérialisées par sa configuration du service ;
+• garantir la confidentialité des données, auxquelles seules les personnes habilitées de Lumio ont accès, et uniquement si nécessaire ;
+• mettre en œuvre des mesures de sécurité appropriées : connexions chiffrées, accès à la base réservé au serveur de Lumio, contrôle d’accès par compte, sauvegardes chiffrées ;
+• ne faire appel qu’aux sous-traitants ultérieurs listés dans la Politique de confidentialité, liés par des obligations équivalentes, et informer le client de tout changement, qui peut s’y opposer en résiliant son abonnement ;
+• aider le client à répondre aux demandes d’exercice de droits de ses visiteurs et à respecter ses propres obligations ;
+• notifier au client toute violation de données le concernant dans les meilleurs délais, et au plus tard 48 heures après en avoir pris connaissance ;
+• à la fin du service, supprimer les données dans un délai de 3 mois, après les avoir restituées au client s’il le demande avant la clôture de son compte ;
+• mettre à la disposition du client les informations nécessaires pour démontrer le respect de ces obligations.
+
+Engagements du client : disposer d’une base légale pour les données collectées sur ses sites, informer ses visiteurs de ce traitement, et ne pas demander de données sensibles dans ses formulaires.`}
+            </div>
+
             <Link
               href="/confidentialite"
               className="mt-4 inline-flex text-sm font-bold text-blue-400 hover:text-blue-300"

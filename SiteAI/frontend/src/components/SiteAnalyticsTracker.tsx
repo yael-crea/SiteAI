@@ -2,6 +2,10 @@
 
 import { useEffect } from "react";
 
+// The CNIL exempts audience measurement from consent only if the visitor
+// identifier lives at most 13 months; it is then replaced by a new one.
+const VISITOR_ID_MAX_AGE_MS = 13 * 30 * 24 * 60 * 60 * 1000;
+
 type SiteAnalyticsTrackerProps = {
   publicSlug: string;
 };
@@ -27,10 +31,19 @@ export default function SiteAnalyticsTracker({
   useEffect(() => {
     if (!publicSlug) return;
     const visitorKey = `siteai_visitor_${publicSlug}`;
+    const visitorCreatedKey = `siteai_visitor_created_${publicSlug}`;
     const recentViewKey = `siteai_recent_view_${publicSlug}`;
     let visitorID = "";
     try {
-      visitorID = localStorage.getItem(visitorKey) || createVisitorID();
+      const now = Date.now();
+      const createdAt = Number(localStorage.getItem(visitorCreatedKey) || "0");
+      visitorID = localStorage.getItem(visitorKey) || "";
+      if (!visitorID || (createdAt && now - createdAt >= VISITOR_ID_MAX_AGE_MS)) {
+        visitorID = createVisitorID();
+        localStorage.setItem(visitorCreatedKey, String(now));
+      } else if (!createdAt) {
+        localStorage.setItem(visitorCreatedKey, String(now));
+      }
       localStorage.setItem(visitorKey, visitorID);
       const recentView = Number(sessionStorage.getItem(recentViewKey) || "0");
       if (!recentView || Date.now() - recentView >= 5000) {
