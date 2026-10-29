@@ -11,6 +11,8 @@
     "check": "npm run typecheck && npm run build"
   },
   "dependencies": {
+    "@supabase/auth-js": "2.116.0",
+    "@supabase/storage-js": "2.116.0",
     "@supabase/supabase-js": "2.116.0",
     "next": "16.4.2",
     "react": "^19.3.0",
@@ -30,4 +32,3 @@
     "source-map-js": "1.2.2"
   }
 }
-
