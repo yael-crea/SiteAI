@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import Icon from "@/components/ui/Icon";
+import AppSidebar from "@/components/app/AppSidebar";
 
 
 
@@ -2781,11 +2782,26 @@ export default function ProspectsPage() {
   return (
     <>
 
-    <main className="lumio-app min-h-screen bg-slate-950 text-white">
+    <main className="lumio-app has-sidebar min-h-screen bg-slate-950 text-white">
 
       {confirmDialog}
 
-      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+      <AppSidebar
+        className="hidden lg:flex"
+        current="prospects"
+        userEmail={userEmail}
+        newLeadsCount={leads.filter((lead) => lead.status === "new").length}
+        onNavigate={(path) => router.push(path)}
+        onLogout={() => void handleLogout()}
+        onCreateSite={() => {
+          sessionStorage.removeItem("siteai_site_to_open");
+          router.push("/creer");
+        }}
+      />
+
+      {/* À partir de 1024 px, la barre latérale remplace cet en-tête. */}
+
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur lg:hidden">
 
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-5">
 

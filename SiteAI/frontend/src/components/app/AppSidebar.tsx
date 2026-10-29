@@ -19,31 +19,34 @@ type NavItem = {
   badge?: number;
 };
 
+// Seules la page active et la navigation sont obligatoires : chaque page passe les données qu'elle a déjà.
 type AppSidebarProps = {
   current: "dashboard" | "sites" | "prospects";
-  userEmail: string;
-  isAdmin: boolean;
-  newLeadsCount: number;
-  leadsLoading: boolean;
-  planName: string;
-  billingStatus: string;
-  billingLoading: boolean;
+  userEmail?: string;
+  isAdmin?: boolean;
+  newLeadsCount?: number;
+  leadsLoading?: boolean;
+  planName?: string;
+  billingStatus?: string;
+  billingLoading?: boolean;
   onNavigate: (path: string) => void;
   onLogout: () => void;
+  onCreateSite?: () => void;
   className?: string;
 };
 
 export default function AppSidebar({
   current,
-  userEmail,
-  isAdmin,
-  newLeadsCount,
-  leadsLoading,
+  userEmail = "",
+  isAdmin = false,
+  newLeadsCount = 0,
+  leadsLoading = false,
   planName,
-  billingStatus,
-  billingLoading,
+  billingStatus = "",
+  billingLoading = false,
   onNavigate,
   onLogout,
+  onCreateSite,
   className = "",
 }: AppSidebarProps) {
   const items: NavItem[] = [
@@ -72,7 +75,18 @@ export default function AppSidebar({
         lumio<span>.</span>
       </button>
 
-      <nav className="mt-8 grid gap-1" aria-label="Navigation principale">
+      {onCreateSite && (
+        <button
+          type="button"
+          onClick={onCreateSite}
+          className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold transition hover:bg-blue-500"
+        >
+          <Icon name="plus" size={16} />
+          Nouveau site
+        </button>
+      )}
+
+      <nav className={`${onCreateSite ? "mt-5" : "mt-8"} grid gap-1`} aria-label="Navigation principale">
         {items.map((item) => {
           const active = item.key === current;
           return (
@@ -112,11 +126,13 @@ export default function AppSidebar({
               <Skeleton width="55%" height={14} />
               <Skeleton width="80%" height={10} />
             </span>
-          ) : (
+          ) : planName ? (
             <>
               <span className="mt-1 block text-base font-semibold text-white">{planName}</span>
               {billingStatus && <span className="mt-0.5 block text-xs text-slate-400">{billingStatus}</span>}
             </>
+          ) : (
+            <span className="mt-1 block text-sm font-semibold text-white">Formule et abonnement</span>
           )}
         </button>
 
