@@ -21,6 +21,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import Icon from "@/components/ui/Icon";
+import AppSidebar from "@/components/app/AppSidebar";
+import { readableBillingStatus, readablePlan } from "@/lib/billingLabels";
 
 
 
@@ -2689,9 +2691,25 @@ export default function SitesPage() {
 
   return (
     <>
-    <main className="lumio-app min-h-screen bg-slate-950 pb-28 text-white md:pb-12">
+    <main className="lumio-app has-sidebar min-h-screen bg-slate-950 pb-28 text-white md:pb-12">
       {confirmDialog}
-      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur">
+      <AppSidebar
+        className="hidden lg:flex"
+        current="sites"
+        planName={billing ? readablePlan(billing.plan ?? "free") : undefined}
+        billingStatus={billing ? readableBillingStatus(billing.status ?? "") : ""}
+        billingLoading={billingLoading}
+        onNavigate={(path) => router.push(path)}
+        onLogout={() => {
+          void supabase.auth.signOut().then(() => {
+            sessionStorage.removeItem("siteai_site_to_open");
+            router.replace("/auth");
+          });
+        }}
+        onCreateSite={createSite}
+      />
+      {/* À partir de 1024 px, la barre latérale remplace cet en-tête. */}
+      <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
           <button
             type="button"

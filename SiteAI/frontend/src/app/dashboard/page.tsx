@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import Icon from "@/components/ui/Icon";
 import AppSidebar from "@/components/app/AppSidebar";
+import { readableBillingStatus, readablePlan } from "@/lib/billingLabels";
 import { Badge, EmptyState, Skeleton } from "@/components/ui/Surface";
 
 type DesignStyle = "moderne" | "elegant" | "artisan";
@@ -106,40 +107,6 @@ type AnalyticsSummary = {
   conversionRate: number;
   sites: SiteAnalyticsSummary[];
 };
-
-function readablePlan(plan: string) {
-  switch (plan.toLowerCase()) {
-    case "essentiel":
-      return "Essentiel";
-    case "pro":
-      return "Pro";
-    case "agence":
-      return "Agence";
-    default:
-      return "Aucun abonnement";
-  }
-}
-
-function readableBillingStatus(status: string) {
-  switch (status) {
-    case "active":
-      return "Actif";
-    case "trialing":
-      return "Période d’essai";
-    case "past_due":
-      return "Paiement en retard";
-    case "unpaid":
-      return "Impayé";
-    case "canceled":
-      return "Résilié";
-    case "incomplete":
-      return "Paiement incomplet";
-    case "incomplete_expired":
-      return "Expiré";
-    default:
-      return status || "Inactif";
-  }
-}
 
 function formatBillingDate(value?: string) {
   if (!value) return "";
@@ -1059,6 +1026,7 @@ export default function DashboardPage() {
         billingLoading={billingLoading}
         onNavigate={(path) => router.push(path)}
         onLogout={() => void handleLogout()}
+        onCreateSite={createSite}
       />
       {/* En dessous de 1024 px, l'en-tête reste la navigation ; au-delà, la barre latérale le remplace. */}
       <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 backdrop-blur lg:hidden">
