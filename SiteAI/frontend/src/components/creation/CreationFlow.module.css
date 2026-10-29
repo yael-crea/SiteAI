@@ -703,3 +703,41 @@
     transition: none !important;
   }
 }
+
+/* Étape « services et ton » */
+.addService > div {
+  display: flex;
+  gap: 10px;
+}
+
+.addService input {
+  flex: 1;
+  min-height: 52px;
+}
+
+.addService button {
+  flex: none;
+}
+
+.addService button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.subhead {
+  margin: 36px 0 0;
+  color: var(--ui-label-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.toneGrid {
+  margin-top: 12px;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 760px) {
+  .toneGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
