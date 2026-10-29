@@ -58,18 +58,23 @@ func TestStripeAPIErrorUsesStripeMessage(t *testing.T) {
 	}
 }
 
-func TestConfigureStripeAutomaticTax(t *testing.T) {
+func TestConfigureStripeBillingDetails(t *testing.T) {
 	t.Parallel()
 
 	values := url.Values{}
-	configureStripeAutomaticTax(values)
+	configureStripeBillingDetails(values)
+
+	// Franchise en base de TVA : aucune taxe ne doit être ajoutée au prix.
+	for _, key := range []string{"automatic_tax[enabled]", "tax_id_collection[enabled]"} {
+		if values.Has(key) {
+			t.Errorf("%s ne doit pas être envoyé à Stripe", key)
+		}
+	}
 
 	want := map[string]string{
-		"automatic_tax[enabled]":     "true",
 		"billing_address_collection": "required",
 		"customer_update[address]":   "auto",
 		"customer_update[name]":      "auto",
-		"tax_id_collection[enabled]": "true",
 	}
 
 	for key, expected := range want {

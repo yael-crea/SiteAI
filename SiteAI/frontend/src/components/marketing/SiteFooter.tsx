@@ -59,7 +59,7 @@ export default function SiteFooter() {
       </nav>
       <div className={styles.footerBottom}>
         <span>© 2026 Lumio</span>
-        <span>Prix affichés hors taxes · Paiement sécurisé par Stripe</span>
+        <span>TVA non applicable, art. 293 B du CGI · Paiement sécurisé par Stripe</span>
       </div>
     </footer>
   );

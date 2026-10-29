@@ -1,9 +1,9 @@
 export type PlanName = "essentiel" | "pro" | "agence";
 
 export const CGV_VERSION = "2026-09-27";
-export const priceSuffix = "HT / mois";
+export const priceSuffix = "/ mois";
 export const priceTaxText =
-  "Prix mensuels hors taxes pour les professionnels. La TVA ou toute autre taxe applicable est ajoutée lorsqu’elle est due et son montant est affiché avant la validation du paiement sur Stripe.";
+  "Prix mensuels. TVA non applicable, article 293 B du Code général des impôts : le prix affiché est le prix payé.";
 
 export const plans: {
   id: PlanName;
