@@ -10,6 +10,16 @@ type SiteAnalyticsTrackerProps = {
   publicSlug: string;
 };
 
+// Campaign source (e.g. ?utm_source=affichette on the printed poster QR code).
+function readUTMSource() {
+  try {
+    const value = new URLSearchParams(window.location.search).get("utm_source") || "";
+    return /^[a-zA-Z0-9_-]{1,40}$/.test(value) ? value.toLowerCase() : "";
+  } catch {
+    return "";
+  }
+}
+
 function createVisitorID() {
   if (
     typeof crypto !== "undefined" &&
@@ -51,7 +61,7 @@ export default function SiteAnalyticsTracker({
         void fetch("/api-backend/analytics/pageview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ publicSlug, visitorId: visitorID }),
+          body: JSON.stringify({ publicSlug, visitorId: visitorID, utmSource: readUTMSource() }),
           keepalive: true,
         }).catch(() => undefined);
       }

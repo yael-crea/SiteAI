@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import SitePreview from "@/components/SitePreview";
+import SiteAnalyticsTracker from "@/components/SiteAnalyticsTracker";
 
 type SiteSection = {
   title: string;
@@ -515,6 +516,12 @@ export default async function DomainPage(
               "\\u003c",
             ),
         }}
+      />
+
+      <SiteAnalyticsTracker
+        publicSlug={
+          publicSite.publicSlug
+        }
       />
 
       <main className="min-h-screen">

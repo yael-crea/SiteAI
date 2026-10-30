@@ -12,6 +12,7 @@ import Icon from "@/components/ui/Icon";
 import AppSidebar from "@/components/app/AppSidebar";
 import { readableBillingStatus, readablePlan } from "@/lib/billingLabels";
 import { Badge, EmptyState, Skeleton } from "@/components/ui/Surface";
+import { downloadSitePoster } from "@/lib/sitePoster";
 
 type DesignStyle = "moderne" | "elegant" | "artisan";
 
@@ -99,6 +100,7 @@ type SiteAnalyticsSummary = {
   leads30d: number;
   phoneClicks30d: number;
   emailClicks30d: number;
+  posterViews30d?: number;
   conversionRate: number;
 };
 
@@ -108,6 +110,7 @@ type AnalyticsSummary = {
   leads30d: number;
   phoneClicks30d: number;
   emailClicks30d: number;
+  posterViews30d?: number;
   conversionRate: number;
   sites: SiteAnalyticsSummary[];
 };
@@ -191,6 +194,7 @@ export default function DashboardPage() {
   const [deletingID, setDeletingID] = useState<number | null>(null);
   const [duplicatingID, setDuplicatingID] = useState<number | null>(null);
   const [shareFeedback, setShareFeedback] = useState<ShareFeedback | null>(null);
+  const [posterLoadingID, setPosterLoadingID] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const [domainPanelSiteID, setDomainPanelSiteID] = useState<number | null>(null);
@@ -415,6 +419,27 @@ export default function DashboardPage() {
   function editSite(id: number) {
     sessionStorage.setItem("siteai_site_to_open", String(id));
     router.push("/builder");
+  }
+
+  async function downloadPoster(siteID: number) {
+    setPosterLoadingID(siteID);
+    setShareFeedback(null);
+
+    try {
+      await downloadSitePoster(siteID, authenticatedFetch);
+    } catch (err) {
+      console.error(err);
+      setShareFeedback({
+        siteID,
+        message:
+          err instanceof Error
+            ? err.message
+            : "Impossible de télécharger l'affichette.",
+        error: true,
+      });
+    } finally {
+      setPosterLoadingID(null);
+    }
   }
 
   function viewPublicSite(slug: string) {
@@ -1404,6 +1429,24 @@ export default function DashboardPage() {
                       </button>
                     )}
                   </div>
+
+                  {savedSite.published && savedSite.publicSlug && (
+                    <button
+                      type="button"
+                      disabled={posterLoadingID === savedSite.id}
+                      onClick={() => void downloadPoster(savedSite.id)}
+                      className="mt-2 w-full rounded-xl border border-slate-700 px-4 py-3 text-sm font-bold text-slate-300 hover:border-blue-500 disabled:cursor-wait disabled:opacity-60"
+                    >
+                      <Icon name="download" size={15} className="mr-1.5 inline-block align-[-0.15em]" />
+                      {posterLoadingID === savedSite.id ? "Préparation..." : "Télécharger mon affichette"}
+                    </button>
+                  )}
+
+                  {shareFeedback?.siteID === savedSite.id && (
+                    <p role="status" className={`mt-2 text-center text-xs ${shareFeedback.error ? "text-amber-300" : "text-emerald-300"}`}>
+                      {shareFeedback.message}
+                    </p>
+                  )}
                 </article>
               ))}
             </div>
@@ -2040,7 +2083,9 @@ export default function DashboardPage() {
                   </p>
 
                   <p className="mt-2 text-xs text-slate-500">
-                    Toutes visites confondues
+                    {analytics.posterViews30d
+                      ? `Dont ${analytics.posterViews30d} via l'affichette`
+                      : "Toutes visites confondues"}
                   </p>
                 </div>
 
