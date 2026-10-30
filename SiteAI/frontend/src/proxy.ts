@@ -64,7 +64,16 @@ export function proxy(
   if (
     isSiteAIDomain(host)
   ) {
-    return NextResponse.next();
+    // La page d'accueil Lumio est la landing immersive statique.
+    const home =
+      request.nextUrl.clone();
+
+    home.pathname =
+      "/decouvrir.html";
+
+    return NextResponse.rewrite(
+      home,
+    );
   }
 
   const url =
