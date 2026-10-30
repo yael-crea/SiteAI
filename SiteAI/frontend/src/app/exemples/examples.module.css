@@ -150,6 +150,7 @@
 
 .demoSection {
   padding-block: 40px clamp(80px, 9vw, 120px);
+  scroll-margin-top: 72px;
 }
 
 .demoHeading {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SitePreview from "@/components/SitePreview";
 import SiteFooter from "@/components/marketing/SiteFooter";
 import SiteHeader from "@/components/marketing/SiteHeader";
@@ -254,11 +254,17 @@ function Arrow() {
 export default function ExamplesPage() {
   const [selected, setSelected] = useState("plombier");
   const example = examples.find((item) => item.id === selected) ?? examples[0];
+  const demoRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("metier");
     if (!requested || !examples.some((item) => item.id === requested)) return;
-    const frame = window.requestAnimationFrame(() => setSelected(requested));
+    // Arrivée depuis un lien « Voir ce site » : on amène directement à l'aperçu demandé.
+    const frame = window.requestAnimationFrame(() => {
+      setSelected(requested);
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      demoRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    });
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
@@ -294,7 +300,7 @@ export default function ExamplesPage() {
           </div>
         </div>
 
-        <section className={`${styles.wrap} ${styles.demoSection}`} aria-live="polite">
+        <section ref={demoRef} id="apercu" className={`${styles.wrap} ${styles.demoSection}`} aria-live="polite">
           <div className={styles.demoHeading}>
             <div><p className={styles.eyebrow}>Aperçu interactif</p><h2>{example.name}</h2></div>
             <div className={styles.demoActions}>
