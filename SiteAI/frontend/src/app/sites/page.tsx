@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
 import Icon from "@/components/ui/Icon";
 import AppSidebar from "@/components/app/AppSidebar";
 import { readableBillingStatus, readablePlan } from "@/lib/billingLabels";
@@ -286,6 +287,8 @@ type BillingStatus = {
 
 export default function SitesPage() {
   const [confirm, confirmDialog] = useConfirm();
+  // Résultat des actions sur les sites : visible même quand la page est défilée.
+  const toast = useToast();
 
 
 
@@ -1250,21 +1253,19 @@ export default function SitesPage() {
 
       setFilter("all");
 
+    toast({ tone: "success", title: `« ${businessName} » a été dupliqué`, description: "La copie apparaît en tête de la liste." });
+
     } catch (err) {
 
       console.error(err);
 
 
 
-      setError(
+      const message = err instanceof Error ? err.message : `Impossible de dupliquer "${businessName}".`;
 
-        err instanceof Error
+      setError(message);
 
-          ? err.message
-
-          : `Impossible de dupliquer "${businessName}".`,
-
-      );
+      toast({ tone: "danger", title: "La duplication n’a pas abouti", description: message });
 
     } finally {
 
@@ -1408,6 +1409,10 @@ export default function SitesPage() {
 
 
 
+      toast({ tone: "success", title: `Site « ${businessName} » supprimé` });
+
+
+
     } catch (err) {
 
 
@@ -1417,6 +1422,10 @@ export default function SitesPage() {
 
 
       setError("Impossible de supprimer ce site.");
+
+
+
+      toast({ tone: "danger", title: "Impossible de supprimer ce site.", description: "Réessaie dans un instant." });
 
 
 

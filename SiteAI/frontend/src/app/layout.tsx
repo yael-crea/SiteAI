@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Mono, Inter, Manrope, Newsreader, Source_Serif_4 } from "next/font/google";
 import { SITE_URL, publicRobots } from "@/lib/seo";
 import "./globals.css";
+import { ToastProvider } from "@/components/ui/Toast";
 
 // Police de l'interface Lumio : Inter, la plus proche de SF Pro utilisable sur le web.
 const sans = Inter({ subsets: ["latin"], variable: "--font-lumio", display: "swap" });
@@ -29,5 +30,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="fr" className={`${sans.variable} ${serif.variable} ${siteSans.variable} ${siteModern.variable} ${siteEditorial.variable} ${siteMono.variable}`}><body>{children}</body></html>;
+  return <html lang="fr" className={`${sans.variable} ${serif.variable} ${siteSans.variable} ${siteModern.variable} ${siteEditorial.variable} ${siteMono.variable}`}><body><ToastProvider>{children}</ToastProvider></body></html>;
 }
