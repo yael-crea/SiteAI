@@ -18,9 +18,9 @@ export default function SiteHeader({ current }: SiteHeaderProps) {
           lumio<span>.</span>
         </Link>
         <nav className={styles.desktopNav} aria-label="Navigation principale">
-          <Link href="/#comment-ca-marche">Comment ça marche</Link>
+          <Link href="/#s1">Comment ça marche</Link>
           <Link href="/exemples" aria-current={current === "exemples" ? "page" : undefined}>Exemples</Link>
-          <Link href="/#tarifs">Tarifs</Link>
+          <Link href="/#s4">Tarifs</Link>
           <Link href="/#faq">Questions</Link>
         </nav>
         <div className={styles.navActions}>

@@ -19,7 +19,7 @@
   --line-strong: var(--ui-separator-strong);
   --violet: var(--ui-tint-text);
   --violet-light: #cbc3ff;
-  --display: var(--ui-font);
+  --display: var(--ui-font-display);
 
   /* Neutres : gris système Apple (mode sombre) */
   --color-white: var(--ui-label);
@@ -331,7 +331,7 @@ main.lumio-app::before {
 .lumio-app :is(button, a).bg-blue-600,
 .lumio-app :is(button, a).bg-blue-500 {
   background: var(--ui-tint) !important;
-  color: #ffffff !important;
+  color: var(--ui-on-tint) !important;
   box-shadow: none !important;
   font-weight: 600;
 }
@@ -388,7 +388,7 @@ main.lumio-app::before {
 }
 
 .lumio-app :is(input, textarea)::placeholder {
-  color: var(--ui-label-on-light-2);
+  color: var(--ui-label-3);
 }
 
 .lumio-app input[type="checkbox"],

@@ -29,7 +29,7 @@ export default function ExamplesLayout({ children }: { children: React.ReactNode
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      {children}
+      <div className="lumio-night">{children}</div>
     </>
   );
 }

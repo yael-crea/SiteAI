@@ -1,0 +1,122 @@
+/*
+ * Thème « nuit Lumio » : l'ambiance de la page d'accueil (public/decouvrir.html)
+ * appliquée aux pages publiques — exemples, connexion, création, pages légales,
+ * abonnement. Activé par la classe `.lumio-night` posée dans le layout de chaque
+ * route ; l'espace client et l'éditeur gardent le thème par défaut.
+ *
+ * On redéfinit seulement les variables --ui-* de globals.css : les feuilles des
+ * pages les lisent déjà. Nuit violette, accent lilas, texte foncé sur l'accent,
+ * Manrope pour le texte et Unbounded pour les titres.
+ */
+
+.lumio-night {
+  --ui-font: var(--font-site-modern), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ui-font-display: var(--font-night-display), var(--font-site-modern), system-ui, sans-serif;
+  --ui-font-serif: var(--ui-font-display);
+
+  --ui-bg: #0a0614;
+  --ui-bg-elevated: #160d26;
+  --ui-bg-elevated-2: #1f1435;
+  --ui-bg-elevated-3: #2b1d47;
+
+  /* Les sections « papier » restent dans la nuit */
+  --ui-light: #120a20;
+  --ui-light-alt: #120a20;
+
+  --ui-label: #f5f0ff;
+  --ui-label-2: #b3a6cc;
+  --ui-label-3: #9a8cb5;
+  --ui-label-on-light: #f5f0ff;
+  --ui-label-on-light-2: #b3a6cc;
+
+  --ui-separator: rgba(245, 240, 255, 0.1);
+  --ui-separator-strong: rgba(245, 240, 255, 0.16);
+  --ui-separator-light: rgba(245, 240, 255, 0.12);
+
+  --ui-tint: #c084fc;
+  --ui-tint-hover: #d1a3fd;
+  --ui-tint-text: #d8b4fe;
+  --ui-tint-text-light: #d8b4fe;
+  --ui-tint-soft: rgba(192, 132, 252, 0.16);
+  --ui-on-tint: #0a0614;
+  --ui-gradient-text: linear-gradient(100deg, #f5f0ff 0%, #c084fc 50%, #f472b6 100%);
+
+  --ui-highlight: inset 0 1px 0 rgba(245, 240, 255, 0.06);
+  --ui-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.3), 0 28px 64px -18px rgba(0, 0, 0, 0.6), 0 0 60px -20px rgba(192, 132, 252, 0.25);
+  --ui-ring: 0 0 0 3px rgba(192, 132, 252, 0.38);
+
+  --ui-glass-bg: rgba(10, 6, 20, 0.6);
+  --ui-glass-bg-strong: rgba(10, 6, 20, 0.85);
+  --ui-glass-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(245, 240, 255, 0.08),
+    inset 0 0 0 0.5px rgba(245, 240, 255, 0.14);
+
+  /* Pas de position: relative, qui changerait le bloc conteneur des aperçus de sites */
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--ui-bg);
+  color: var(--ui-label);
+  font-family: var(--ui-font);
+  color-scheme: dark;
+}
+
+/* Pages .lumio-app (Tailwind) : le bleu/violet devient lilas */
+.lumio-night .lumio-app {
+  --color-blue-950: #1c0f30;
+  --color-blue-900: #2c1650;
+  --color-blue-800: #4a2380;
+  --color-blue-700: #9d5cf0;
+  --color-blue-600: #c084fc;
+  --color-blue-500: #d1a3fd;
+  --color-blue-400: #d8b4fe;
+  --color-blue-300: #e9d5ff;
+  --color-violet-500: #c084fc;
+  --color-violet-400: #d8b4fe;
+  --color-violet-300: #e9d5ff;
+}
+
+/* Halos lilas et rose, comme la lueur de la spirale d'écrans */
+.lumio-night::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 40rem at 12% -12%, rgba(192, 132, 252, 0.18), transparent 70%),
+    radial-gradient(48rem 36rem at 100% 8%, rgba(244, 114, 182, 0.11), transparent 70%),
+    radial-gradient(56rem 40rem at 50% 115%, rgba(192, 132, 252, 0.12), transparent 70%);
+}
+
+/* Les fonds de page opaques laissent passer les halos */
+.lumio-night :is(main.lumio-app, main.bg-slate-950) {
+  background: transparent !important;
+}
+
+/* Titres : Unbounded serré, comme sur l'accueil (les aperçus de sites gardent leurs polices) */
+.lumio-night :is(h1, h2):not(.siteai-design-root *) {
+  font-family: var(--ui-font-display);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+/* Mots mis en avant dans les titres : dégradé lilas-rose au lieu de l'italique */
+.lumio-night :is(h1, h2):not(.siteai-design-root *) :is(em, i) {
+  font-family: inherit !important;
+  font-style: normal !important;
+  background: var(--ui-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+.lumio-night ::selection {
+  background: rgba(192, 132, 252, 0.4);
+  color: #fff;
+}
+
+.lumio-night :focus-visible {
+  outline-color: #c084fc;
+}

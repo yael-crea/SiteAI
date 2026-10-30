@@ -112,6 +112,7 @@
 }
 
 .logo {
+  font-family: var(--ui-font-display);
   display: inline-flex;
   align-items: baseline;
   font-size: 21px;
@@ -428,7 +429,7 @@
   align-items: center;
   gap: 12px;
   background: var(--ui-label);
-  color: var(--ui-label-on-light);
+  color: var(--ui-bg);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -441,7 +442,8 @@
 }
 
 .googleButton b {
-  color: var(--ui-label-on-light-2);
+  color: var(--ui-bg);
+  opacity: 0.6;
   font-size: 17px;
   font-weight: 400;
 }
@@ -506,7 +508,7 @@
 }
 
 .form input:not([type="checkbox"])::placeholder {
-  color: var(--ui-label-on-light-2);
+  color: var(--ui-label-3);
 }
 
 .form input:not([type="checkbox"]):focus {
@@ -602,7 +604,7 @@
   justify-content: center;
   gap: 10px;
   background: var(--ui-tint);
-  color: #fff;
+  color: var(--ui-on-tint);
 }
 
 .submitButton b {

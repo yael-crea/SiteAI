@@ -11,9 +11,9 @@ const columns = [
   {
     title: "Produit",
     links: [
-      { href: "/#comment-ca-marche", label: "Comment ça marche" },
+      { href: "/#s1", label: "Comment ça marche" },
       { href: "/exemples", label: "Exemples" },
-      { href: "/#tarifs", label: "Tarifs" },
+      { href: "/#s4", label: "Tarifs" },
       { href: "/#faq", label: "Questions fréquentes" },
     ],
   },
@@ -21,7 +21,7 @@ const columns = [
     title: "Compte",
     links: [
       { href: "/auth", label: "Se connecter" },
-      { href: "/auth", label: "Créer mon site" },
+      { href: "/creer", label: "Créer mon site" },
       { href: "mailto:support@lumio.business", label: "Support" },
     ],
   },

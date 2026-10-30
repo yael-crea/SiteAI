@@ -58,7 +58,7 @@
 .primary {
   --button-bg: var(--ui-tint);
   --button-bg-hover: var(--ui-tint-hover);
-  --button-fg: #fff;
+  --button-fg: var(--ui-on-tint);
   --button-border: transparent;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }

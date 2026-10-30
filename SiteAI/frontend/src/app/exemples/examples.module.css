@@ -199,7 +199,7 @@
   justify-content: center;
   gap: 8px;
   background: var(--ui-tint);
-  color: #fff;
+  color: var(--ui-on-tint);
   font-size: 15px;
   font-weight: 600;
   white-space: nowrap;

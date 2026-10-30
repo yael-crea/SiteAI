@@ -20,6 +20,7 @@
    */
   --ui-font: var(--font-lumio), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   --ui-font-serif: var(--font-serif), Georgia, serif;
+  --ui-font-display: var(--ui-font);
 
   /* Fonds sombres (base → élevé) */
   --ui-bg: #0b0b10;
@@ -49,6 +50,8 @@
   --ui-tint-text: #b4a9ff;
   --ui-tint-text-light: #5a49e6;
   --ui-tint-soft: rgba(122, 107, 255, 0.16);
+  /* Texte posé sur un fond --ui-tint */
+  --ui-on-tint: #fff;
   --ui-gradient-text: linear-gradient(100deg, #c9c1ff 0%, #8f7dff 45%, #e0b3ff 100%);
 
   /* États : teintes légèrement désaturées, lisibles sur fond sombre */

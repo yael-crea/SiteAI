@@ -5,9 +5,9 @@ import { useEffect, useRef } from "react";
 import styles from "@/app/home.module.css";
 
 const navigationItems = [
-  { href: "/#comment-ca-marche", label: "Comment ça marche" },
+  { href: "/#s1", label: "Comment ça marche" },
   { href: "/exemples", label: "Exemples" },
-  { href: "/#tarifs", label: "Tarifs" },
+  { href: "/#s4", label: "Tarifs" },
   { href: "/#faq", label: "Questions" },
   { href: "/auth", label: "Connexion" },
 ];

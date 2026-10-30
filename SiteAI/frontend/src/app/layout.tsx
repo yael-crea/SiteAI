@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { DM_Mono, Inter, Manrope, Newsreader, Source_Serif_4 } from "next/font/google";
+import { DM_Mono, Inter, Manrope, Newsreader, Source_Serif_4, Unbounded } from "next/font/google";
 import { SITE_URL, publicRobots } from "@/lib/seo";
 import "./globals.css";
+import "./night-theme.css";
 
 // Police de l'interface Lumio : Inter, la plus proche de SF Pro utilisable sur le web.
 const sans = Inter({ subsets: ["latin"], variable: "--font-lumio", display: "swap" });
@@ -20,6 +21,9 @@ const siteModern = Manrope({ subsets: ["latin"], variable: "--font-site-modern",
 const siteEditorial = Source_Serif_4({ subsets: ["latin"], variable: "--font-site-editorial", style: ["normal", "italic"], display: "swap", preload: false });
 const siteMono = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-site-mono", display: "swap", preload: false });
 
+// Titres du thème « nuit Lumio » (pages publiques, voir night-theme.css) ; le texte reprend Manrope.
+const nightDisplay = Unbounded({ subsets: ["latin"], variable: "--font-night-display", display: "swap", preload: false });
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: "Lumio - Crée ton site professionnel avec l'IA", template: "%s | Lumio" },
@@ -29,5 +33,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="fr" className={`${sans.variable} ${serif.variable} ${siteSans.variable} ${siteModern.variable} ${siteEditorial.variable} ${siteMono.variable}`}><body>{children}</body></html>;
+  return <html lang="fr" className={`${sans.variable} ${serif.variable} ${siteSans.variable} ${siteModern.variable} ${siteEditorial.variable} ${siteMono.variable} ${nightDisplay.variable}`}><body>{children}</body></html>;
 }
