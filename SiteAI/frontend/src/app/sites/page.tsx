@@ -23,6 +23,7 @@ import { useConfirm } from "@/components/ui/ConfirmDialog";
 import Icon from "@/components/ui/Icon";
 import AppSidebar from "@/components/app/AppSidebar";
 import { readableBillingStatus, readablePlan } from "@/lib/billingLabels";
+import { downloadSitePoster } from "@/lib/sitePoster";
 
 
 
@@ -324,6 +325,7 @@ export default function SitesPage() {
   const [deletingID, setDeletingID] = useState<number | null>(null);
 
   const [duplicatingID, setDuplicatingID] = useState<number | null>(null);
+  const [posterLoadingID, setPosterLoadingID] = useState<number | null>(null);
 
   const [shareFeedback, setShareFeedback] = useState<ShareFeedback | null>(null);
 
@@ -931,6 +933,27 @@ export default function SitesPage() {
 
 
 
+
+  async function downloadPoster(siteID: number) {
+    setPosterLoadingID(siteID);
+    setShareFeedback(null);
+
+    try {
+      await downloadSitePoster(siteID, authenticatedFetch);
+    } catch (err) {
+      console.error(err);
+      setShareFeedback({
+        siteID,
+        message:
+          err instanceof Error
+            ? err.message
+            : "Impossible de télécharger l'affichette.",
+        error: true,
+      });
+    } finally {
+      setPosterLoadingID(null);
+    }
+  }
 
   function viewPublicSite(slug: string) {
 
@@ -3010,6 +3033,17 @@ export default function SitesPage() {
                                 Partager
                               </button>
                             </div>
+
+                            <button
+                              type="button"
+                              disabled={posterLoadingID === savedSite.id}
+                              onClick={() => void downloadPoster(savedSite.id)}
+                              className="w-full rounded-xl border border-slate-700 px-4 py-3 text-sm font-bold text-slate-200 transition hover:border-blue-500 hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60"
+                            >
+                              {posterLoadingID === savedSite.id
+                                ? "Préparation..."
+                                : "Télécharger mon affichette"}
+                            </button>
 
                             {shareFeedback?.siteID === savedSite.id && (
                               <p

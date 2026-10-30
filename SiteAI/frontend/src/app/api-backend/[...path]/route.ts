@@ -123,6 +123,19 @@ async function proxyRequest(
       );
     }
 
+    // Keeps the file name of downloads (quote PDF, printable poster).
+    const contentDisposition =
+      backendResponse.headers.get(
+        "content-disposition",
+      );
+
+    if (contentDisposition) {
+      responseHeaders.set(
+        "Content-Disposition",
+        contentDisposition,
+      );
+    }
+
     const location =
       backendResponse.headers.get(
         "location",

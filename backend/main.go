@@ -594,6 +594,7 @@ type LeadUpdateInput struct {
 type PageViewInput struct {
 	PublicSlug string `json:"publicSlug"`
 	VisitorID  string `json:"visitorId"`
+	UTMSource  string `json:"utmSource"`
 }
 
 type SiteAnalyticsSummary struct {
@@ -605,6 +606,7 @@ type SiteAnalyticsSummary struct {
 	Leads30d       int64   `json:"leads30d"`
 	PhoneClicks30d int64   `json:"phoneClicks30d"`
 	EmailClicks30d int64   `json:"emailClicks30d"`
+	PosterViews30d int64   `json:"posterViews30d"`
 	ConversionRate float64 `json:"conversionRate"`
 }
 
@@ -614,6 +616,7 @@ type AnalyticsSummary struct {
 	Leads30d       int64                  `json:"leads30d"`
 	PhoneClicks30d int64                  `json:"phoneClicks30d"`
 	EmailClicks30d int64                  `json:"emailClicks30d"`
+	PosterViews30d int64                  `json:"posterViews30d"`
 	ConversionRate float64                `json:"conversionRate"`
 	Sites          []SiteAnalyticsSummary `json:"sites"`
 }
@@ -1255,6 +1258,9 @@ func createTables(ctx context.Context) error {
         ON site_pageviews(site_id, visitor_id, created_at DESC);
 
         `,
+
+		// Campaign source of the visit (e.g. "affichette" for the printed poster QR code).
+		`ALTER TABLE site_pageviews ADD COLUMN IF NOT EXISTS utm_source TEXT NOT NULL DEFAULT '';`,
 
 		`
 
@@ -1911,6 +1917,7 @@ func analyticsPageViewHandler(
 			user_id,
 			public_slug,
 			visitor_id,
+			utm_source,
 			created_at
 		)
 		VALUES (
@@ -1918,6 +1925,7 @@ func analyticsPageViewHandler(
 			$2::uuid,
 			$3,
 			$4,
+			$5,
 			NOW()
 		);
 		`,
@@ -1925,6 +1933,7 @@ func analyticsPageViewHandler(
 		ownerUserID,
 		input.PublicSlug,
 		input.VisitorID,
+		normalizeUTMSource(input.UTMSource),
 	)
 
 	if err != nil {
@@ -2038,7 +2047,15 @@ func analyticsSummaryHandler(
 					c.site_id = s.id
 					AND c.event_type = 'email_click'
 					AND c.created_at >= NOW() - INTERVAL '30 days'
-			), 0) AS email_clicks_30d
+			), 0) AS email_clicks_30d,
+			COALESCE((
+				SELECT COUNT(*)
+				FROM site_pageviews v
+				WHERE
+					v.site_id = s.id
+					AND v.utm_source = 'affichette'
+					AND v.created_at >= NOW() - INTERVAL '30 days'
+			), 0) AS poster_views_30d
 		FROM sites s
 		WHERE s.user_id = $1::uuid
 		ORDER BY s.updated_at DESC;
@@ -2081,6 +2098,7 @@ func analyticsSummaryHandler(
 			&site.Leads30d,
 			&site.PhoneClicks30d,
 			&site.EmailClicks30d,
+			&site.PosterViews30d,
 		); err != nil {
 			log.Println(
 				"Erreur lecture analytics :",
@@ -2114,6 +2132,9 @@ func analyticsSummaryHandler(
 			site.PhoneClicks30d
 		summary.EmailClicks30d +=
 			site.EmailClicks30d
+
+		summary.PosterViews30d +=
+			site.PosterViews30d
 
 		summary.Sites = append(
 			summary.Sites,
@@ -3801,6 +3822,14 @@ func siteByIDHandler(
 
 			restoreSiteVersionHandler(w, r, id, user.ID)
 
+			return
+
+		case "poster":
+			if r.Method != http.MethodGet {
+				http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+				return
+			}
+			sitePosterHandler(w, r, id, user.ID)
 			return
 
 		case "duplicate":
