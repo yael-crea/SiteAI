@@ -62,6 +62,8 @@ type LumioAssistantProps = {
   /** Distance du bouton par rapport au bas de l'écran sur mobile. */
   mobileOffset?: number;
   starterSuggestions?: string[];
+  /** Masque le bouton flottant sur ordinateur (la page a sa propre entrée vers l'assistant). */
+  hideDesktopLauncher?: boolean;
 };
 
 import { OPEN_ASSISTANT_EVENT, takePendingAssistantOpen } from "./assistantEvents";
@@ -168,6 +170,7 @@ export default function LumioAssistant({
   onBusyChange,
   mobileOffset = 92,
   starterSuggestions,
+  hideDesktopLauncher = false,
 }: LumioAssistantProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() =>
@@ -181,6 +184,7 @@ export default function LumioAssistant({
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const launcherRef = useRef<HTMLButtonElement | null>(null);
+  const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
   const titleId = useId();
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const [listening, setListening] = useState(false);
@@ -264,18 +268,20 @@ export default function LumioAssistant({
   }, [open]);
 
   useEffect(() => {
-    function openWith(prompt?: string) {
+    function openWith(prompt?: string, autoSend?: boolean) {
       takePendingAssistantOpen();
       setOpen(true);
-      if (prompt) setDraft(prompt);
+      if (prompt && autoSend) window.setTimeout(() => void sendRef.current(prompt), 0);
+      else if (prompt) setDraft(prompt);
     }
     function handleOpen(event: Event) {
-      openWith((event as CustomEvent<{ prompt?: string }>).detail?.prompt);
+      const detail = (event as CustomEvent<{ prompt?: string; send?: boolean }>).detail;
+      openWith(detail?.prompt, detail?.send);
     }
     window.addEventListener(OPEN_ASSISTANT_EVENT, handleOpen);
     // L'assistant est chargé à la demande : on rejoue une ouverture demandée avant son arrivée.
     const pending = takePendingAssistantOpen();
-    const timer = pending ? window.setTimeout(() => openWith(pending.prompt), 0) : undefined;
+    const timer = pending ? window.setTimeout(() => openWith(pending.prompt, pending.send), 0) : undefined;
     return () => {
       window.removeEventListener(OPEN_ASSISTANT_EVENT, handleOpen);
       if (timer) window.clearTimeout(timer);
@@ -436,6 +442,10 @@ export default function LumioAssistant({
     setSuggestions([]);
   }
 
+  useEffect(() => {
+    sendRef.current = send;
+  });
+
   const visibleSuggestions = suggestions.length > 0 ? suggestions : messages.length === 0 ? baseSuggestions : [];
 
   return (
@@ -446,7 +456,7 @@ export default function LumioAssistant({
       <button
         ref={launcherRef}
         type="button"
-        className={`${styles.launcher} ${open ? styles.launcherOpen : ""}`}
+        className={`${styles.launcher} ${open ? styles.launcherOpen : ""} ${hideDesktopLauncher ? styles.launcherMobileOnly : ""}`}
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}

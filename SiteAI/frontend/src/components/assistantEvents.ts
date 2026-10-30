@@ -9,7 +9,7 @@
 
 export const OPEN_ASSISTANT_EVENT = "lumio-assistant:open";
 
-type PendingOpen = { prompt?: string };
+type PendingOpen = { prompt?: string; send?: boolean };
 
 declare global {
   interface Window {
@@ -17,9 +17,11 @@ declare global {
   }
 }
 
-export function openLumioAssistant(prompt?: string) {
-  window.__lumioAssistantPending = { prompt };
-  window.dispatchEvent(new CustomEvent(OPEN_ASSISTANT_EVENT, { detail: { prompt } }));
+/** `send` envoie aussitôt la demande au lieu de seulement préremplir le champ. */
+export function openLumioAssistant(prompt?: string, options: { send?: boolean } = {}) {
+  const detail: PendingOpen = { prompt, send: options.send };
+  window.__lumioAssistantPending = detail;
+  window.dispatchEvent(new CustomEvent(OPEN_ASSISTANT_EVENT, { detail }));
 }
 
 /** Demande d'ouverture arrivée avant le chargement de l'assistant (lue une seule fois). */

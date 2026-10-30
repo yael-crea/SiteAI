@@ -561,3 +561,8 @@
     animation: none;
   }
 }
+
+/* Bouton flottant réservé au mobile (l'éditeur a sa barre d'assistant sur ordinateur). */
+@media (min-width: 768px) {
+  .launcherMobileOnly:not(.launcherOpen) { display: none; }
+}

@@ -62,8 +62,9 @@
   color-scheme: dark;
 }
 
-/* Pages .lumio-app (Tailwind) : le bleu/violet devient lilas */
-.lumio-night .lumio-app {
+/* Pages .lumio-app et éditeur (Tailwind) : le bleu/violet devient lilas */
+.lumio-night .lumio-app,
+.lumio-night.lumio-editor {
   --color-blue-950: #1c0f30;
   --color-blue-900: #2c1650;
   --color-blue-800: #4a2380;

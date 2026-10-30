@@ -31,6 +31,7 @@ import { useBuilderDraft } from "@/lib/useBuilderDraft";
 import AIUsage from "@/components/AIUsage";
 import { activityExamples } from "@/lib/activityExamples";
 import "./editor-theme.css";
+import "./builder-layout.css";
 import type { AssistantModification } from "@/components/LumioAssistant";
 import { openLumioAssistant } from "@/components/assistantEvents";
 // Assistant fermé au départ : chargé après l'affichage de l'éditeur.
@@ -591,6 +592,59 @@ function isBuilderSnapshot(value: unknown): value is BuilderSnapshot {
   );
 }
 
+// Onglets du panneau : [panneau ordinateur, libellé, étape mobile].
+const workspaceTabs = [
+  ["contenu", "Contenu", 1],
+  ["apparence", "Style", 2],
+  ["publication", "Publier", 4],
+] as const;
+
+// Onglets fixés en bas de l'écran sur mobile : [libellé, étape].
+const mobileTabs = [
+  ["Contenu", 1],
+  ["Style", 2],
+  ["Aperçu", 3],
+  ["Publier", 4],
+] as const;
+
+const previewDeviceOptions = [
+  ["desktop", "Ordinateur"],
+  ["tablet", "Tablette"],
+  ["mobile", "Téléphone"],
+] as const;
+
+// Idées rapides de la barre de l'assistant : [libellé, demande préremplie].
+const quickIdeas = [
+  [
+    "Raccourcir",
+    "Raccourcis les textes du site en conservant les informations essentielles, les noms et les coordonnées. Ne change ni le style ni les images.",
+  ],
+  [
+    "Plus professionnel",
+    "Rends les textes du site plus professionnels sans inventer de faits, de tarifs, de certifications ou d’avis. Conserve le style et les images.",
+  ],
+  [
+    "Simplifier",
+    "Réécris les textes avec des mots simples et des phrases courtes, sans modifier les informations, le style ou les images.",
+  ],
+  [
+    "Ajouter une promotion",
+    "Ajoute une promotion clairement visible dans le texte d’accueil. Laisse des emplacements [OFFRE], [PRIX] et [DATE DE FIN] à compléter et n’invente aucun tarif.",
+  ],
+  [
+    "Nouveau service",
+    "Ajoute un nouveau service à la fin des prestations. Utilise le titre [NOM DU SERVICE] et une description courte à compléter, sans inventer de prix.",
+  ],
+  [
+    "Améliorer Google",
+    "Améliore le titre et la description SEO pour l’activité et la ville déjà renseignées, sans ajouter de zone, certification ou promesse qui n’existe pas.",
+  ],
+  [
+    "Mettre en avant le devis",
+    "Rends les appels à l’action plus directs afin d’encourager les demandes de devis, sans modifier les coordonnées ni inventer de délai de réponse.",
+  ],
+] as const;
+
 export default function Home() {
   useEffect(() => {
     void loadSitePreview();
@@ -599,9 +653,9 @@ export default function Home() {
   const mobileSteps = [
     "Infos",
     "Contenu",
-    "Apparence",
+    "Style",
     "Aperçu",
-    "Publication",
+    "Publier",
   ] as const;
   const [advancedMode, setAdvancedMode] = useState(false);
   const [newSiteGoal, setNewSiteGoal] = useState<SiteGoal>("quote");
@@ -646,12 +700,12 @@ export default function Home() {
     publicSlug: string;
     businessName: string;
   } | null>(null);
-  const [previewEditing, setPreviewEditing] = useState(false);
+  // Clic sur un texte de l'aperçu → ouvre le champ correspondant (actif par défaut).
+  const [previewEditing, setPreviewEditing] = useState(true);
+  const [aiPrompt, setAiPrompt] = useState("");
   const [authLoading, setAuthLoading] = useState(true);
 
   const [userEmail, setUserEmail] = useState("");
-
-  const [builderMobileMenuOpen, setBuilderMobileMenuOpen] = useState(false);
 
   const [businessName, setBusinessName] = useState("");
 
@@ -776,7 +830,7 @@ export default function Home() {
 
   const [site, setSite] = useState<GeneratedSite | null>(null);
 
-  const activeDesktopPanel = desktopPanel ?? (site ? "apercu" : "infos");
+  const activeDesktopPanel = desktopPanel ?? (site ? "contenu" : "infos");
 
   const [loading, setLoading] = useState(false);
 
@@ -1320,7 +1374,7 @@ export default function Home() {
       setDraftRevision(null);
       setPublishedResult(null);
       setSite(generatedSite);
-      setDesktopPanel("apercu");
+      setDesktopPanel("contenu");
       if (window.matchMedia("(width < 48rem)").matches) navigateMobileStep(1);
       setBusinessName(generatedSite.businessName || businessName);
       setPhone(generatedSite.phone || phone);
@@ -2826,9 +2880,42 @@ export default function Home() {
         )),
   );
 
+  // Panneau latéral : trois onglets (Contenu, Style, Publier) au lieu de cinq étapes.
+  // « apercu » masque le panneau pour laisser toute la place au site.
+  const panelHidden = editorCollapsed || activeDesktopPanel === "apercu";
+  // Sur mobile, l'étape 0 (formulaire de création) n'a plus lieu d'être une fois le site créé.
+  const mobileView = site && mobileStep === 0 ? 1 : mobileStep;
+
+  function openWorkspaceTab(
+    panel: (typeof workspaceTabs)[number][0],
+    step: number,
+  ) {
+    setDesktopPanel(panel);
+    setEditorCollapsed(false);
+    if (isMobileBuilder) navigateMobileStep(step);
+    else setMobileStep(step);
+  }
+
+  function togglePanel() {
+    if (panelHidden) {
+      setEditorCollapsed(false);
+      if (activeDesktopPanel === "apercu") setDesktopPanel("contenu");
+    } else {
+      setEditorCollapsed(true);
+    }
+  }
+
+  function sendAiPrompt(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const prompt = aiPrompt.trim();
+    if (!prompt || busy) return;
+    openLumioAssistant(prompt, { send: true });
+    setAiPrompt("");
+  }
+
   if (authLoading) {
     return (
-      <main className="lumio-editor flex min-h-screen items-center justify-center bg-slate-950 text-white">
+      <main className="lumio-editor lumio-night flex min-h-screen items-center justify-center">
         <div className="lumio-loading">
           <strong>lumio<span>.</span></strong>
           <p>Ouverture de l’éditeur…</p>
@@ -2841,232 +2928,85 @@ export default function Home() {
     <main
       data-simple-mode={!advancedMode}
       data-desktop-panel={activeDesktopPanel}
-      data-mobile-step={mobileStep}
+      data-mobile-step={mobileView}
+      data-panel-hidden={panelHidden}
+      data-has-site={Boolean(site)}
       data-siteai-builder
-      className="lumio-editor min-h-screen overflow-x-hidden bg-[#070809] text-[#f5f0e8]"
+      className="lumio-editor lumio-night min-h-screen overflow-x-hidden"
     >
-      <header className="sticky top-0 z-50 border-b border-[#262629] bg-[#090a0c]/90 backdrop-blur-xl">
-        <div className="mx-auto max-w-[1800px] px-4 py-2.5 lg:px-6">
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={returnToDashboard}
-              className="lumio-logo shrink-0"
-              aria-label="Lumio, tableau de bord"
-            >
-              lumio<span>.</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setBuilderMobileMenuOpen((current) => !current)}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-900 text-xl font-bold transition hover:border-blue-500 md:hidden"
-              aria-label={
-                builderMobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"
-              }
-              aria-expanded={builderMobileMenuOpen}
-            >
-              <Icon name={builderMobileMenuOpen ? "close" : "menu"} size={20} />
-            </button>
-
-            <div className="hidden items-center gap-2 md:flex">
-              <div className="hidden text-right xl:block">
-                <p className="text-xs text-slate-500">Connecté avec</p>
-
-                <p className="text-sm font-medium">{userEmail}</p>
-              </div>
-
-              <button
-                type="button"
-                onClick={returnToDashboard}
-                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-200 hover:border-blue-500"
-              >
-                Mes sites
-              </button>
-
-              <button
-                type="button"
-                onClick={startGuidedCreation}
-                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-blue-950/30 hover:bg-blue-500"
-              >
-                + Nouveau site
-              </button>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="rounded-lg border border-transparent px-3 py-2 text-xs font-semibold text-slate-400 hover:border-red-900 hover:bg-red-950/40 hover:text-red-300"
-              >
-                Déconnexion
-              </button>
-            </div>
-          </div>
-
-          {builderMobileMenuOpen && (
-            <div className="mt-4 border-t border-slate-800 pt-4 md:hidden">
-              {userEmail && (
-                <div className="mb-3 rounded-xl bg-slate-900 px-4 py-3">
-                  <p className="text-xs text-slate-500">Connecté avec</p>
-                  <p className="mt-1 break-all text-sm font-medium text-slate-200">
-                    {userEmail}
-                  </p>
-                </div>
-              )}
-
-              <div className="grid gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBuilderMobileMenuOpen(false);
-                    returnToDashboard();
-                  }}
-                  className="w-full rounded-xl border border-slate-700 px-4 py-3 text-left text-sm font-semibold hover:border-blue-500"
-                >
-                  Mes sites
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBuilderMobileMenuOpen(false);
-                    startGuidedCreation();
-                  }}
-                  className="w-full rounded-xl border border-slate-700 px-4 py-3 text-left text-sm font-semibold hover:border-blue-500"
-                >
-                  + Nouveau site
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBuilderMobileMenuOpen(false);
-                    void handleLogout();
-                  }}
-                  className="w-full rounded-xl border border-red-900 px-4 py-3 text-left text-sm font-semibold text-red-400 hover:bg-red-950"
-                >
-                  Déconnexion
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
-
-      <div
-        data-builder-statusbar
-        className="shrink-0 bg-[#111214]/80 md:flex md:items-stretch"
-      >
-        {site && (
-          <SaveStatus
-            hasUnsavedChanges={hasUnsavedChanges}
-            saving={saving}
-            publishing={publishing}
-            busy={busy}
-            published={Boolean(openedSite?.published)}
-            pendingPublication={Boolean(
-              openedSite?.published &&
-                openedSite.draftRevision !== openedSite.publishedRevision,
-            )}
-            error={Boolean(saveError || saveConflict)}
-            localStatus={draft.status}
-            onSave={saveCurrentSite}
-          />
-        )}
-        <AIUsage ready={Boolean(draftUserId)} busy={busy} />
-      </div>
-      <nav
-        aria-label="Étapes et outils du builder"
-        className="lumio-workflow-nav hidden shrink-0 items-center gap-1.5 border-b border-[#262629] bg-[#090a0c]/85 px-4 py-2.5 md:flex"
-      >
-        {(
-          [
-            ["infos", "1 · Informations"],
-            ["contenu", "2 · Contenu"],
-            ["apparence", "3 · Apparence"],
-            ["apercu", "4 · Aperçu"],
-            ["publication", "5 · Publier"],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            disabled={!site && value !== "infos"}
-            aria-pressed={activeDesktopPanel === value}
-            onClick={() => {
-              setDesktopPanel(value);
-              setEditorCollapsed(false);
-            }}
-            className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition disabled:opacity-30 ${activeDesktopPanel === value ? "border-[#f0eadf] bg-[#f0eadf] text-[#121214]" : "border-transparent text-slate-400 hover:border-[#35353a] hover:bg-[#17181b] hover:text-white"}`}
-          >
-            {label}
-          </button>
-        ))}
+      <header data-builder-header>
         <button
           type="button"
-          disabled={!site}
-          aria-pressed={activeDesktopPanel === "ia"}
-          onClick={() => {
-            setDesktopPanel("ia");
-            setEditorCollapsed(false);
-            openLumioAssistant();
-          }}
-          className={`lumio-ai-trigger shrink-0 rounded-full border px-4 py-2 text-xs font-black transition disabled:opacity-30 ${activeDesktopPanel === "ia" ? "border-violet-300 bg-violet-500 text-white shadow-lg shadow-violet-950/40" : "border-violet-700/80 bg-violet-500/10 text-violet-200 hover:border-violet-500 hover:bg-violet-500/20"}`}
+          onClick={returnToDashboard}
+          className="lumio-logo shrink-0"
+          aria-label="Lumio, mes sites"
         >
-          Assistant IA
+          lumio<span>.</span>
         </button>
-        <div className="ml-auto shrink-0">
-          <BuilderToolsMenu
-            advancedMode={advancedMode}
-            hasSite={Boolean(site)}
-            previewEditing={previewEditing}
-            canUndo={draft.canUndo}
-            canRedo={draft.canRedo}
-            busy={busy}
-            onToggleAdvanced={() => setAdvancedMode((value) => !value)}
-            onUndo={draft.undo}
-            onRedo={draft.redo}
-            onTogglePreviewEditing={() => setPreviewEditing((value) => !value)}
-            align="right"
-          >
-            {site && (
-              <>
-                <AccountVersions
-                  siteId={savedSiteID}
-                  disabled={busy}
-                  load={loadAccountVersions}
-                  restore={restoreAccountVersion}
-                />
-                <BuilderVersions
-                  entries={versions.entries}
-                  error={versions.error}
-                  disabled={busy || !draftReady}
-                  onSave={() =>
-                    versions.checkpoint(draftSnapshot, "Version conservée")
-                  }
-                  onRestore={restoreVersion}
-                />
-              </>
-            )}
-          </BuilderToolsMenu>
-        </div>
-      </nav>
-      <div className="shrink-0 border-b border-slate-800/80 bg-slate-950/80 px-4 py-2 text-slate-300 md:hidden">
-        <BuilderToolsMenu
-          advancedMode={advancedMode}
-          hasSite={Boolean(site)}
-          previewEditing={previewEditing}
-          canUndo={draft.canUndo}
-          canRedo={draft.canRedo}
-          busy={busy}
-          onToggleAdvanced={() => setAdvancedMode((value) => !value)}
-          onUndo={draft.undo}
-          onRedo={draft.redo}
-          onTogglePreviewEditing={() => setPreviewEditing((value) => !value)}
-          align="left"
-          label="Outils d’édition"
-        >
+
+        {site && (
+          <div data-builder-site className="min-w-0">
+            <p className="truncate text-sm font-semibold">
+              {businessName || site.businessName || "Mon site"}
+            </p>
+            <SaveStatus
+              hasUnsavedChanges={hasUnsavedChanges}
+              saving={saving}
+              publishing={publishing}
+              busy={busy}
+              published={Boolean(openedSite?.published)}
+              pendingPublication={Boolean(
+                openedSite?.published &&
+                  openedSite.draftRevision !== openedSite.publishedRevision,
+              )}
+              error={Boolean(saveError || saveConflict)}
+              localStatus={draft.status}
+              onSave={saveCurrentSite}
+            />
+          </div>
+        )}
+
+        <div data-builder-actions>
           {site && (
-            <>
+            <div data-builder-history className="hidden items-center gap-1 md:flex">
+              <button
+                type="button"
+                disabled={!draft.canUndo || busy}
+                onClick={draft.undo}
+                aria-label="Annuler la dernière modification"
+                title="Annuler"
+                data-icon-button
+              >
+                ↶
+              </button>
+              <button
+                type="button"
+                disabled={!draft.canRedo || busy}
+                onClick={draft.redo}
+                aria-label="Rétablir la modification"
+                title="Rétablir"
+                data-icon-button
+              >
+                ↷
+              </button>
+            </div>
+          )}
+
+          {site && (
+            <BuilderToolsMenu
+              advancedMode={advancedMode}
+              hasSite={Boolean(site)}
+              previewEditing={previewEditing}
+              canUndo={draft.canUndo}
+              canRedo={draft.canRedo}
+              busy={busy}
+              onToggleAdvanced={() => setAdvancedMode((value) => !value)}
+              onUndo={draft.undo}
+              onRedo={draft.redo}
+              onTogglePreviewEditing={() => setPreviewEditing((value) => !value)}
+              align="right"
+              label="Plus"
+            >
               <AccountVersions
                 siteId={savedSiteID}
                 disabled={busy}
@@ -3082,290 +3022,160 @@ export default function Home() {
                 }
                 onRestore={restoreVersion}
               />
-            </>
+            </BuilderToolsMenu>
           )}
-        </BuilderToolsMenu>
-        {saveConflict && (
-          <p role="alert" className="mt-2 text-sm text-amber-300">
-            Une version plus récente existe. Utilise Versions appareil pour
-            conserver ton travail, puis{" "}
-            <button
-              type="button"
-              disabled={busy || savedSiteID === null}
-              onClick={() => {
-                if (savedSiteID !== null) {
-                  setSaveConflict(false);
-                  void openSavedSite(savedSiteID);
-                }
-              }}
-              className="underline disabled:opacity-40"
-            >
-              rouvre le brouillon du compte
-            </button>
-            .
-          </p>
-        )}
-        {versions.error && (
-          <p role="alert" className="mt-2 text-xs text-amber-300">
-            {versions.error}
-          </p>
-        )}
-        {draft.status === "error" && (
-          <button
-            type="button"
-            onClick={draft.retrySave}
-            className="mt-2 text-xs text-blue-300 underline"
-          >
-            Réessayer la sauvegarde locale
-          </button>
-        )}
-        {draft.restoredDraft && (
-          <div className="mt-2 flex flex-wrap items-center gap-3 rounded-xl border border-blue-800 bg-blue-950/30 p-3 text-sm">
-            <p>Un brouillon a été retrouvé sur cet appareil.</p>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={draft.restoreDraft}
-              className="rounded-lg bg-blue-600 px-3 py-2 font-semibold"
-            >
-              Reprendre
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={draft.discardDraft}
-              className="rounded-lg border border-slate-700 px-3 py-2"
-            >
-              Garder cette version
-            </button>
-          </div>
-        )}
-      </div>
-      <div className="px-4 pt-3 md:hidden">
-        <nav
-          aria-label="Étapes de création du site"
-          className="grid grid-cols-5 gap-1"
-        >
-          {mobileSteps.map((label, index) => (
-            <button
-              key={label}
-              type="button"
-              aria-current={mobileStep === index ? "step" : undefined}
-              disabled={index > 0 && !site}
-              onClick={() => navigateMobileStep(index)}
-              className={`min-h-12 min-w-0 rounded-xl px-1 py-1.5 text-[10px] font-bold disabled:opacity-35 ${mobileStep === index ? "bg-blue-600 text-white shadow-lg shadow-blue-950/30" : "bg-slate-900 text-slate-300"}`}
-            >
-              <span className="mb-1 block text-sm">{index + 1}</span>
-              {label}
-            </button>
-          ))}
-        </nav>
-        <h1
-          ref={mobileHeadingRef}
-          tabIndex={-1}
-          className="mt-4 scroll-mt-4 text-2xl font-bold outline-none"
-        >
-          {mobileSteps[mobileStep]}
-        </h1>
-        <p className="mt-2 text-sm text-slate-400" aria-live="polite">
-          Étape {mobileStep + 1} sur 5 ·{" "}
-          {
-            [
-              "Renseigne ton entreprise, puis crée ou ouvre un site.",
-              "Modifie tes textes et tes images, ou demande de l’aide à l’IA.",
-              "Personnalise le style, les couleurs et la mise en page.",
-              "Parcours ton site avant de le publier.",
-              "Enregistre tes modifications, puis publie ton site.",
-            ][mobileStep]
-          }
-        </p>
-        {site && mobileStep === 1 && (
-          <button
-            type="button"
-            onClick={() => openLumioAssistant()}
-            className="mt-3 w-full rounded-xl border border-violet-700 bg-violet-500/10 px-4 py-3 text-sm font-black text-violet-200"
-          >
-            Ouvrir l&apos;assistant IA
-          </button>
-        )}
-      </div>
-      <style>{`
-        [data-siteai-builder] {
-          --lumio-paper: #f3eee4;
-          --lumio-panel: #111214;
-          --lumio-panel-soft: #15161a;
-          --lumio-line: #2b2c31;
-          --lumio-violet: #9f87ff;
-          background:
-            radial-gradient(circle at 78% -10%, rgb(116 88 255 / .16), transparent 30rem),
-            repeating-linear-gradient(90deg, transparent 0 63px, rgb(255 255 255 / .012) 64px),
-            #070809;
-        }
-        [data-siteai-builder] > header {
-          box-shadow: 0 16px 40px rgb(0 0 0 / .18);
-        }
-        [data-builder-statusbar] {
-          border-bottom: 1px solid var(--lumio-line);
-        }
-        [data-builder-section] {
-          background: linear-gradient(180deg, rgb(255 255 255 / .018), transparent 14rem);
-        }
-        [data-builder-section] > [data-mobile-hide] h1,
-        [data-builder-editor] h2,
-        [data-builder-editor] h3 {
-          font-family: Georgia, "Times New Roman", serif;
-          letter-spacing: -.025em;
-        }
-        [data-builder-editor] > * {
-          border-color: var(--lumio-line) !important;
-          background: rgb(17 18 20 / .96) !important;
-          box-shadow: 0 20px 55px rgb(0 0 0 / .22);
-        }
-        [data-builder-editor] input,
-        [data-builder-editor] textarea,
-        [data-builder-editor] select {
-          border-color: #35363c !important;
-          background: #090a0c !important;
-          color: #f5f0e8 !important;
-        }
-        [data-builder-editor] input::placeholder,
-        [data-builder-editor] textarea::placeholder {
-          color: #777982;
-        }
-        [data-builder-editor] input:focus,
-        [data-builder-editor] textarea:focus,
-        [data-builder-editor] select:focus {
-          border-color: var(--lumio-violet) !important;
-          box-shadow: 0 0 0 3px rgb(159 135 255 / .12);
-        }
-        [data-desktop-preview] {
-          border-color: #313238 !important;
-          background: #101114 !important;
-          box-shadow: 0 28px 80px rgb(0 0 0 / .38) !important;
-        }
-        [data-desktop-preview] > div:first-child {
-          border-bottom: 1px solid var(--lumio-line);
-          background: rgb(12 13 15 / .94) !important;
-        }
-        .lumio-workflow-nav > button[aria-pressed="true"]:not(.lumio-ai-trigger) {
-          border-color: var(--lumio-paper) !important;
-          background: var(--lumio-paper) !important;
-          color: #121214 !important;
-          box-shadow: 0 8px 24px rgb(0 0 0 / .28);
-        }
-        [data-simple-mode="true"] [data-advanced-option] { display: none; }
-        [data-builder-editor] { container: siteai-editor / inline-size; min-width: 0; }
-        [data-builder-editor] input,
-        [data-builder-editor] textarea,
-        [data-builder-editor] select { min-width: 0; max-width: 100%; }
-        [data-builder-editor] .grid > *,
-        [data-builder-editor] .flex > * { min-width: 0; }
-        [data-builder-editor] p,
-        [data-builder-editor] button,
-        [data-builder-editor] label { overflow-wrap: anywhere; }
-        /* Controls follow their panel width, not the width of the desktop. */
-        @container siteai-editor (max-width: 420px) {
-          [data-builder-editor] [class~="sm:flex-row"] {
-            flex-direction: column !important;
-            align-items: stretch !important;
-          }
-          [data-builder-editor] [class~="sm:grid-cols-2"],
-          [data-builder-editor] [class~="sm:grid-cols-3"],
-          [data-builder-editor] [class~="md:grid-cols-2"] {
-            grid-template-columns: minmax(0, 1fr) !important;
-          }
-        }
 
-        @media (width >= 48rem) {
-          body:has([data-siteai-builder]) { margin: 0; height: 100dvh; overflow: hidden; }
-          [data-siteai-builder] { position: fixed; inset: 0; width: 100%; height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-          [data-siteai-builder] > :not([data-builder-section]) { flex-shrink: 0; }
-          [data-siteai-builder] > header { flex-shrink: 0; }
-          [data-siteai-builder] > header > div { max-width: none; padding-top: .65rem; padding-bottom: .65rem; }
-          [data-builder-section] { display: flex; flex-direction: column; width: 100%; max-width: none; flex: 1; min-height: 0; overflow: hidden; padding: .625rem .75rem .75rem; }
-          [data-builder-section] > [data-mobile-hide] { display: none; }
-          [data-builder-grid] { flex: 1; width: 100%; height: 100%; min-height: 0; grid-template-columns: minmax(390px, 38%) minmax(0, 62%); gap: .75rem; }
-          [data-builder-editor] { display: block; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: .25rem; }
-          [data-builder-editor] > * { display: none; margin: 0; }
-          [data-builder-editor] { overflow-x: hidden; }
-          [data-desktop-panel="infos"] form[data-mobile-panel="infos"],
-          [data-desktop-panel="sites"] [data-desktop-sites],
-          [data-desktop-panel="ia"] [data-desktop-ai],
-          [data-desktop-panel="publication"] [data-mobile-panel="publication"],
-          [data-desktop-panel="contenu"] [data-mobile-manual],
-          [data-desktop-panel="apparence"] [data-mobile-manual] { display: block; padding: 1rem; border-radius: 1rem; }
-          [data-mobile-manual] > div:first-child { display: none; }
-          [data-mobile-fields] { margin-top: 0; }
-          [data-desktop-save] { display: none; }
-          [data-desktop-panel="contenu"] [data-mobile-appearance] { display: none; }
-          [data-desktop-panel="apparence"] [data-mobile-fields] > :not([data-mobile-appearance]) { display: none; }
-          [data-desktop-panel="apparence"] [data-mobile-appearance] { border: 0; padding: 0; margin: 0; }
-          [data-desktop-panel="apercu"] [data-builder-grid] { grid-template-columns: minmax(0, 1fr); }
-          [data-desktop-panel="apercu"] [data-builder-editor] { display: none; }
-          [data-desktop-preview] { position: static; align-self: stretch; min-height: 0; overflow: auto; border-radius: 1rem; scrollbar-width: thin; box-shadow: 0 18px 50px rgb(0 0 0 / .22); }
-          [data-desktop-preview] > div:first-child { position: sticky; top: 0; z-index: 10; background: rgb(11 18 34 / .94); backdrop-filter: blur(14px); padding: .55rem .75rem; }
-          [data-desktop-preview] > div:first-child > div { flex-direction: row; flex-wrap: wrap; }
-          [data-desktop-preview] > div:first-child > div > div:first-child { display: none; }
-          [data-desktop-preview] > div:first-child > div > div:last-child > button:first-child { display: none; }
-          [data-desktop-preview] > div:nth-child(2) { padding: .75rem; }
-          [data-desktop-preview] > div:nth-child(2) > p { display: none; }
-        }
+          <details data-account-menu className="relative">
+            <summary
+              aria-label="Mon compte"
+              title={userEmail ? `Connecté avec ${userEmail}` : "Mon compte"}
+            >
+              {(userEmail || "?").slice(0, 1).toUpperCase()}
+            </summary>
+            <div data-account-popover>
+              {userEmail && (
+                <p className="px-3 pb-2 text-xs text-slate-400">
+                  Connecté avec
+                  <span className="mt-0.5 block break-all text-sm font-medium text-slate-200">
+                    {userEmail}
+                  </span>
+                </p>
+              )}
+              <button type="button" onClick={returnToDashboard}>
+                Mes sites
+              </button>
+              <button type="button" onClick={startGuidedCreation}>
+                + Nouveau site
+              </button>
+              <button type="button" onClick={handleLogout} data-danger>
+                Déconnexion
+              </button>
+            </div>
+          </details>
 
-        @media (width < 48rem) {
-          [data-siteai-builder] [data-mobile-hide] { display: none !important; }
-          [data-builder-section] { padding-top: 1rem; padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
-          [data-builder-grid] { display: block; }
-          [data-mobile-step="3"] [data-builder-section] { display: none; }
-          [data-builder-editor] { display: block !important; }
-          [data-mobile-panel], [data-mobile-manual] { display: none; }
-          [data-mobile-step="0"] [data-mobile-panel="infos"],
-          [data-mobile-step="1"] [data-mobile-panel="contenu"],
-          [data-mobile-step="4"] [data-mobile-panel="publication"],
-          [data-mobile-step="1"] [data-mobile-manual],
-          [data-mobile-step="2"] [data-mobile-manual] { display: block; margin-top: 0; margin-bottom: 1.5rem; padding: 1rem; }
-          [data-mobile-manual] > div:first-child { display: none; }
-          [data-mobile-fields] { margin-top: 0; }
-          [data-mobile-step="1"] [data-mobile-appearance] { display: none; }
-          [data-mobile-step="2"] [data-mobile-fields] > :not([data-mobile-appearance]) { display: none; }
-          [data-mobile-step="2"] [data-mobile-appearance] { border: 0; padding-top: 0; margin-top: 0; }
-        }
-      `}</style>
-      <section
-        data-builder-section
-        className="mx-auto max-w-[1800px] px-4 py-5 lg:px-6"
-      >
-        <div
-          data-mobile-hide
-          className="mb-4 flex items-end justify-between gap-4"
-        >
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-violet-300">
-              Atelier Lumio
-            </p>
-            <h1 className="mt-2 font-serif text-3xl font-semibold text-[#f5f0e8]">
-              Construis ton site simplement
-            </h1>
-          </div>
-          <p className="hidden max-w-xl text-right text-sm text-slate-500 xl:block">
-            Renseigne ton entreprise, choisis un style et laisse l&apos;IA
-            préparer une première version.
-          </p>
+          {site && (
+            <button
+              type="button"
+              data-publish-cta
+              disabled={busy}
+              onClick={() => openWorkspaceTab("publication", 4)}
+              className="hidden md:inline-flex"
+            >
+              {openedSite?.published ? "Mettre en ligne" : "Publier"}
+            </button>
+          )}
         </div>
+      </header>
 
-        {!site && <FirstSiteGuide />}
+      {(saveConflict ||
+        versions.error ||
+        draft.status === "error" ||
+        draft.restoredDraft) && (
+        <div data-builder-notices role="status">
+          {saveConflict && (
+            <p role="alert" className="text-amber-300">
+              Une version plus récente existe. Utilise Plus › Versions pour
+              conserver ton travail, puis{" "}
+              <button
+                type="button"
+                disabled={busy || savedSiteID === null}
+                onClick={() => {
+                  if (savedSiteID !== null) {
+                    setSaveConflict(false);
+                    void openSavedSite(savedSiteID);
+                  }
+                }}
+                className="underline disabled:opacity-40"
+              >
+                rouvre le brouillon du compte
+              </button>
+              .
+            </p>
+          )}
+          {versions.error && (
+            <p role="alert" className="text-amber-300">
+              {versions.error}
+            </p>
+          )}
+          {draft.status === "error" && (
+            <button
+              type="button"
+              onClick={draft.retrySave}
+              className="text-blue-300 underline"
+            >
+              Réessayer la sauvegarde locale
+            </button>
+          )}
+          {draft.restoredDraft && (
+            <div className="flex flex-wrap items-center gap-3">
+              <p>Un brouillon a été retrouvé sur cet appareil.</p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={draft.restoreDraft}
+                className="rounded-lg bg-blue-600 px-3 py-2 font-semibold"
+              >
+                Reprendre
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={draft.discardDraft}
+                className="rounded-lg border border-slate-700 px-3 py-2"
+              >
+                Garder cette version
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
-        <div
-          data-builder-grid
-          className={`grid gap-3 ${
-            editorCollapsed
-              ? "grid-cols-1"
-              : "xl:grid-cols-[minmax(390px,38%)_minmax(0,62%)]"
-          }`}
-        >
+      <h1
+        ref={mobileHeadingRef}
+        tabIndex={-1}
+        className="sr-only"
+      >
+        {site ? mobileSteps[mobileView] : "Crée ton site"}
+      </h1>
+
+      <section data-builder-section>
+        {/* Guide de démarrage : sur mobile seulement, l'aperçu vide l'explique déjà sur ordinateur. */}
+        {!site && (
+          <div data-first-guide>
+            <FirstSiteGuide />
+          </div>
+        )}
+
+        <div data-builder-grid>
+          <div data-builder-panel>
+            {site && (
+              <div
+                role="tablist"
+                aria-label="Modifier le site"
+                data-builder-tabs
+              >
+                {workspaceTabs.map(([value, label, step]) => {
+                  const selected = isMobileBuilder
+                    ? mobileView === step
+                    : activeDesktopPanel === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => openWorkspaceTab(value, step)}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           <fieldset
             disabled={busy}
             data-builder-editor
-            className={editorCollapsed ? "hidden" : "space-y-4"}
+            className="space-y-4"
           >
             <form
               data-mobile-panel="infos"
@@ -4791,80 +4601,6 @@ export default function Home() {
               />
             )}
 
-            {site && (
-              <div
-                data-desktop-ai
-                data-mobile-panel="contenu"
-                className="rounded-3xl border border-slate-800 bg-slate-900 p-7"
-              >
-                <h2 className="text-xl font-bold">
-                  Assistant <em>Lumio</em>
-                </h2>
-
-                <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Écris ou dicte ce que tu veux changer, comme à une personne :
-                  « ajoute mes horaires », « passe le site en vert »… Il répond
-                  aussi à tes questions, et chaque modification s’annule en un
-                  clic.
-                </p>
-
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => openLumioAssistant()}
-                  className="mt-5 w-full rounded-xl bg-blue-600 px-6 py-4 font-bold hover:bg-blue-500 disabled:opacity-50"
-                >
-                  Discuter avec l’assistant
-                </button>
-
-                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  Idées rapides
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {[
-                    [
-                      "Raccourcir",
-                      "Raccourcis les textes du site en conservant les informations essentielles, les noms et les coordonnées. Ne change ni le style ni les images.",
-                    ],
-                    [
-                      "Plus professionnel",
-                      "Rends les textes du site plus professionnels sans inventer de faits, de tarifs, de certifications ou d’avis. Conserve le style et les images.",
-                    ],
-                    [
-                      "Simplifier",
-                      "Réécris les textes avec des mots simples et des phrases courtes, sans modifier les informations, le style ou les images.",
-                    ],
-                    [
-                      "Ajouter une promotion",
-                      "Ajoute une promotion clairement visible dans le texte d’accueil. Laisse des emplacements [OFFRE], [PRIX] et [DATE DE FIN] à compléter et n’invente aucun tarif.",
-                    ],
-                    [
-                      "Nouveau service",
-                      "Ajoute un nouveau service à la fin des prestations. Utilise le titre [NOM DU SERVICE] et une description courte à compléter, sans inventer de prix.",
-                    ],
-                    [
-                      "Améliorer Google",
-                      "Améliore le titre et la description SEO pour l’activité et la ville déjà renseignées, sans ajouter de zone, certification ou promesse qui n’existe pas.",
-                    ],
-                    [
-                      "Mettre en avant le devis",
-                      "Rends les appels à l’action plus directs afin d’encourager les demandes de devis, sans modifier les coordonnées ni inventer de délai de réponse.",
-                    ],
-                  ].map(([label, instruction]) => (
-                    <button
-                      key={label}
-                      type="button"
-                      disabled={busy}
-                      onClick={() => prepareQuickPrompt(instruction)}
-                      className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold hover:border-blue-400 disabled:opacity-40"
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div
               data-desktop-sites
               data-mobile-panel="infos"
@@ -4956,13 +4692,23 @@ export default function Home() {
             </div>
           </fieldset>
 
-          <div
-            data-desktop-preview
-            data-mobile-hide
-            className="overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/80 shadow-2xl shadow-black/20 xl:sticky xl:top-6 xl:self-start"
-          >
+            {site && (isMobileBuilder ? mobileView === 1 : activeDesktopPanel === "contenu") && (
+              <button
+                type="button"
+                data-more-options
+                aria-pressed={advancedMode}
+                onClick={() => setAdvancedMode((value) => !value)}
+              >
+                {advancedMode
+                  ? "Masquer les options avancées"
+                  : "Plus d’options : SEO, avis, ordre des blocs…"}
+              </button>
+            )}
+          </div>
+
+          <div data-desktop-preview data-mobile-hide>
             {!site ? (
-              <div className="flex min-h-[700px] items-center justify-center text-center">
+              <div className="flex h-full min-h-[560px] items-center justify-center p-6 text-center">
                 <div>
                   <div className="lumio-empty-mark" aria-hidden="true">lumio<span>.</span></div>
 
@@ -4971,15 +4717,14 @@ export default function Home() {
                   </h2>
 
                   <p className="mx-auto mt-3 max-w-md leading-6 text-slate-400">
-                    Renseigne les informations de ton entreprise à gauche. Lumio
-                    préparera automatiquement le contenu et le design de ton
-                    site.
+                    Réponds à 3 questions : Lumio écrit les textes, choisit
+                    la mise en page et prépare ton site.
                   </p>
 
                   <button
                     type="button"
                     onClick={startGuidedCreation}
-                    className="mt-6 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-500"
+                    className="mt-6 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold"
                   >
                     Créer mon site en 3 questions
                   </button>
@@ -4990,69 +4735,45 @@ export default function Home() {
               </div>
             ) : (
               <>
-                <div className="border-b border-slate-800 bg-slate-950/70 p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-bold text-slate-200">
-                        Aperçu responsive
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Le site est rendu dans un vrai viewport pour tester les
-                        versions ordinateur, tablette et téléphone.
-                      </p>
-                    </div>
+                <div data-preview-toolbar>
+                  <button
+                    type="button"
+                    onClick={togglePanel}
+                    aria-pressed={!panelHidden}
+                    data-pill
+                  >
+                    {panelHidden ? "☰ Afficher le panneau" : "Masquer le panneau"}
+                  </button>
 
-                    <div className="inline-flex w-fit rounded-xl border border-slate-700 bg-slate-900 p-1">
-                      {(
-                        [
-                          ["desktop", "🖥️", "Ordinateur"],
-                          ["tablet", "▭", "Tablette"],
-                          ["mobile", "📱", "Téléphone"],
-                        ] as const
-                      ).map(([value, icon, label]) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => setPreviewDevice(value)}
-                          aria-pressed={previewDevice === value}
-                          title={`Aperçu ${label.toLowerCase()}`}
-                          className={`rounded-lg px-3 py-2 text-xs font-bold transition ${
-                            previewDevice === value
-                              ? "bg-blue-600 text-white"
-                              : "text-slate-400 hover:bg-slate-800 hover:text-white"
-                          }`}
-                        >
-                          <span className="mr-1.5">{icon}</span>
-                          <span className="hidden sm:inline">{label}</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div data-device-switch role="group" aria-label="Taille de l’aperçu">
+                    {previewDeviceOptions.map(([value, label]) => (
                       <button
+                        key={value}
                         type="button"
-                        onClick={() =>
-                          setEditorCollapsed((collapsed) => !collapsed)
-                        }
-                        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-300 transition hover:border-blue-500 hover:text-white"
+                        onClick={() => setPreviewDevice(value)}
+                        aria-pressed={previewDevice === value}
                       >
-                        {editorCollapsed
-                          ? "☰ Afficher l'éditeur"
-                          : "↔ Plus de place"}
+                        {label}
                       </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setPreviewFullscreenOpen(true)}
-                        className="rounded-xl border border-blue-500/50 bg-blue-500/10 px-3 py-2 text-xs font-bold text-blue-300 transition hover:bg-blue-500/20 hover:text-white"
-                      >
-                        ⛶ Agrandir l&apos;aperçu
-                      </button>
-                    </div>
+                    ))}
                   </div>
+
+                  <p data-preview-hint>
+                    {previewEditing
+                      ? "Clique sur un texte ou une image pour le modifier"
+                      : previewViewports[previewDevice].label}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => setPreviewFullscreenOpen(true)}
+                    data-pill
+                  >
+                    Agrandir
+                  </button>
                 </div>
 
-                <div className="bg-slate-950/40 p-4 sm:p-6">
+                <div data-preview-canvas>
                   <ResponsiveSitePreview
                     onEdit={
                       previewEditing && !busy ? editFromPreview : undefined
@@ -5064,28 +4785,61 @@ export default function Home() {
                     activity={activity}
                     city={city}
                   />
-
-                  <p className="mt-3 text-center text-xs text-slate-500">
-                    {previewViewports[previewDevice].label}
-                  </p>
                 </div>
+
+                <form data-ai-bar onSubmit={sendAiPrompt}>
+                  <div data-ai-input>
+                    <span aria-hidden="true">✦</span>
+                    <label htmlFor="builder-ai-prompt" className="sr-only">
+                      Demande à Lumio de modifier ton site
+                    </label>
+                    <input
+                      id="builder-ai-prompt"
+                      value={aiPrompt}
+                      onChange={(event) => setAiPrompt(event.target.value)}
+                      placeholder="Demande à Lumio : « ajoute mes horaires », « passe le site en vert »…"
+                      autoComplete="off"
+                      disabled={busy}
+                    />
+                    <button
+                      type="submit"
+                      disabled={busy || !aiPrompt.trim()}
+                      data-ai-send
+                    >
+                      Envoyer
+                    </button>
+                  </div>
+                  <div data-ai-ideas>
+                    {quickIdeas.map(([label, instruction]) => (
+                      <button
+                        key={label}
+                        type="button"
+                        disabled={busy}
+                        onClick={() => prepareQuickPrompt(instruction)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    <AIUsage ready={Boolean(draftUserId)} busy={busy} />
+                  </div>
+                </form>
               </>
             )}
           </div>
         </div>
       </section>
 
-      {isMobileBuilder && mobileStep === 3 && site && (
-        <div className="px-2 pb-28 md:hidden">
+      {isMobileBuilder && mobileView === 3 && site && (
+        <div data-mobile-preview>
           <button
             type="button"
             onClick={() => {
               setPreviewDevice("mobile");
               setPreviewFullscreenOpen(true);
             }}
-            className="mb-3 w-full rounded-xl border border-blue-500/50 px-4 py-3 font-bold text-blue-300"
+            className="mb-3 w-full rounded-xl border border-slate-700 px-4 py-3 text-sm font-bold"
           >
-            ⛶ Agrandir l&apos;aperçu
+            Agrandir l&apos;aperçu
           </button>
           <ResponsiveSitePreview
             onEdit={previewEditing && !busy ? editFromPreview : undefined}
@@ -5098,33 +4852,25 @@ export default function Home() {
           />
         </div>
       )}
-      <nav
-        aria-label="Navigation entre les étapes"
-        className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-slate-800 bg-slate-950 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:hidden"
-      >
-        <button
-          type="button"
-          disabled={mobileStep === 0}
-          onClick={() => navigateMobileStep(mobileStep - 1)}
-          className="min-h-11 flex-1 rounded-xl border border-slate-700 px-3 py-3 text-sm font-bold disabled:opacity-35"
-        >
-          Précédent
-        </button>
-        {mobileStep < 4 ? (
-          <button
-            type="button"
-            disabled={!site}
-            onClick={() => navigateMobileStep(mobileStep + 1)}
-            className="min-h-11 flex-1 rounded-xl bg-blue-600 px-3 py-3 text-sm font-bold disabled:opacity-35"
-          >
-            {mobileSteps[mobileStep + 1]} →
-          </button>
-        ) : (
-          <span className="flex-1 text-center text-sm text-slate-400">
-            Étape 5 sur 5
-          </span>
-        )}
-      </nav>
+
+      {site && (
+        <nav aria-label="Modifier le site" data-mobile-tabbar>
+          {mobileTabs.map(([label, step]) => (
+            <button
+              key={label}
+              type="button"
+              aria-current={mobileView === step ? "page" : undefined}
+              onClick={() => {
+                const panel = step === 2 ? "apparence" : step === 4 ? "publication" : step === 3 ? "apercu" : "contenu";
+                setDesktopPanel(panel);
+                navigateMobileStep(step);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {confirmDialog}
 
@@ -5208,7 +4954,8 @@ export default function Home() {
         onSiteModified={applyAssistantModification}
         onBusyChange={setEditLoading}
         busy={busy && !editLoading}
-        mobileOffset={96}
+        mobileOffset={88}
+        hideDesktopLauncher
       />
     </main>
   );

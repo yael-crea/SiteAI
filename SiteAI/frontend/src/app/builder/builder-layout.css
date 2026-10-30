@@ -1,0 +1,595 @@
+/*
+ * Mise en page de l'éditeur : une barre du haut, un panneau à trois onglets
+ * (Contenu, Style, Publier), l'aperçu du site au centre et la barre de
+ * l'assistant en dessous. Sur mobile, des onglets fixés en bas de l'écran.
+ *
+ * Les panneaux existants sont affichés selon data-desktop-panel (ordinateur)
+ * et data-mobile-step (mobile) posés sur <main>. Les couleurs viennent des
+ * variables --ui-* (thème « nuit Lumio », voir night-theme.css).
+ */
+
+/* ---------- Barre du haut ---------- */
+
+[data-builder-header] {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 60px;
+  padding: 0.5rem 1rem;
+}
+
+[data-builder-site] {
+  display: grid;
+  gap: 0.1rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--ui-separator);
+}
+
+[data-builder-site] p {
+  margin: 0;
+}
+
+[data-builder-actions] {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+[data-icon-button] {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ui-label-2);
+  font-size: 1.1rem;
+}
+
+[data-icon-button]:hover:not(:disabled) {
+  background: var(--ui-bg-elevated-2);
+  color: var(--ui-label);
+}
+
+[data-account-menu] > summary {
+  list-style: none;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ui-separator-strong);
+  background: var(--ui-bg-elevated-2);
+  color: var(--ui-label);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+[data-account-menu] > summary::-webkit-details-marker {
+  display: none;
+}
+
+[data-account-popover] {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 70;
+  width: min(16rem, calc(100vw - 2rem));
+  padding: 0.6rem;
+  display: grid;
+  gap: 0.15rem;
+  border: 1px solid var(--ui-separator-strong);
+  border-radius: 16px;
+  background: var(--ui-bg-elevated);
+  box-shadow: var(--ui-shadow-2);
+}
+
+[data-account-popover] button {
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+[data-account-popover] button:hover {
+  background: var(--ui-bg-elevated-2);
+}
+
+[data-account-popover] [data-danger] {
+  color: var(--ui-red);
+}
+
+[data-publish-cta] {
+  min-height: 38px;
+  padding: 0 1.2rem;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--ui-tint);
+  color: var(--ui-on-tint);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+[data-publish-cta]:hover:not(:disabled) {
+  background: var(--ui-tint-hover);
+}
+
+[data-builder-notices] {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--ui-separator);
+  background: var(--ui-bg-elevated);
+  font-size: 0.85rem;
+}
+
+/* ---------- Panneau ---------- */
+
+[data-builder-section] {
+  padding: 0.75rem;
+}
+
+[data-builder-grid] {
+  display: grid;
+  gap: 0.75rem;
+}
+
+[data-builder-panel] {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+[data-builder-tabs] {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--ui-separator);
+  border-radius: 999px;
+  background: var(--ui-bg-elevated);
+}
+
+[data-builder-tabs] button {
+  min-height: 38px;
+  border-radius: 999px;
+  color: var(--ui-label-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+[data-builder-tabs] button:hover {
+  color: var(--ui-label);
+}
+
+[data-builder-tabs] button[aria-selected="true"] {
+  background: var(--ui-tint);
+  color: var(--ui-on-tint);
+}
+
+[data-more-options] {
+  align-self: flex-start;
+  padding: 0.25rem 0.25rem 1rem;
+  color: var(--ui-tint-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+[data-simple-mode="true"] [data-advanced-option] {
+  display: none;
+}
+
+[data-builder-editor] {
+  container: siteai-editor / inline-size;
+  min-width: 0;
+}
+
+[data-builder-editor] > * {
+  border-color: var(--ui-separator) !important;
+  border-radius: 20px !important;
+  background: var(--ui-bg-elevated) !important;
+}
+
+[data-builder-editor] :is(input, textarea, select) {
+  min-width: 0;
+  max-width: 100%;
+  border-color: var(--ui-separator-strong) !important;
+  background: var(--ui-bg) !important;
+  color: var(--ui-label) !important;
+}
+
+[data-builder-editor] .grid > *,
+[data-builder-editor] .flex > * {
+  min-width: 0;
+}
+
+[data-builder-editor] :is(p, button, label) {
+  overflow-wrap: anywhere;
+}
+
+/* Les contrôles suivent la largeur du panneau, pas celle de l'écran. */
+@container siteai-editor (max-width: 420px) {
+  [data-builder-editor] [class~="sm:flex-row"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  [data-builder-editor] [class~="sm:grid-cols-2"],
+  [data-builder-editor] [class~="sm:grid-cols-3"],
+  [data-builder-editor] [class~="md:grid-cols-2"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* ---------- Aperçu et assistant ---------- */
+
+[data-desktop-preview] {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--ui-separator);
+  border-radius: 20px;
+  background: rgba(22, 13, 38, 0.55);
+}
+
+[data-preview-toolbar] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--ui-separator);
+}
+
+[data-pill] {
+  min-height: 34px;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  background: var(--ui-bg-elevated-2);
+  color: var(--ui-label);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+[data-pill]:hover {
+  background: var(--ui-bg-elevated-3);
+}
+
+[data-device-switch] {
+  display: inline-flex;
+  padding: 0.2rem;
+  border: 1px solid var(--ui-separator);
+  border-radius: 999px;
+  background: var(--ui-bg);
+}
+
+[data-device-switch] button {
+  min-height: 30px;
+  padding: 0 0.8rem;
+  border-radius: 999px;
+  color: var(--ui-label-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+[data-device-switch] button[aria-pressed="true"] {
+  background: var(--ui-bg-elevated-3);
+  color: var(--ui-label);
+}
+
+[data-preview-hint] {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ui-label-3);
+  font-size: 0.8rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-preview-canvas] {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.75rem;
+  scrollbar-width: thin;
+}
+
+[data-ai-bar] {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem 0.75rem;
+  border-top: 1px solid var(--ui-separator);
+  background: rgba(10, 6, 20, 0.6);
+}
+
+[data-ai-input] {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.3rem 0.3rem 1rem;
+  border: 1px solid rgba(192, 132, 252, 0.45);
+  border-radius: 999px;
+  background: var(--ui-bg);
+  box-shadow: 0 0 30px -10px rgba(192, 132, 252, 0.5);
+}
+
+[data-ai-input]:focus-within {
+  border-color: var(--ui-tint);
+}
+
+[data-ai-input] > span {
+  color: var(--ui-tint);
+}
+
+[data-ai-input] input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0;
+  border: 0 !important;
+  outline: none;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ui-label);
+  font-size: 0.95rem;
+}
+
+[data-ai-send] {
+  min-height: 38px;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  background: var(--ui-tint);
+  color: var(--ui-on-tint);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+[data-ai-ideas] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+[data-ai-ideas] > button {
+  min-height: 30px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--ui-separator-strong);
+  border-radius: 999px;
+  color: var(--ui-label-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+[data-ai-ideas] > button:hover:not(:disabled) {
+  border-color: var(--ui-tint);
+  color: var(--ui-label);
+}
+
+/* Compteur IA, aligné à droite des idées */
+[data-ai-ideas] > div {
+  margin-left: auto;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+}
+
+[data-mobile-tabbar],
+[data-mobile-preview] {
+  display: none;
+}
+
+/* ---------- Ordinateur ---------- */
+
+@media (width >= 48rem) {
+  body:has([data-siteai-builder]) {
+    height: 100dvh;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  [data-siteai-builder] {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  [data-siteai-builder] > :not([data-builder-section]) {
+    flex-shrink: 0;
+  }
+
+  [data-builder-section] {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  [data-builder-grid] {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(340px, 400px) minmax(0, 1fr);
+  }
+
+  [data-has-site="false"] [data-builder-grid] {
+    grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
+  }
+
+  [data-panel-hidden="true"] [data-builder-grid] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-panel-hidden="true"] [data-builder-panel] {
+    display: none;
+  }
+
+  [data-first-guide] {
+    display: none;
+  }
+
+  [data-builder-panel] {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 0.25rem;
+    scrollbar-width: thin;
+  }
+
+  [data-builder-editor] > * {
+    display: none;
+    margin: 0;
+  }
+
+  [data-desktop-panel="infos"] form[data-mobile-panel="infos"],
+  [data-desktop-panel="sites"] [data-desktop-sites],
+  [data-desktop-panel="publication"] [data-mobile-panel="publication"],
+  [data-desktop-panel="contenu"] [data-mobile-manual],
+  [data-desktop-panel="apparence"] [data-mobile-manual] {
+    display: block;
+    padding: 1rem;
+  }
+
+  [data-mobile-manual] > div:first-child,
+  [data-desktop-save] {
+    display: none;
+  }
+
+  [data-mobile-fields] {
+    margin-top: 0;
+  }
+
+  [data-desktop-panel="contenu"] [data-mobile-appearance] {
+    display: none;
+  }
+
+  [data-desktop-panel="apparence"] [data-mobile-fields] > :not([data-mobile-appearance]) {
+    display: none;
+  }
+
+  [data-desktop-panel="apparence"] [data-mobile-appearance] {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+}
+
+/* ---------- Mobile ---------- */
+
+@media (width < 48rem) {
+  [data-builder-header] {
+    gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  [data-builder-site] {
+    padding-left: 0.6rem;
+  }
+
+  [data-builder-tabs] {
+    display: none;
+  }
+
+  [data-siteai-builder] [data-mobile-hide] {
+    display: none !important;
+  }
+
+  [data-builder-section] {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  }
+
+  [data-builder-grid] {
+    display: block;
+  }
+
+  [data-mobile-step="3"] [data-builder-section] {
+    display: none;
+  }
+
+  [data-mobile-panel],
+  [data-mobile-manual] {
+    display: none;
+  }
+
+  [data-mobile-step="0"] [data-mobile-panel="infos"],
+  [data-mobile-step="4"] [data-mobile-panel="publication"],
+  [data-mobile-step="1"] [data-mobile-manual],
+  [data-mobile-step="2"] [data-mobile-manual] {
+    display: block;
+    margin: 0 0 1rem;
+    padding: 1rem;
+  }
+
+  [data-mobile-manual] > div:first-child {
+    display: none;
+  }
+
+  [data-mobile-fields] {
+    margin-top: 0;
+  }
+
+  [data-mobile-step="1"] [data-mobile-appearance] {
+    display: none;
+  }
+
+  [data-mobile-step="2"] [data-mobile-fields] > :not([data-mobile-appearance]) {
+    display: none;
+  }
+
+  [data-mobile-step="2"] [data-mobile-appearance] {
+    margin-top: 0;
+    padding-top: 0;
+    border: 0;
+  }
+
+  [data-mobile-preview] {
+    display: block;
+    padding: 0.5rem 0.5rem calc(6rem + env(safe-area-inset-bottom));
+  }
+
+  [data-mobile-tabbar] {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.25rem;
+    padding: 0.5rem 0.5rem max(0.5rem, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--ui-separator);
+    background: var(--ui-glass-bg-strong);
+    -webkit-backdrop-filter: var(--ui-glass-filter);
+    backdrop-filter: var(--ui-glass-filter);
+  }
+
+  [data-mobile-tabbar] button {
+    min-height: 48px;
+    border-radius: 14px;
+    color: var(--ui-label-2);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  [data-mobile-tabbar] button[aria-current="page"] {
+    background: var(--ui-tint-soft);
+    color: var(--ui-tint-text);
+  }
+}
