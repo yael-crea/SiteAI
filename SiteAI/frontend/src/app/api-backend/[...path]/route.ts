@@ -76,6 +76,30 @@ async function proxyRequest(
       );
     }
 
+    // IP du visiteur pour la limite anti-spam des formulaires de contact.
+    // Vercel fixe x-real-ip et x-forwarded-for lui-même (non falsifiables) ;
+    // le backend ne croit cette IP que si le secret partagé correspond.
+    const proxySecret =
+      process.env.LUMIO_PROXY_SECRET;
+
+    const clientIP =
+      request.headers.get("x-real-ip")?.trim() ||
+      request.headers
+        .get("x-forwarded-for")
+        ?.split(",")[0]
+        ?.trim();
+
+    if (proxySecret && clientIP) {
+      headers.set(
+        "X-Lumio-Proxy-Secret",
+        proxySecret,
+      );
+      headers.set(
+        "X-Lumio-Client-IP",
+        clientIP,
+      );
+    }
+
     let body:
       | ArrayBuffer
       | undefined;
