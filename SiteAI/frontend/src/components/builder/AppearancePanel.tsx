@@ -1,6 +1,7 @@
 "use client";
 import StylePicker from "@/components/StylePicker";
 import AppearanceOptions from "@/components/AppearanceOptions";
+import AnimationOptions from "@/components/builder/AnimationOptions";
 import { smartPalettes } from "@/lib/siteGrowth";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import type { GeneratedSite, DesignSettings } from "@/lib/builderTypes";
@@ -132,16 +133,28 @@ export default function AppearancePanel({
         </div>
       </div>
 
+      <AnimationOptions
+        value={normalizeDesignSettings(site.designSettings)}
+        onChange={(value) => updateSiteField("designSettings", value)}
+        disabled={loading || editLoading || saving || publishing}
+      />
+
       {advancedMode ? (
         <AppearanceOptions
           value={normalizeDesignSettings(site.designSettings)}
           onChange={(value) => updateSiteField("designSettings", value)}
-          onReset={() =>
+          onReset={() => {
+            // Revenir au style garde les animations choisies.
+            const current = normalizeDesignSettings(site.designSettings);
             updateSiteField(
               "designSettings",
-              normalizeDesignSettings(getDesignStyle(designStyle).settings),
-            )
-          }
+              normalizeDesignSettings({
+                ...getDesignStyle(designStyle).settings,
+                motion: current.motion,
+                heroBackground: current.heroBackground,
+              }),
+            );
+          }}
         />
       ) : (
         <p className="mt-4 text-sm text-slate-400">
