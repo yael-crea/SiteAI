@@ -46,3 +46,17 @@ from Stripe, so an old event arriving late cannot reactivate a cancellation.
 The table is backend-only (RLS enabled, no policy, privileges revoked from
 `anon` and `authenticated`). It is applied after the security baseline because
 the baseline only revokes privileges on tables that already exist.
+
+## 20261031 Lifecycle emails
+
+`20261031_lifecycle_emails.sql` creates two backend-only tables used by the
+reminder emails sent to accounts that created a site without publishing it
+(`lifecycle_emails.go`):
+
+- `lifecycle_emails`: one row per account and email (`bienvenue`, `publier`,
+  `dernier_rappel`). The row is inserted before sending, so two backend
+  instances never send the same email; it is deleted again if the send fails.
+- `email_preferences`: the unsubscribe token put in each email and the
+  opt-out date. Lead and quote notifications are not affected by an opt-out.
+
+`gen_random_uuid()` is built into PostgreSQL 13 and later (Supabase).
