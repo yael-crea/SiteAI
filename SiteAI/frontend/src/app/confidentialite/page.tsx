@@ -98,6 +98,7 @@ Les données de carte bancaire ne sont pas destinées à être stockées directe
 • Railway Corporation (États-Unis) : hébergement du serveur applicatif ;
 • OpenAI (États-Unis) : génération et modification des textes par intelligence artificielle. Seules les informations saisies pour générer ou modifier un site lui sont transmises ; elles ne sont pas utilisées pour entraîner ses modèles ;
 • Resend, Inc. (États-Unis) : envoi des e-mails du service, notamment les notifications de demandes de devis et les e-mails d’aide à la publication ;
+• Functional Software, Inc. (Sentry, États-Unis) : suivi des erreurs techniques du service. Seuls le message d’erreur, l’adresse de la page concernée et des informations techniques sont transmis ; les adresses e-mail sont masquées et aucun cookie ni jeton de connexion n’est envoyé ;
 • Google : uniquement si l’utilisateur choisit de se connecter avec son compte Google.
 
 Lorsque des données sont transférées hors de l’Union européenne, ces transferts sont encadrés par les garanties prévues par le RGPD : décision d’adéquation de la Commission européenne (Data Privacy Framework UE–États-Unis) pour les prestataires certifiés, ou clauses contractuelles types de la Commission européenne.
