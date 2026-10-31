@@ -12,6 +12,9 @@ export const extraChoices = {
   imageRatio: ["auto", "landscape", "square", "portrait"],
   imageFit: ["auto", "cover", "contain"],
   buttonSize: ["auto", "compact", "large"],
+  // « auto » = aucune animation, fond fixe : les sites créés avant ce réglage ne changent pas.
+  motion: ["auto", "subtle", "dynamic"],
+  heroBackground: ["auto", "zoom", "gradient", "aurora"],
 } as const;
 
 export type DesignExtras = { [K in keyof typeof extraChoices]?: (typeof extraChoices)[K][number] };

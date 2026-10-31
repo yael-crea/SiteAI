@@ -847,6 +847,7 @@ PRINCIPE :
 - pour un nouveau service, définis sourceIndex à null ; ne réutilise jamais un sourceIndex deux fois
 - tu peux changer layoutOrder pour réorganiser les blocs, hiddenBlocks pour les masquer ou les afficher, et designSettings pour modifier l'apparence
 - utilise uniquement ces identifiants de blocs : about, services, process, faq, gallery, contact
+- animations : designSettings.motion vaut auto (aucune animation), subtle (apparitions douces) ou dynamic (plus vivant) ; designSettings.heroBackground vaut auto (fond fixe), zoom (zoom lent sur la photo), gradient (dégradé animé) ou aurora (formes lumineuses qui flottent)
 - conserve exactement layoutOrder, hiddenBlocks et designSettings lorsqu'aucun changement n'est demandé
 - ne crée pas de faux témoignages ; laisse la liste des avis vide lorsqu'aucun avis réel n'est fourni
 - une demande impliquant une fonctionnalité non représentée par ces champs ne doit pas être simulée en affirmant qu'elle est réalisée
@@ -1638,6 +1639,7 @@ func modifiedDesignSettingsSchema() map[string]any {
 		"contentWidth", "spacing", "background", "titleScale", "textScale",
 		"titleWeight", "titleCase", "lineHeight", "cardRadius",
 		"shadowStrength", "imageRadius", "imageRatio", "imageFit", "buttonSize",
+		"motion", "heroBackground",
 	}
 	properties := make(map[string]any, len(fields))
 	for _, field := range fields {

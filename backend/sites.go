@@ -85,6 +85,12 @@ type DesignSettings struct {
 	ImageFit string `json:"imageFit"`
 
 	ButtonSize string `json:"buttonSize"`
+
+	// Animations : intensité (subtle, dynamic) et fond du haut de site (zoom,
+	// gradient, aurora). Vide ou « auto » = aucune animation, fond fixe.
+	Motion string `json:"motion"`
+
+	HeroBackground string `json:"heroBackground"`
 }
 
 type GeneratedSite struct {

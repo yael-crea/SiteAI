@@ -6,6 +6,10 @@ import { normalizeDesignExtras, type AppearanceSettings } from "@/lib/appearance
 type Control = { key: keyof AppearanceSettings; label: string; choices: readonly (readonly [string, string])[]; hint?: string };
 const auto = ["auto", "Selon le style"] as const;
 const groups: {title: string; description: string; controls: Control[]}[] = [
+  {title: "Animations", description: "Donne du mouvement au site. Les visiteurs qui ont demandé moins d’animations sur leur appareil voient toujours un site fixe.", controls: [
+    {key:"motion",label:"Animations au défilement",choices:[["auto","Aucune"],["subtle","Discrètes"],["dynamic","Dynamiques"]],hint:"Les sections et les cartes apparaissent en douceur pendant la lecture."},
+    {key:"heroBackground",label:"Fond du haut du site",choices:[["auto","Fixe"],["zoom","Zoom lent sur la photo"],["gradient","Dégradé qui ondule"],["aurora","Formes lumineuses"]],hint:"Le dégradé et les formes lumineuses reprennent la couleur principale du site."},
+  ]},
   {title: "Textes", description: "Ajuste la lisibilité et le caractère des titres.", controls: [
     {key:"font",label:"Police",choices:[["system","Système"],["modern","Moderne"],["classic","Classique"],["editorial","Éditoriale"],["mono","Monospace"]]},
     {key:"titleScale",label:"Taille des titres",choices:[auto,["small","Discrète"],["large","Grande"]]},
