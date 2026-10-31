@@ -43,8 +43,28 @@ type UserUsage = {
   monthlyRevenueEur: number;
 };
 
+type FunnelCount = {
+  label: string;
+  count: number;
+};
+
+type Funnel = {
+  days: number;
+  landingViews: number;
+  ctaClicks: number;
+  signUps: number;
+  firstSites: number;
+  publishers: number;
+  newSubscriptions: number;
+  clicksByButton: FunnelCount[];
+  viewsBySource: FunnelCount[];
+  reminderEmails: FunnelCount[];
+  remindedSubscribers: number;
+};
+
 type AdminStats = {
   summary: Summary;
+  funnel?: Funnel;
   users: UserUsage[];
 };
 
@@ -63,6 +83,23 @@ function moneyUSD(value: number) {
     maximumFractionDigits: 6,
   }).format(value);
 }
+
+function percent(part: number, total: number) {
+  if (total <= 0) return "–";
+  return `${Math.round((part / total) * 100)} %`;
+}
+
+const BUTTON_LABELS: Record<string, string> = {
+  header: "En-tête",
+  hero: "Haut de page",
+  pricing: "Tarifs",
+};
+
+const REMINDER_LABELS: Record<string, string> = {
+  bienvenue: "Bienvenue",
+  publier: "Publier",
+  dernier_rappel: "Dernier rappel",
+};
 
 function planLabel(plan: string) {
   if (plan === "essentiel") return "Essentiel";
@@ -201,6 +238,8 @@ export default function AdminPage() {
               <Card title="Sites publiés" value={data.summary.publishedSites} />
             </div>
 
+            {data.funnel && <FunnelSection funnel={data.funnel} />}
+
             <h2 className="mt-10 text-xl font-black">✨ IA et plateforme</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Card title="Utilisateurs" value={data.summary.totalUsers} />
@@ -286,6 +325,98 @@ function Card({
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
       <p className="text-sm text-slate-500">{title}</p>
       <p className="mt-2 text-2xl font-black">{value}</p>
+    </div>
+  );
+}
+
+function FunnelSection({ funnel }: { funnel: Funnel }) {
+  const steps = [
+    { title: "Visites de la page d'accueil", value: funnel.landingViews },
+    { title: "Clics « Créer mon site »", value: funnel.ctaClicks },
+    { title: "Comptes créés", value: funnel.signUps },
+    { title: "Premiers sites créés", value: funnel.firstSites },
+    { title: "Comptes ayant publié", value: funnel.publishers },
+    { title: "Nouveaux abonnements", value: funnel.newSubscriptions },
+  ];
+
+  return (
+    <>
+      <h2 className="mt-10 text-xl font-black">
+        🎯 Conversion sur {funnel.days} jours
+      </h2>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {steps.map((step, index) => (
+          <div
+            key={step.title}
+            className="rounded-2xl border border-slate-800 bg-slate-900 p-5"
+          >
+            <p className="text-sm text-slate-500">{step.title}</p>
+            <p className="mt-2 text-2xl font-black">{step.value}</p>
+            {index > 0 && (
+              <p className="mt-1 text-xs text-slate-500">
+                {percent(step.value, steps[index - 1].value)} de l&apos;étape
+                précédente
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <CountList
+          title="Clics par bouton"
+          items={funnel.clicksByButton}
+          label={(item) => BUTTON_LABELS[item.label] ?? item.label}
+        />
+        <CountList
+          title="Visites par source"
+          items={funnel.viewsBySource}
+          label={(item) => item.label || "Directe"}
+        />
+        <CountList
+          title="Emails de relance envoyés"
+          items={funnel.reminderEmails}
+          label={(item) => REMINDER_LABELS[item.label] ?? item.label}
+          footer={`${funnel.remindedSubscribers} destinataire(s) désormais abonné(s)`}
+        />
+      </div>
+
+      <p className="mt-3 text-xs leading-5 text-slate-600">
+        Chaque étape est comptée sur la même période, sans suivre les mêmes
+        personnes d&apos;une étape à l&apos;autre. Les visites sont mesurées
+        sans cookie : une vue par chargement de page, robots exclus.
+      </p>
+    </>
+  );
+}
+
+function CountList({
+  title,
+  items,
+  label,
+  footer,
+}: {
+  title: string;
+  items: FunnelCount[];
+  label: (item: FunnelCount) => string;
+  footer?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+      <p className="text-sm text-slate-500">{title}</p>
+      {items.length === 0 ? (
+        <p className="mt-3 text-sm text-slate-600">Aucune donnée pour l&apos;instant.</p>
+      ) : (
+        <ul className="mt-3 space-y-2 text-sm">
+          {items.map((item) => (
+            <li key={item.label} className="flex justify-between gap-4">
+              <span className="truncate text-slate-300">{label(item)}</span>
+              <span className="font-bold">{item.count}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {footer && <p className="mt-3 text-xs text-slate-500">{footer}</p>}
     </div>
   );
 }

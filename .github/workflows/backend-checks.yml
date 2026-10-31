@@ -52,12 +52,14 @@ jobs:
           cache-dependency-path: backend/go.sum
 
       - name: Appliquer les migrations sur une base vierge
-        # Les rôles anon et authenticated existent sur Supabase, pas dans
-        # l'image Postgres. Chaque fichier est appliqué deux fois pour
-        # vérifier qu'il reste rejouable à chaque redémarrage.
+        # Les rôles anon et authenticated, et la table auth.users (lue par
+        # les statistiques admin), existent sur Supabase, pas dans l'image
+        # Postgres : on les recrée, vides. Chaque fichier est appliqué deux
+        # fois pour vérifier qu'il reste rejouable à chaque redémarrage.
         run: |
           psql -h localhost -U lumio -d lumio_test -v ON_ERROR_STOP=1 \
-            -c "CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;"
+            -c "CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;" \
+            -c "CREATE SCHEMA auth; CREATE TABLE auth.users (id UUID PRIMARY KEY, email TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());"
           for pass in 1 2; do
             for file in migrations/*.sql; do
               echo "== $file (passage $pass)"

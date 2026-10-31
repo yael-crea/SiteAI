@@ -134,6 +134,8 @@ Toute personne peut aussi introduire une réclamation auprès de la CNIL : 3 pla
 
 Sur le site Lumio, seuls des éléments strictement nécessaires sont enregistrés dans le navigateur : la session de connexion (Supabase), le brouillon du site en cours de création et quelques préférences de navigation. Ils ne nécessitent pas de consentement.
 
+Sur la page d’accueil de Lumio, chaque affichage de la page et chaque clic sur « Créer mon site » sont comptés, avec la provenance de la visite (paramètre utm_source ou site d’origine). Aucun cookie ni identifiant n’est enregistré dans le navigateur, et aucune adresse IP n’est conservée. Ces compteurs servent uniquement à améliorer Lumio et sont supprimés au bout de 25 mois.
+
 Sur les sites publiés, Lumio mesure l’audience pour le compte du propriétaire du site : un identifiant aléatoire propre à chaque site est enregistré dans le stockage local du navigateur pour compter les visiteurs uniques. Cette mesure respecte les conditions de dispense de consentement fixées par la CNIL :
 • elle sert uniquement à produire des statistiques de fréquentation pour le propriétaire du site ;
 • les données ne sont ni croisées avec d’autres traitements, ni transmises à des tiers, ni utilisées pour la publicité ;

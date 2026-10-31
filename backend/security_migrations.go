@@ -18,6 +18,9 @@ var stripeWebhookEventsSQL string
 //go:embed migrations/20261031_lifecycle_emails.sql
 var lifecycleEmailsSQL string
 
+//go:embed migrations/20261031_landing_events.sql
+var landingEventsSQL string
+
 func applySupabaseSecurityBaseline(ctx context.Context) error {
 	_, err := db.Exec(ctx, supabaseSecurityBaselineSQL)
 	if err != nil {
@@ -38,6 +41,14 @@ func applyLifecycleEmailsMigration(ctx context.Context) error {
 	_, err := db.Exec(ctx, lifecycleEmailsSQL)
 	if err != nil {
 		return fmt.Errorf("apply lifecycle emails migration: %w", err)
+	}
+	return nil
+}
+
+func applyLandingEventsMigration(ctx context.Context) error {
+	_, err := db.Exec(ctx, landingEventsSQL)
+	if err != nil {
+		return fmt.Errorf("apply landing events migration: %w", err)
 	}
 	return nil
 }

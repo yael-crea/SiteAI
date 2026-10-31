@@ -551,6 +551,7 @@ type AdminUserUsage struct {
 
 type AdminStatsResponse struct {
 	Summary AdminStatsSummary `json:"summary"`
+	Funnel  *AdminFunnel      `json:"funnel,omitempty"`
 	Users   []AdminUserUsage  `json:"users"`
 }
 
@@ -726,6 +727,7 @@ func main() {
 	http.HandleFunc("/analytics/pageview", analyticsPageViewHandler)
 	http.HandleFunc("/analytics/event", analyticsEventHandler)
 	http.HandleFunc("/analytics/summary", analyticsSummaryHandler)
+	http.HandleFunc("/analytics/landing", landingEventHandler)
 
 	http.HandleFunc("/stripe/checkout", stripeCheckoutHandler)
 
@@ -1313,6 +1315,10 @@ func createTables(ctx context.Context) error {
 		return err
 	}
 
+	if err := applyLandingEventsMigration(ctx); err != nil {
+		return err
+	}
+
 	fmt.Println("Table sites prête")
 
 	return nil
@@ -1797,11 +1803,21 @@ func adminStatsHandler(
 		return
 	}
 
+	// The funnel is optional: the rest of the dashboard stays available if
+	// it cannot be computed.
+	var funnel *AdminFunnel
+	if loaded, err := loadAdminFunnel(ctx, time.Now().AddDate(0, 0, -adminFunnelDays)); err != nil {
+		log.Println("Erreur entonnoir admin :", err)
+	} else {
+		funnel = &loaded
+	}
+
 	writeJSON(
 		w,
 		http.StatusOK,
 		AdminStatsResponse{
 			Summary: summary,
+			Funnel:  funnel,
 			Users:   users,
 		},
 	)
