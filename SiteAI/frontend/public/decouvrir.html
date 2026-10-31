@@ -51,6 +51,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 #scene{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
 .vignette{position:fixed;inset:0;z-index:0;pointer-events:none;box-shadow:inset 0 0 220px 40px rgba(5,7,14,.9)}
+/* Image fixe de la spirale sur téléphone, en attendant la 3D (ou à sa place). */
+.backdrop{display:none;position:fixed;inset:0;z-index:1;pointer-events:none;background:#0A0614 url(/images/landing/fond-mobile.jpg) center/cover no-repeat;transition:opacity 1.6s ease}
+@media (max-width:820px),(pointer:coarse){.backdrop{display:block}}
+.three-on .backdrop{opacity:0}
 
 header{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:calc(1.1rem + env(safe-area-inset-top,0px)) clamp(1.1rem,4vw,2.5rem) 1.1rem}
 .mark{font-family:'Unbounded',sans-serif;font-weight:700;font-size:1.5rem;letter-spacing:-.02em;color:var(--text);text-decoration:none}
@@ -220,6 +224,7 @@ h1,h2,p,.step{text-shadow:0 2px 24px rgba(10,6,20,.85),0 0 2px rgba(10,6,20,.6)}
 </head>
 <body>
 <canvas id="scene" aria-hidden="true"></canvas>
+<div class="backdrop" aria-hidden="true"></div>
 <div class="vignette" aria-hidden="true"></div>
 
 <header>
@@ -332,11 +337,19 @@ h1,h2,p,.step{text-shadow:0 2px 24px rgba(10,6,20,.85),0 0 2px rgba(10,6,20,.6)}
 
   var c = navigator.connection || {};
   var light = c.saveData || /(^|-)2g$/.test(c.effectiveType || '') || (navigator.deviceMemory && navigator.deviceMemory < 2);
-  var files = (light ? [] : ['/vendor/three-r128-bloom.min.js']).concat(['/landing/decouvrir.js?v=2']);
+  var files = (light ? [] : ['/vendor/three-r128-bloom.min.js']).concat(['/landing/decouvrir.js?v=3']);
   function start(){ files.forEach(function(src){ var s = document.createElement('script'); s.src = src; s.async = false; document.body.appendChild(s); }); }
   // La 3D démarre une fois les textes affichés et le processeur libre.
   function idle(){ if (window.requestIdleCallback) requestIdleCallback(start, { timeout: 2500 }); else setTimeout(start, 300); }
-  function later(){ setTimeout(idle, 800); }
+  // Sur téléphone, la 3D démarre au premier geste (défilement, toucher) :
+  // l'image fixe de la spirale est affichée en attendant.
+  var phone = window.matchMedia('(max-width: 820px), (pointer: coarse)').matches;
+  var gestures = ['scroll', 'touchstart', 'pointerdown', 'keydown', 'wheel'];
+  function onGesture(){ gestures.forEach(function(g){ window.removeEventListener(g, onGesture); }); idle(); }
+  function later(){
+    if (!phone) { setTimeout(idle, 800); return; }
+    gestures.forEach(function(g){ window.addEventListener(g, onGesture, { passive: true }); });
+  }
   if (document.readyState === 'complete') later(); else window.addEventListener('load', later);
 })();
 </script>
