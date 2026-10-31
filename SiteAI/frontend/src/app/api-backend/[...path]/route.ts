@@ -4,6 +4,8 @@ import { reportServerError } from "@/lib/serverMonitoring";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
+
 function getBackendURL() {
   const backendURL =
     process.env.NEXT_PUBLIC_API_URL ||
@@ -130,8 +132,12 @@ async function proxyRequest(
         },
       );
 
+    // 101, 204, 205 et 304 n'ont jamais de corps : en passer un, même
+    // vide, fait échouer le constructeur Response (erreur 502 à tort).
     const responseBody =
-      await backendResponse.arrayBuffer();
+      NULL_BODY_STATUSES.has(backendResponse.status)
+        ? null
+        : await backendResponse.arrayBuffer();
 
     const responseHeaders =
       new Headers();
