@@ -13,6 +13,7 @@ import AppSidebar from "@/components/app/AppSidebar";
 import { readableBillingStatus, readablePlan } from "@/lib/billingLabels";
 import { Badge, EmptyState, Skeleton } from "@/components/ui/Surface";
 import { downloadSitePoster } from "@/lib/sitePoster";
+import ReferralCard from "@/components/app/ReferralCard";
 
 type DesignStyle = "moderne" | "elegant" | "artisan";
 
@@ -2005,6 +2006,8 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
+
+        <ReferralCard authenticatedFetch={authenticatedFetch} />
 
         <section className="mt-8">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import "../app-theme.css";
-import { plans, CGV_VERSION, freePreviewText, domainText, aiUsageText, cancellationText, priceSuffix, priceTaxText } from "@/lib/commercialPlans";
+import { plans, CGV_VERSION, freePreviewText, domainText, aiUsageText, cancellationText, priceSuffix, priceTaxText, referralText } from "@/lib/commercialPlans";
 
 
 
@@ -182,6 +182,10 @@ TVA non applicable, article 293 B du Code général des impôts.`}
             <p className="mt-3 text-sm leading-7 text-slate-400">
               Le paiement est exigible lors de la souscription puis à chaque
               échéance de renouvellement de l&apos;abonnement.
+            </p>
+
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              {referralText}
             </p>
           </section>
 

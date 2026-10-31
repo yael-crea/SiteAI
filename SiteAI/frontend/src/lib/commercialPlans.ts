@@ -1,6 +1,6 @@
 export type PlanName = "essentiel" | "pro" | "agence";
 
-export const CGV_VERSION = "2026-10-31";
+export const CGV_VERSION = "2026-10-31-parrainage";
 export const priceSuffix = "/ mois";
 export const priceTaxText =
   "Prix mensuels. TVA non applicable, article 293 B du Code général des impôts : le prix affiché est le prix payé.";
@@ -67,6 +67,9 @@ export const aiUsageText =
 
 export const domainText =
   "La connexion d’un domaine personnel est incluse dès Essentiel. Son achat et son renouvellement auprès d’un fournisseur de domaines restent à ta charge. Une adresse publique Lumio est également fournie.";
+
+export const referralText =
+  "Parrainage : chaque client dispose d’un lien personnel. Lorsqu’un nouveau client professionnel, n’ayant jamais été abonné à Lumio, s’abonne après être arrivé par ce lien et paie sa première mensualité, le parrain reçoit un crédit égal au prix mensuel de sa formule en cours (Essentiel s’il n’a pas d’abonnement actif), imputé automatiquement sur ses prochaines factures. Les crédits sont limités à 12 sur 12 mois glissants, ne sont ni remboursables ni convertibles en argent, et l’auto-parrainage est exclu. Lumio peut annuler un crédit obtenu de manière frauduleuse.";
 
 export const cancellationText =
   "Abonnement mensuel renouvelé automatiquement, résiliable depuis ton espace client. Si tu programmes la résiliation à l’échéance, le site reste en ligne jusqu’à la fin de la période payée. À la fin effective de l’abonnement, il est retiré du public ; son contenu reste dans ton compte en brouillon. Après réabonnement, tu peux le republier.";

@@ -13,6 +13,7 @@ const LumioAssistant = dynamic(() => import("@/components/LumioAssistant"), { ss
 import { plans, CGV_VERSION, freePreviewText, domainText, aiUsageText, cancellationText, priceSuffix, priceTaxText, type PlanName } from "@/lib/commercialPlans";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { readReferralCode } from "@/lib/referral";
 
 
 type BillingStatus = {
@@ -410,6 +411,7 @@ export default function PricingPage() {
             body: JSON.stringify(
               {
                 plan,
+                referralCode: readReferralCode(),
               },
             ),
           },
