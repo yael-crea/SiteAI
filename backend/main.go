@@ -735,6 +735,10 @@ func main() {
 
 	http.HandleFunc("/stripe/webhook", stripeWebhookHandler)
 
+	http.HandleFunc("/emails/unsubscribe", emailUnsubscribeHandler)
+
+	startLifecycleEmails()
+
 	port := os.Getenv("PORT")
 
 	if port == "" {
@@ -762,6 +766,8 @@ func main() {
 	fmt.Println("Stripe :", stripeIntegrationStatus())
 
 	fmt.Println("Notifications email :", leadEmailStatus())
+
+	fmt.Println("Emails de relance :", lifecycleEmailStatus())
 
 	fmt.Println("======================================")
 
@@ -1300,6 +1306,10 @@ func createTables(ctx context.Context) error {
 	}
 
 	if err := applyStripeWebhookEventsMigration(ctx); err != nil {
+		return err
+	}
+
+	if err := applyLifecycleEmailsMigration(ctx); err != nil {
 		return err
 	}
 

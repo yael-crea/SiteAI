@@ -72,6 +72,7 @@ Les données de carte bancaire ne sont pas destinées à être stockées directe
 • gérer les abonnements et les paiements ;
 • connecter des domaines personnalisés ;
 • transmettre et organiser les demandes de devis pour le propriétaire du site ;
+• envoyer au titulaire d’un compte gratuit, pendant les 30 jours suivant la création de son premier site, au plus trois e-mails pour l’aider à le terminer et à le publier ; chaque e-mail contient un lien de désinscription ;
 • fournir au propriétaire des statistiques agrégées sur les visites et les intentions de contact ;
 • assurer la sécurité et le bon fonctionnement du service ;
 • répondre aux demandes de support ;
@@ -84,7 +85,7 @@ Les données de carte bancaire ne sont pas destinées à être stockées directe
               Chaque traitement repose sur l’une des bases suivantes :
 • l’exécution du contrat : création et gestion du compte, génération et publication des sites, abonnement, paiement, support ;
 • le respect d’une obligation légale : facturation, comptabilité, conservation des preuves de paiement ;
-• l’intérêt légitime de Lumio : sécurité du service, prévention des abus, journaux techniques, preuve de l’acceptation des CGV, mesure d’audience des sites publiés dans les conditions décrites à la section 8.
+• l’intérêt légitime de Lumio : sécurité du service, prévention des abus, journaux techniques, preuve de l’acceptation des CGV, mesure d’audience des sites publiés dans les conditions décrites à la section 8, e-mails d’aide à la publication envoyés aux utilisateurs inscrits, auxquels il est possible de s’opposer à tout moment via le lien présent dans chaque e-mail.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
@@ -96,7 +97,7 @@ Les données de carte bancaire ne sont pas destinées à être stockées directe
 • Vercel Inc. (États-Unis) : hébergement du site Lumio et des sites publiés ;
 • Railway Corporation (États-Unis) : hébergement du serveur applicatif ;
 • OpenAI (États-Unis) : génération et modification des textes par intelligence artificielle. Seules les informations saisies pour générer ou modifier un site lui sont transmises ; elles ne sont pas utilisées pour entraîner ses modèles ;
-• Resend, Inc. (États-Unis) : envoi des e-mails du service, notamment les notifications de demandes de devis ;
+• Resend, Inc. (États-Unis) : envoi des e-mails du service, notamment les notifications de demandes de devis et les e-mails d’aide à la publication ;
 • Google : uniquement si l’utilisateur choisit de se connecter avec son compte Google.
 
 Lorsque des données sont transférées hors de l’Union européenne, ces transferts sont encadrés par les garanties prévues par le RGPD : décision d’adéquation de la Commission européenne (Data Privacy Framework UE–États-Unis) pour les prestataires certifiés, ou clauses contractuelles types de la Commission européenne.
