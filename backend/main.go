@@ -2570,46 +2570,33 @@ func sendLeadNotificationEmail(
 	return err
 }
 
+// getClientIP returns the visitor IP used by the lead rate limit.
+//
+// Lead forms reach the backend through the Next proxy (/api-backend), so the
+// connecting IP is Vercel's: the proxy forwards the visitor IP in
+// X-Lumio-Client-IP, trusted only with the LUMIO_PROXY_SECRET shared with
+// Vercel. Otherwise the last X-Forwarded-For entry, added by Railway's edge,
+// is the connecting IP; earlier entries can be forged by the client.
 func getClientIP(r *http.Request) string {
-	if forwarded := strings.TrimSpace(
-		r.Header.Get("X-Forwarded-For"),
-	); forwarded != "" {
-		parts := strings.Split(
-			forwarded,
-			",",
-		)
-
-		if len(parts) > 0 {
-			ip := strings.TrimSpace(
-				parts[0],
-			)
-
-			if ip != "" {
-				return ip
-			}
+	secret := strings.TrimSpace(os.Getenv("LUMIO_PROXY_SECRET"))
+	if secret != "" && hmac.Equal([]byte(r.Header.Get("X-Lumio-Proxy-Secret")), []byte(secret)) {
+		if ip := strings.TrimSpace(r.Header.Get("X-Lumio-Client-IP")); net.ParseIP(ip) != nil {
+			return ip
 		}
 	}
 
-	if realIP := strings.TrimSpace(
-		r.Header.Get("X-Real-IP"),
-	); realIP != "" {
-		return realIP
+	if forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); forwarded != "" {
+		parts := strings.Split(forwarded, ",")
+		if ip := strings.TrimSpace(parts[len(parts)-1]); ip != "" {
+			return ip
+		}
 	}
 
-	host, _, err := net.SplitHostPort(
-		strings.TrimSpace(
-			r.RemoteAddr,
-		),
-	)
-
-	if err == nil &&
-		strings.TrimSpace(host) != "" {
+	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err == nil && strings.TrimSpace(host) != "" {
 		return strings.TrimSpace(host)
 	}
-
-	return strings.TrimSpace(
-		r.RemoteAddr,
-	)
+	return strings.TrimSpace(r.RemoteAddr)
 }
 
 func allowLeadSubmission(
