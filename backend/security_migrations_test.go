@@ -119,7 +119,7 @@ func TestStripeWebhookEventsMigrationIsBackendOnly(t *testing.T) {
 // Stripe table is created afterwards, so its migration must run after it and
 // carry its own REVOKE.
 func TestStripeWebhookMigrationRunsAfterBaseline(t *testing.T) {
-	content, err := os.ReadFile("main.go")
+	content, err := os.ReadFile("database.go")
 	if err != nil {
 		t.Fatal(err)
 	}
