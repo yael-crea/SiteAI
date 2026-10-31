@@ -51,7 +51,7 @@ import (
 
 var db *pgxpool.Pool
 
-const currentCGVVersion = "2026-10-31"
+const currentCGVVersion = "2026-10-31-parrainage"
 
 // Types de documents enregistrés dans legal_acceptances.
 const (
@@ -401,7 +401,8 @@ type DomainStatus struct {
 }
 
 type StripeCheckoutInput struct {
-	Plan string `json:"plan"`
+	Plan         string `json:"plan"`
+	ReferralCode string `json:"referralCode"`
 }
 
 type CGVAcceptanceInput struct {
@@ -741,6 +742,8 @@ func main() {
 	http.HandleFunc("/stripe/webhook", stripeWebhookHandler)
 
 	http.HandleFunc("/emails/unsubscribe", emailUnsubscribeHandler)
+
+	http.HandleFunc("/referrals", referralsHandler)
 
 	startLifecycleEmails()
 
@@ -1317,6 +1320,10 @@ func createTables(ctx context.Context) error {
 	}
 
 	if err := applyLifecycleEmailsMigration(ctx); err != nil {
+		return err
+	}
+
+	if err := applyReferralsMigration(ctx); err != nil {
 		return err
 	}
 
@@ -8450,6 +8457,11 @@ func stripeCheckoutHandler(
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	// A referral problem must never block the payment.
+	if err := recordReferral(r.Context(), user.ID, input.ReferralCode); err != nil {
+		log.Println("Erreur enregistrement parrainage :", err)
 	}
 
 	acceptedAt, accepted, err := getCurrentLegalAcceptance(

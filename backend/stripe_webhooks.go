@@ -374,7 +374,15 @@ func syncCheckoutSession(
 		return err
 	}
 
-	return syncStripeSubscription(ctx, q, current)
+	if err := syncStripeSubscription(ctx, q, current); err != nil {
+		return err
+	}
+
+	// First month paid: referral rewards (see referrals.go).
+	if isActiveBillingStatus(current.Status) {
+		return onReferralCheckoutPaid(ctx, q, userID)
+	}
+	return nil
 }
 
 func syncStripeSubscription(

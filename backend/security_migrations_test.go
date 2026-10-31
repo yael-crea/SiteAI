@@ -86,7 +86,7 @@ func TestEveryCreatedTableHasRowLevelSecurity(t *testing.T) {
 		t.Fatal("aucune table trouvée : l'analyse du code est cassée")
 	}
 
-	embedded := strings.ToLower(supabaseSecurityBaselineSQL + "\n" + stripeWebhookEventsSQL + "\n" + lifecycleEmailsSQL + "\n" + landingEventsSQL)
+	embedded := strings.ToLower(supabaseSecurityBaselineSQL + "\n" + stripeWebhookEventsSQL + "\n" + lifecycleEmailsSQL + "\n" + landingEventsSQL + "\n" + referralsSQL)
 
 	for table, path := range tables {
 		expected := "alter table if exists public." + table + " enable row level security"

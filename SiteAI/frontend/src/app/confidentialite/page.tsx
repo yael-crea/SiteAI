@@ -72,6 +72,7 @@ Les données de carte bancaire ne sont pas destinées à être stockées directe
 • gérer les abonnements et les paiements ;
 • connecter des domaines personnalisés ;
 • transmettre et organiser les demandes de devis pour le propriétaire du site ;
+• gérer le parrainage : le lien d’un client vers les comptes qu’il a parrainés, pour lui créditer les mois offerts ;
 • envoyer au titulaire d’un compte gratuit, pendant les 30 jours suivant la création de son premier site, au plus trois e-mails pour l’aider à le terminer et à le publier ; chaque e-mail contient un lien de désinscription ;
 • fournir au propriétaire des statistiques agrégées sur les visites et les intentions de contact ;
 • assurer la sécurité et le bon fonctionnement du service ;

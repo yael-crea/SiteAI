@@ -21,6 +21,9 @@ var lifecycleEmailsSQL string
 //go:embed migrations/20261031_landing_events.sql
 var landingEventsSQL string
 
+//go:embed migrations/20261031_referrals.sql
+var referralsSQL string
+
 func applySupabaseSecurityBaseline(ctx context.Context) error {
 	_, err := db.Exec(ctx, supabaseSecurityBaselineSQL)
 	if err != nil {
@@ -49,6 +52,14 @@ func applyLandingEventsMigration(ctx context.Context) error {
 	_, err := db.Exec(ctx, landingEventsSQL)
 	if err != nil {
 		return fmt.Errorf("apply landing events migration: %w", err)
+	}
+	return nil
+}
+
+func applyReferralsMigration(ctx context.Context) error {
+	_, err := db.Exec(ctx, referralsSQL)
+	if err != nil {
+		return fmt.Errorf("apply referrals migration: %w", err)
 	}
 	return nil
 }

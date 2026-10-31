@@ -257,6 +257,14 @@ h1,h2,p,.step{text-shadow:0 2px 24px rgba(10,6,20,.85),0 0 2px rgba(10,6,20,.6)}
   </div>
 </header>
 <script>
+/* Lien de parrainage (?parrain=CODE) : gardé 90 jours dans ce navigateur et
+   envoyé au premier paiement (src/lib/referral.ts). */
+(function(){
+  try {
+    var code = (new URLSearchParams(location.search).get('parrain') || '').trim().toLowerCase();
+    if (/^[a-z0-9]{6,16}$/.test(code)) localStorage.setItem('lumio_referral', JSON.stringify({ code: code, at: Date.now() }));
+  } catch (e) {}
+})();
 /* Déjà connecté sur cet appareil (session Supabase sb-<projet>-auth-token) :
    le lien mène directement à l'espace client. */
 (function(){
