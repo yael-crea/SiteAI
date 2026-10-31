@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - "SiteAI/frontend/**"
+      # La version des CGV est vérifiée contre le backend (commercialPlans.test.ts).
+      - "backend/main.go"
       - ".github/workflows/frontend-checks.yml"
   push:
     branches: [main]
     paths:
       - "SiteAI/frontend/**"
+      # La version des CGV est vérifiée contre le backend (commercialPlans.test.ts).
+      - "backend/main.go"
       - ".github/workflows/frontend-checks.yml"
 
 jobs:
