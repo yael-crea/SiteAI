@@ -59,7 +59,12 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 header{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:calc(1.1rem + env(safe-area-inset-top,0px)) clamp(1.1rem,4vw,2.5rem) 1.1rem}
 .mark{font-family:'Unbounded',sans-serif;font-weight:700;font-size:1.5rem;letter-spacing:-.02em;color:var(--text);text-decoration:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 1.35rem;border-radius:999px;font-weight:600;font-size:.95rem;text-decoration:none;transition:transform .3s cubic-bezier(.2,.8,.2,1),background .3s,color .3s,box-shadow .3s}
-.btn:focus-visible,.rail button:focus-visible,.mark:focus-visible{outline:2px solid var(--warm);outline-offset:4px}
+.head-actions{display:flex;align-items:center;gap:clamp(.9rem,2.5vw,1.6rem)}
+.login{color:var(--muted);font-weight:600;font-size:.95rem;text-decoration:none;padding:.7rem .2rem;white-space:nowrap;transition:color .3s}
+.login:hover{color:var(--text)}
+header .btn{white-space:nowrap}
+@media (max-width:420px){header{gap:.6rem}.mark{font-size:1.2rem}.head-actions{gap:.7rem}header .btn{min-height:42px;padding:0 .9rem;font-size:.85rem}.login{font-size:.85rem}}
+.btn:focus-visible,.rail button:focus-visible,.mark:focus-visible,.login:focus-visible{outline:2px solid var(--warm);outline-offset:4px}
 .btn-ghost{color:var(--text);border:1px solid var(--line);background:rgba(10,6,20,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .btn-ghost:hover{border-color:var(--warm);color:var(--warm)}
 .btn-main{background:var(--warm);color:var(--ink);box-shadow:0 0 0 rgba(192,132,252,0)}
@@ -229,8 +234,30 @@ h1,h2,p,.step{text-shadow:0 2px 24px rgba(10,6,20,.85),0 0 2px rgba(10,6,20,.6)}
 
 <header>
   <a class="mark" href="#s0" aria-label="Lumio, retour en haut">lumio</a>
-  <a class="btn btn-ghost" href="/creer" data-cta="header">Créer mon site</a>
+  <div class="head-actions">
+    <a class="login" id="account" href="/auth">Se connecter</a>
+    <a class="btn btn-ghost" href="/creer" data-cta="header">Créer mon site</a>
+  </div>
 </header>
+<script>
+/* Déjà connecté sur cet appareil (session Supabase sb-<projet>-auth-token) :
+   le lien mène directement à l'espace client. */
+(function(){
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (!/^sb-.+-auth-token$/.test(key)) continue;
+      var session = JSON.parse(localStorage.getItem(key) || 'null');
+      if (session && session.refresh_token) {
+        var link = document.getElementById('account');
+        link.textContent = 'Mon espace';
+        link.href = '/dashboard';
+      }
+      break;
+    }
+  } catch (e) {}
+})();
+</script>
 
 <nav class="rail" aria-label="Étapes">
   <button type="button" data-go="0" aria-label="Accueil" aria-current="true"><span></span></button>
