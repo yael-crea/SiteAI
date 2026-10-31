@@ -184,6 +184,8 @@ func publishDraftHandler(w http.ResponseWriter, r *http.Request, id int64, userI
 		versionError(w, errDraftConflict)
 		return
 	}
+	// lifecycle_emails keeps the email to one per site, even after an unpublish.
+	wasPublished := saved.Published
 	if !saved.Published && rights.MaxPublishedSites > 0 {
 		var count int
 		if err = tx.QueryRow(r.Context(), `SELECT COUNT(*) FROM sites WHERE user_id=$1::uuid AND published=TRUE AND id<>$2`, userID, id).Scan(&count); err != nil {
@@ -212,6 +214,9 @@ func publishDraftHandler(w http.ResponseWriter, r *http.Request, id int64, userI
 	if err = tx.Commit(r.Context()); err != nil {
 		versionError(w, err)
 		return
+	}
+	if !wasPublished {
+		go notifySiteLive(id)
 	}
 	writeJSON(w, 200, saved)
 }

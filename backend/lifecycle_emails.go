@@ -289,12 +289,32 @@ func buildLifecycleMessage(recipient lifecycleRecipient, step lifecycleStep, app
 		buttonURL = appURL + "/pricing"
 	}
 
+	htmlBody := lumioEmailHTML(
+		title,
+		paragraphs,
+		buttonLabel,
+		buttonURL,
+		`Tu reçois cet email car tu as créé un site avec Lumio.<br><a href="`+html.EscapeString(unsubscribeURL)+`" style="color:#64748b;">Ne plus recevoir ces rappels</a>`,
+	)
+
+	return lifecycleMessage{
+		To:             recipient.Email,
+		Subject:        subject,
+		HTML:           htmlBody,
+		UnsubscribeURL: unsubscribeURL,
+		IdempotencyKey: fmt.Sprintf("lumio-lifecycle-%s-%s", recipient.UserID, step.Kind),
+	}
+}
+
+// lumioEmailHTML is the layout shared by Lumio's emails to site owners.
+// footerHTML is inserted as is; every other value is escaped.
+func lumioEmailHTML(title string, paragraphs []string, buttonLabel, buttonURL, footerHTML string) string {
 	var body strings.Builder
 	for _, paragraph := range paragraphs {
 		fmt.Fprintf(&body, `<p style="margin:0 0 16px;line-height:1.7;">%s</p>`, html.EscapeString(paragraph))
 	}
 
-	htmlBody := fmt.Sprintf(`<!doctype html>
+	return fmt.Sprintf(`<!doctype html>
 <html lang="fr">
 <body style="margin:0;background:#f8fafc;font-family:Arial,sans-serif;color:#0f172a;">
   <div style="max-width:640px;margin:0 auto;padding:32px 20px;">
@@ -306,7 +326,7 @@ func buildLifecycleMessage(recipient lifecycleRecipient, step lifecycleStep, app
       %s
       <a href="%s" style="display:inline-block;margin-top:8px;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:700;padding:13px 18px;border-radius:10px;">%s</a>
     </div>
-    <p style="margin:18px 0 0;text-align:center;font-size:12px;line-height:1.6;color:#64748b;">Tu reçois cet email car tu as créé un site avec Lumio.<br><a href="%s" style="color:#64748b;">Ne plus recevoir ces rappels</a></p>
+    <p style="margin:18px 0 0;text-align:center;font-size:12px;line-height:1.6;color:#64748b;">%s</p>
   </div>
 </body>
 </html>`,
@@ -314,16 +334,8 @@ func buildLifecycleMessage(recipient lifecycleRecipient, step lifecycleStep, app
 		body.String(),
 		html.EscapeString(buttonURL),
 		html.EscapeString(buttonLabel),
-		html.EscapeString(unsubscribeURL),
+		footerHTML,
 	)
-
-	return lifecycleMessage{
-		To:             recipient.Email,
-		Subject:        subject,
-		HTML:           htmlBody,
-		UnsubscribeURL: unsubscribeURL,
-		IdempotencyKey: fmt.Sprintf("lumio-lifecycle-%s-%s", recipient.UserID, step.Kind),
-	}
 }
 
 func sendLifecycleMessageWithResend(ctx context.Context, message lifecycleMessage) error {
@@ -337,17 +349,21 @@ func sendLifecycleMessageWithResend(ctx context.Context, message lifecycleMessag
 		fromEmail = "Lumio <onboarding@resend.dev>"
 	}
 
-	payload, err := json.Marshal(map[string]any{
+	fields := map[string]any{
 		"from":     fromEmail,
 		"to":       []string{message.To},
 		"reply_to": lifecycleSupportEmail,
 		"subject":  message.Subject,
 		"html":     message.HTML,
-		"headers": map[string]string{
+	}
+	// Transactional emails (site published) have no unsubscribe link.
+	if message.UnsubscribeURL != "" {
+		fields["headers"] = map[string]string{
 			"List-Unsubscribe":      "<" + message.UnsubscribeURL + ">",
 			"List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-		},
-	})
+		}
+	}
+	payload, err := json.Marshal(fields)
 	if err != nil {
 		return err
 	}
