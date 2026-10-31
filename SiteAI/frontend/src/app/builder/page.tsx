@@ -2793,8 +2793,18 @@ export default function Home() {
     const style = getDesignStyle(value);
     setDesignStyle(style.id);
     setAccentColor(style.accent);
+    // Changer de style garde les animations choisies.
     setSite((current) =>
-      current ? { ...current, designSettings: { ...style.settings } } : current,
+      current
+        ? {
+            ...current,
+            designSettings: {
+              ...style.settings,
+              motion: current.designSettings?.motion,
+              heroBackground: current.designSettings?.heroBackground,
+            },
+          }
+        : current,
     );
     setSaveMessage("");
   }
