@@ -32,6 +32,13 @@
   var renderer;
   try { renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('scene'), antialias: true, powerPreference: 'high-performance' }); }
   catch { document.documentElement.classList.add('fallback'); return; }
+  // Sans vraie carte graphique (rendu WebGL logiciel), la 3D sature le
+  // processeur : on garde la version sans 3D.
+  try {
+    var gl = renderer.getContext(), dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    var gpu = String(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || '');
+    if (/swiftshader|llvmpipe|softpipe|software/i.test(gpu)) { renderer.dispose(); document.documentElement.classList.add('fallback'); return; }
+  } catch { /* information indisponible : on garde la 3D */ }
   var mobile = window.innerWidth < 820;
   var PR = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2);
   renderer.setPixelRatio(PR); renderer.setClearColor(0x0A0614, 1);
@@ -235,5 +242,6 @@
     else renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
+  document.documentElement.classList.add('three-on');
   requestAnimationFrame(frame);
 })();

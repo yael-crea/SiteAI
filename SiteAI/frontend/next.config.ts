@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/vendor/:path*", headers: immutable },
       { source: "/fonts/:path*", headers: immutable },
+      // Toujours chargé avec ?v=N, changé à chaque version.
+      { source: "/landing/:path*", headers: immutable },
       { source: "/images/landing/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] },
     ];
   },
