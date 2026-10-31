@@ -498,7 +498,13 @@ func syncStripeSubscription(
 		return err
 	}
 
-	if tag.RowsAffected() == 0 || !ended {
+	if tag.RowsAffected() == 0 {
+		return nil
+	}
+
+	// A payment issue (past_due, incomplete…) keeps the sites online until
+	// Stripe actually ends the subscription.
+	if !ended && !isActiveBillingStatus(subscription.Status) {
 		return nil
 	}
 
@@ -522,6 +528,29 @@ func syncStripeSubscription(
 		return nil
 	}
 
+	if ended {
+		_, err = q.Exec(
+			ctx,
+			`UPDATE sites
+			 SET published = FALSE,
+			     published_at = NULL,
+			     updated_at = NOW()
+			 WHERE user_id = $1::uuid
+			   AND published = TRUE;`,
+			userID,
+		)
+		return err
+	}
+
+	// Active subscription: after a downgrade (Agence → Essentiel, for
+	// example), only the sites the new plan includes stay online, the
+	// earliest published first; the others go back to draft. An unknown
+	// plan (limit 0) never unpublishes anything here.
+	limit := billingEntitlements(BillingStatus{Plan: plan, Status: subscription.Status}).MaxPublishedSites
+	if limit <= 0 {
+		return nil
+	}
+
 	_, err = q.Exec(
 		ctx,
 		`UPDATE sites
@@ -529,8 +558,15 @@ func syncStripeSubscription(
 		     published_at = NULL,
 		     updated_at = NOW()
 		 WHERE user_id = $1::uuid
-		   AND published = TRUE;`,
+		   AND published = TRUE
+		   AND id NOT IN (
+		       SELECT id FROM sites
+		       WHERE user_id = $1::uuid AND published = TRUE
+		       ORDER BY published_at ASC NULLS LAST, id ASC
+		       LIMIT $2
+		   );`,
 		userID,
+		limit,
 	)
 	return err
 }

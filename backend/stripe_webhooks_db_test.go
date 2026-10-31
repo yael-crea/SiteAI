@@ -61,6 +61,7 @@ func setupStripeWebhookTestDB(t *testing.T) {
 		);`,
 		`CREATE TEMPORARY TABLE admin_users (user_id UUID PRIMARY KEY);`,
 		`CREATE TEMPORARY TABLE sites (
+			id BIGSERIAL PRIMARY KEY,
 			user_id UUID,
 			published BOOLEAN NOT NULL DEFAULT FALSE,
 			published_at TIMESTAMPTZ,
@@ -314,5 +315,113 @@ func TestStripeWebhookPurgeKeepsRecentEvents(t *testing.T) {
 	}
 	if remaining != "evt_recent" {
 		t.Fatalf("got %q, want evt_recent", remaining)
+	}
+}
+
+func publishedSiteIDs(t *testing.T) []int64 {
+	t.Helper()
+
+	rows, err := db.Query(
+		context.Background(),
+		"SELECT id FROM sites WHERE user_id = $1::uuid AND published ORDER BY id;",
+		testUserID,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+func insertPublishedSites(t *testing.T, ages ...string) {
+	t.Helper()
+
+	for _, age := range ages {
+		if _, err := db.Exec(
+			context.Background(),
+			"INSERT INTO sites (user_id, published, published_at) VALUES ($1::uuid, TRUE, NOW() - $2::interval);",
+			testUserID,
+			age,
+		); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestStripeWebhookDowngradeKeepsOnlyIncludedSites(t *testing.T) {
+	setupStripeWebhookTestDB(t)
+
+	// Three sites published under Agence; the second one is the oldest.
+	insertPublishedSites(t, "2 days", "30 days", "1 day")
+
+	// The subscription is now Pro (metadata plan "pro"), which includes one site.
+	replaceStripeFetch(t, func(context.Context, string) (StripeSubscription, error) {
+		return stripeSubscriptionState("active"), nil
+	})
+	event := subscriptionEvent(t, "evt_downgrade", "customer.subscription.updated", "active")
+	if err := handleStripeEventOnce(context.Background(), event); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := publishedSiteIDs(t); len(got) != 1 || got[0] != 2 {
+		t.Fatalf("published sites after downgrade: %v, want only the oldest [2]", got)
+	}
+}
+
+func TestStripeWebhookPastDueKeepsSitesOnline(t *testing.T) {
+	setupStripeWebhookTestDB(t)
+
+	insertPublishedSites(t, "2 days", "1 day")
+
+	replaceStripeFetch(t, func(context.Context, string) (StripeSubscription, error) {
+		return stripeSubscriptionState("past_due"), nil
+	})
+	event := subscriptionEvent(t, "evt_past_due", "customer.subscription.updated", "past_due")
+	if err := handleStripeEventOnce(context.Background(), event); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := publishedSiteIDs(t); len(got) != 2 {
+		t.Fatalf("a payment issue unpublished sites: %v still published, want 2", got)
+	}
+}
+
+func TestBillingEntitlementsMatchCommercialPlans(t *testing.T) {
+	cases := []struct {
+		plan          string
+		sites         int
+		domain, stats bool
+		ai            int
+	}{
+		{"essentiel", 1, true, false, 50},
+		{"pro", 1, true, true, 200},
+		{"agence", 10, true, true, 1000},
+	}
+	for _, tc := range cases {
+		status := BillingStatus{Plan: tc.plan, Status: "active"}
+		got := billingEntitlements(status)
+		if got.MaxPublishedSites != tc.sites || got.CustomDomainAllowed != tc.domain || got.DetailedAnalytics != tc.stats {
+			t.Errorf("%s : %+v", tc.plan, got)
+		}
+		if limit := aiMonthlyLimit(status); limit != tc.ai {
+			t.Errorf("%s : %d demandes IA, attendu %d", tc.plan, limit, tc.ai)
+		}
+	}
+
+	free := BillingStatus{Plan: "free", Status: "inactive"}
+	if got := billingEntitlements(free); got != (PlanEntitlements{}) {
+		t.Errorf("gratuit : %+v, aucun droit attendu", got)
+	}
+	if limit := aiMonthlyLimit(free); limit != 15 {
+		t.Errorf("gratuit : %d demandes IA, attendu 15", limit)
 	}
 }

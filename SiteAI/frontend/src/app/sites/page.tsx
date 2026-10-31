@@ -2627,39 +2627,7 @@ export default function SitesPage() {
 
 
 
-  const normalizedPlan =
-
-
-
-    (billing?.plan ?? "")
-
-
-
-      .trim()
-
-
-
-      .toLowerCase();
-
-
-
-
-
-
-
-  const planAllowsCustomDomain =
-
-
-
-    normalizedPlan === "pro" ||
-
-
-
-    normalizedPlan === "agence";
-
-
-
-
+  // Le serveur indique si la formule inclut le domaine (dès Essentiel).
 
 
 
@@ -2668,10 +2636,6 @@ export default function SitesPage() {
 
 
     subscriptionActive &&
-
-
-
-    planAllowsCustomDomain &&
 
 
 
@@ -3308,7 +3272,7 @@ export default function SitesPage() {
                             onClick={() => router.push("/pricing")}
                             className="w-full rounded-xl border border-violet-800 px-4 py-3 text-sm font-bold text-violet-300 transition hover:bg-violet-950"
                           >
-                            Domaine personnalisé · Pro
+                            Domaine personnalisé · Abonnement
                           </button>
                         ) : (
                           <div className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-xs text-slate-500">
