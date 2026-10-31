@@ -1,0 +1,72 @@
+name: Vérifications backend
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "go.mod"
+      - ".github/workflows/backend-checks.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "go.mod"
+      - ".github/workflows/backend-checks.yml"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    # Base jetable, propre à chaque exécution : les tests DB n'y créent que
+    # des tables temporaires et ne touchent jamais la base de production.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lumio
+          POSTGRES_PASSWORD: lumio
+          POSTGRES_DB: lumio_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lumio -d lumio_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      LUMIO_TEST_DATABASE_URL: postgres://lumio:lumio@localhost:5432/lumio_test?sslmode=disable
+      PGPASSWORD: lumio
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Appliquer les migrations sur une base vierge
+        # Les rôles anon et authenticated existent sur Supabase, pas dans
+        # l'image Postgres. Chaque fichier est appliqué deux fois pour
+        # vérifier qu'il reste rejouable à chaque redémarrage.
+        run: |
+          psql -h localhost -U lumio -d lumio_test -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;"
+          for pass in 1 2; do
+            for file in migrations/*.sql; do
+              echo "== $file (passage $pass)"
+              psql -h localhost -U lumio -d lumio_test -v ON_ERROR_STOP=1 -q -f "$file"
+            done
+          done
+
+      - name: Analyser le code
+        run: go vet ./...
+
+      - name: Lancer les tests (base de données comprise)
+        run: go test -count=1 ./...
