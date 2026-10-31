@@ -229,7 +229,7 @@ h1,h2,p,.step{text-shadow:0 2px 24px rgba(10,6,20,.85),0 0 2px rgba(10,6,20,.6)}
 
 <header>
   <a class="mark" href="#s0" aria-label="Lumio, retour en haut">lumio</a>
-  <a class="btn btn-ghost" href="/creer">Créer mon site</a>
+  <a class="btn btn-ghost" href="/creer" data-cta="header">Créer mon site</a>
 </header>
 
 <nav class="rail" aria-label="Étapes">
@@ -254,7 +254,7 @@ h1,h2,p,.step{text-shadow:0 2px 24px rgba(10,6,20,.85),0 0 2px rgba(10,6,20,.6)}
       <h1>Des centaines de métiers. Un site pour le tien.</h1>
       <p>Décris ton activité en quelques phrases : Lumio écrit, met en page et publie ton site. Touche un écran pour découvrir un vrai site réalisé avec Lumio.</p>
       <div class="actions">
-        <a class="btn btn-main" href="/creer">Créer mon site</a>
+        <a class="btn btn-main" href="/creer" data-cta="hero">Créer mon site</a>
         <button id="gyro" class="btn btn-ghost" type="button" hidden>Activer l’inclinaison</button>
       </div>
       <div class="hint" aria-hidden="true"><i></i>Fais défiler</div>
@@ -299,7 +299,7 @@ h1,h2,p,.step{text-shadow:0 2px 24px rgba(10,6,20,.85),0 0 2px rgba(10,6,20,.6)}
       <p class="offer">Crée ton compte et prépare ton site gratuitement, sans carte bancaire. Tu choisis un abonnement uniquement pour publier.</p>
       <p class="tax">Prix mensuels, sans engagement. TVA non applicable, article 293 B du CGI.</p>
       <div class="actions">
-        <a class="btn btn-main" href="/creer">Créer mon site</a>
+        <a class="btn btn-main" href="/creer" data-cta="pricing">Créer mon site</a>
       </div>
     </div>
   </section>
@@ -351,6 +351,32 @@ h1,h2,p,.step{text-shadow:0 2px 24px rgba(10,6,20,.85),0 0 2px rgba(10,6,20,.6)}
     gestures.forEach(function(g){ window.addEventListener(g, onGesture, { passive: true }); });
   }
   if (document.readyState === 'complete') later(); else window.addEventListener('load', later);
+
+  // Mesure d'audience sans cookie ni identifiant : une vue par chargement et
+  // les clics sur « Créer mon site », avec la source (utm_source ou site
+  // d'origine). Les robots et les outils de test comme Lighthouse sont ignorés.
+  if (navigator.webdriver || /bot|crawl|spider|lighthouse|headless|preview/i.test(navigator.userAgent)) return;
+  var source = '';
+  try {
+    source = new URLSearchParams(location.search).get('utm_source') || '';
+    if (!source && document.referrer) {
+      var ref = new URL(document.referrer).hostname;
+      if (ref !== location.hostname) source = ref;
+    }
+  } catch (e) {}
+  source = source.toLowerCase().slice(0, 100);
+  function track(event, placement){
+    var url = '/api-backend/analytics/landing';
+    var body = JSON.stringify({ event: event, placement: placement || '', source: source });
+    try { if (navigator.sendBeacon && navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }))) return; } catch (e) {}
+    if (window.fetch) fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true }).catch(function(){});
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[data-cta]');
+    if (a) track('cta_click', a.getAttribute('data-cta'));
+  });
+  // Après le chargement, pour ne pas retarder l'affichage.
+  if (document.readyState === 'complete') track('view'); else window.addEventListener('load', function(){ track('view'); });
 })();
 </script>
 </body>
