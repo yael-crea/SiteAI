@@ -13,6 +13,7 @@ const columns = [
     links: [
       { href: "/#s1", label: "Comment ça marche" },
       { href: "/exemples", label: "Exemples" },
+      { href: "/site-internet", label: "Site par métier" },
       { href: "/#s4", label: "Tarifs" },
       { href: "/#faq", label: "Questions fréquentes" },
     ],
