@@ -9,6 +9,7 @@ import { activityExamples } from "@/lib/activityExamples";
 import { designStyles, getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { clearExampleTemplate, readExampleTemplate } from "@/lib/exampleTemplates";
 import { tradeHeroLayout, withTradePhotos } from "@/lib/tradePhotos";
+import { tradeMotion } from "@/lib/siteMotion";
 import { clearPendingCreation, readPendingCreation, savePendingCreation } from "@/lib/pendingCreation";
 import type { SiteGoal } from "@/lib/siteGoal";
 import type { GeneratedSite } from "@/lib/builderTypes";
@@ -430,10 +431,15 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
     }
   }
 
-  // Réglages d'un style pour ce site : le haut de page suit le métier quand le site a une photo principale.
+  // Réglages d'un style pour ce site : le haut de page et les animations suivent le métier.
   function designFor(style: ReturnType<typeof getDesignStyle>) {
     const hero = generated?.heroImageUrl ? tradeHeroLayout(activity) : undefined;
-    return { ...generated?.designSettings, ...style.settings, ...(hero ? { heroLayout: hero } : {}) };
+    return {
+      ...generated?.designSettings,
+      ...style.settings,
+      ...(hero ? { heroLayout: hero } : {}),
+      ...tradeMotion(activity, Boolean(generated?.heroImageUrl)),
+    };
   }
 
   function back() {

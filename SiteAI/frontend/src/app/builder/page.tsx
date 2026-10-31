@@ -5,6 +5,7 @@ import BuilderToolsMenu from "@/components/builder/BuilderToolsMenu";
 import FirstSiteGuide from "@/components/builder/FirstSiteGuide";
 import { sameContent } from "@/lib/builderSaveState";
 import { withTradePhotos } from "@/lib/tradePhotos";
+import { tradeMotion } from "@/lib/siteMotion";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import Icon from "@/components/ui/Icon";
 
@@ -1342,7 +1343,7 @@ export default function Home() {
 
       const data: GeneratedSite = await response.json();
 
-      const generatedSite: GeneratedSite = withTradePhotos({
+      const withPhotos: GeneratedSite = withTradePhotos({
         ...data,
         siteGoal: newSiteGoal,
         bookingUrl: newBookingUrl,
@@ -1368,6 +1369,14 @@ export default function Home() {
         clientEmail: data.clientEmail ?? "",
         socialLinks: normalizeSocialLinks(data.socialLinks),
       }, activity);
+      // Animations proposées selon le métier (modifiables dans « Animations »).
+      const generatedSite: GeneratedSite = {
+        ...withPhotos,
+        designSettings: withPhotos.designSettings && {
+          ...withPhotos.designSettings,
+          ...tradeMotion(activity, Boolean(withPhotos.heroImageUrl)),
+        },
+      };
 
       draft.clearDraft();
       setSavedSiteID(null);

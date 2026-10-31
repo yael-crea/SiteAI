@@ -4,6 +4,7 @@ import { goalAction } from "@/lib/siteGoal";
 import { createContext, useContext, useState } from "react";
 import { normalizeDesignExtras, type DesignExtras } from "@/lib/appearanceSettings";
 import { designExtrasCSS } from "@/lib/designExtrasCSS";
+import { siteMotionCSS } from "@/lib/siteMotionCSS";
 import { siteQualityCSS } from "@/lib/siteQualityCSS";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { getQuoteOptions, type Testimonial } from "@/lib/siteGrowth";
@@ -394,6 +395,8 @@ function DesignShell({
       data-image-ratio={settings.imageRatio}
       data-image-fit={settings.imageFit}
       data-button-size={settings.buttonSize}
+      data-motion={settings.motion}
+      data-hero-background={settings.heroBackground}
       data-theme={theme}
       data-has-hero-image={hasHeroImage}
       data-card-style={settings.cardStyle}
@@ -414,6 +417,8 @@ function DesignShell({
             spacingMultiplier,
           "--siteai-accent-contrast":
             getContrastTextColor(accentColor),
+          "--siteai-accent":
+            accentColor,
         } as React.CSSProperties
       }
     >
@@ -1267,6 +1272,7 @@ function DesignShell({
 
       <style>{siteQualityCSS}</style>
       <style>{designExtrasCSS}</style>
+      <style>{siteMotionCSS}</style>
       {children}
     </div>
   );
@@ -5749,11 +5755,15 @@ function SignatureShell({
       data-image-ratio={settings.imageRatio}
       data-image-fit={settings.imageFit}
       data-button-size={settings.buttonSize}
+      data-motion={settings.motion}
+      data-hero-background={settings.heroBackground}
       style={{
         "--sg-accent": accentColor,
         "--sg-on-accent": getContrastTextColor(accentColor),
+        "--siteai-accent": accentColor,
       } as React.CSSProperties}
     >
+      <style>{siteMotionCSS}</style>
       {children}
     </div>
   );
