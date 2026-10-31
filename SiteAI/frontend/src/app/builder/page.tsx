@@ -4075,7 +4075,7 @@ export default function Home() {
 
                     <details className="rounded-xl border border-slate-700 p-4">
                       <summary className="cursor-pointer text-sm font-semibold">
-                        Informations client — Agence
+                        Informations client (pour les agences)
                       </summary>
                       <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <input

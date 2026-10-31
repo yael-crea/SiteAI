@@ -1,6 +1,6 @@
 export type PlanName = "essentiel" | "pro" | "agence";
 
-export const CGV_VERSION = "2026-10-29-pro";
+export const CGV_VERSION = "2026-10-31";
 export const priceSuffix = "/ mois";
 export const priceTaxText =
   "Prix mensuels. TVA non applicable, article 293 B du Code général des impôts : le prix affiché est le prix payé.";
@@ -37,8 +37,8 @@ export const plans: {
     highlighted: false,
     features: [
       "Tout Essentiel, avec davantage d’IA et de suivi",
+      "1 site publié et hébergé",
       "200 demandes IA par mois",
-      "Création et modification des textes avec l’IA",
       "Statistiques détaillées : visiteurs, appels, e-mails et prospects",
     ],
   },

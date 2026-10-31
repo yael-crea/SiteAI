@@ -51,7 +51,7 @@ import (
 
 var db *pgxpool.Pool
 
-const currentCGVVersion = "2026-10-29-pro"
+const currentCGVVersion = "2026-10-31"
 
 // Types de documents enregistrés dans legal_acceptances.
 const (
@@ -4339,7 +4339,7 @@ func addDomainHandler(
 		if !isActiveBillingStatus(billingStatus.Status) {
 			http.Error(
 				w,
-				"Un abonnement Pro ou Agence actif est nécessaire pour utiliser un domaine personnalisé.",
+				"Un abonnement actif est nécessaire pour utiliser un domaine personnalisé.",
 				http.StatusForbidden,
 			)
 			return
@@ -4347,7 +4347,7 @@ func addDomainHandler(
 
 		http.Error(
 			w,
-			"Les domaines personnalisés sont disponibles avec les formules Pro ou Agence.",
+			"Ta formule ne permet pas de connecter un domaine personnalisé.",
 			http.StatusForbidden,
 		)
 		return
@@ -4455,7 +4455,7 @@ func verifyDomainHandler(
 		if !isActiveBillingStatus(billingStatus.Status) {
 			http.Error(
 				w,
-				"Un abonnement Pro ou Agence actif est nécessaire pour vérifier un domaine personnalisé.",
+				"Un abonnement actif est nécessaire pour vérifier un domaine personnalisé.",
 				http.StatusForbidden,
 			)
 			return
@@ -4463,7 +4463,7 @@ func verifyDomainHandler(
 
 		http.Error(
 			w,
-			"Les domaines personnalisés sont disponibles avec les formules Pro ou Agence.",
+			"Ta formule ne permet pas de connecter un domaine personnalisé.",
 			http.StatusForbidden,
 		)
 		return
@@ -8097,7 +8097,7 @@ func billingEntitlements(status BillingStatus) PlanEntitlements {
 
 	case "pro":
 		return PlanEntitlements{
-			MaxPublishedSites:   3,
+			MaxPublishedSites:   1,
 			CustomDomainAllowed: true,
 			DetailedAnalytics:   true,
 		}
@@ -8128,10 +8128,10 @@ func applyBillingEntitlements(status *BillingStatus) {
 func publishedSiteLimitMessage(plan string, maxSites int) string {
 	switch strings.ToLower(strings.TrimSpace(plan)) {
 	case "essentiel":
-		return "Limite de la formule Essentiel atteinte : 1 site publié maximum. Passe à Pro pour publier jusqu'à 3 sites."
+		return "Limite de la formule Essentiel atteinte : 1 site publié maximum. Passe à Agence pour publier jusqu'à 10 sites."
 
 	case "pro":
-		return "Limite de la formule Pro atteinte : 3 sites publiés maximum. Passe à Agence pour publier jusqu'à 10 sites."
+		return "Limite de la formule Pro atteinte : 1 site publié maximum. Passe à Agence pour publier jusqu'à 10 sites."
 
 	case "agence":
 		return "Limite de la formule Agence atteinte : 10 sites publiés maximum."
