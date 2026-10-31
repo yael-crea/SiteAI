@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Bibliothèques tierces déjà minifiées, servies telles quelles.
+    "public/vendor/**",
   ]),
 ]);
 
