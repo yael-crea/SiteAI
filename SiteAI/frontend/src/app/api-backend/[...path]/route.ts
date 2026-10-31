@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { reportServerError } from "@/lib/serverMonitoring";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -193,6 +194,12 @@ async function proxyRequest(
       "Erreur proxy backend :",
       error,
     );
+
+    await reportServerError(error, {
+      path: request.nextUrl.pathname,
+      method: request.method,
+      tags: { routeType: "proxy-backend" },
+    });
 
     return new Response(
       "Impossible de contacter le backend.",

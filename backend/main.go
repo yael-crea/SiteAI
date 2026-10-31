@@ -665,6 +665,9 @@ func main() {
 
 	}
 
+	flushMonitoring := initMonitoring()
+	defer flushMonitoring()
+
 	required := []string{
 
 		"OPENAI_API_KEY",
@@ -771,6 +774,8 @@ func main() {
 
 	fmt.Println("Emails de relance :", lifecycleEmailStatus())
 
+	fmt.Println("Suivi des erreurs :", monitoringStatus())
+
 	fmt.Println("======================================")
 
 	fmt.Println()
@@ -781,7 +786,7 @@ func main() {
 
 			":"+port,
 
-			nil,
+			withMonitoring(http.DefaultServeMux),
 		),
 	)
 
