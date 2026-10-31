@@ -11,6 +11,16 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async headers() {
+    // Fichiers de la landing qui ne changent jamais sous le même nom
+    // (Three.js versionné dans le nom, polices) : cache navigateur d'un an.
+    const immutable = [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }];
+    return [
+      { source: "/vendor/:path*", headers: immutable },
+      { source: "/fonts/:path*", headers: immutable },
+      { source: "/images/landing/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] },
+    ];
+  },
   async rewrites() {
     return [
       {
