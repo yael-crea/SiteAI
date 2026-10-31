@@ -1,13 +1,16 @@
 import type { MetadataRoute } from "next";
 import { IS_INDEXABLE, SITE_URL } from "@/lib/seo";
+import { tradePages } from "@/lib/tradePages";
 
 export const revalidate = 3600;
 const BACKEND_URL = (process.env.NEXT_PUBLIC_API_URL || "https://siteai-production-aa03.up.railway.app").replace(/\/$/, "");
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (!IS_INDEXABLE) return [];
-  const pages: MetadataRoute.Sitemap = ["", "/exemples", "/cgv", "/cgu", "/mentions-legales", "/confidentialite"]
-    .map(path => ({ url: `${SITE_URL}${path}` }));
+  const pages: MetadataRoute.Sitemap = [
+    "", "/exemples", "/site-internet", ...tradePages.map(page => `/site-internet/${page.slug}`),
+    "/cgv", "/cgu", "/mentions-legales", "/confidentialite",
+  ].map(path => ({ url: `${SITE_URL}${path}` }));
   try {
     const response = await fetch(`${BACKEND_URL}/public-sitemap-sites`, {
       next: { revalidate: 3600 }, signal: AbortSignal.timeout(10000),

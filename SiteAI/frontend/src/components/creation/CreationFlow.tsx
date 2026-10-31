@@ -184,6 +184,10 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
         setCity(template.city);
         setTemplateServices(template.services);
       }
+      // Arrivée depuis une page /site-internet/[metier] : le métier est déjà choisi.
+      const requestedTrade = new URLSearchParams(window.location.search).get("metier");
+      const trade = activityExamples.find((item) => item.label === requestedTrade);
+      if (!template && trade && active) setActivity(trade.label);
       if (pending && active) {
         setActivity(pending.activity);
         setBusinessName(pending.businessName);
