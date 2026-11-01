@@ -41,7 +41,7 @@ export default function LegalPage() {
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
               Responsable du traitement : Yael Castan Gleizes EI (SIREN 131 781 932)
 Adresse : 3 rue de l’Opale, 34070 Montpellier, France
-E-mail relatif aux données personnelles : castanyael@gmail.com
+E-mail relatif aux données personnelles : support@lumio.business
 
 Lumio est responsable du traitement des données de ses propres clients et utilisateurs (compte, sites, abonnement, support).
 
@@ -122,7 +122,7 @@ Lorsque des données sont transférées hors de l’Union européenne, ces trans
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
               Toute personne concernée peut demander l’accès à ses données, leur rectification, leur effacement, la limitation du traitement ou leur portabilité, et s’opposer aux traitements fondés sur l’intérêt légitime.
 
-Pour exercer ces droits, il suffit d’écrire à castanyael@gmail.com. Une réponse est apportée dans un délai d’un mois. Un justificatif d’identité peut être demandé en cas de doute raisonnable sur l’identité du demandeur.
+Pour exercer ces droits, il suffit d’écrire à support@lumio.business. Une réponse est apportée dans un délai d’un mois. Un justificatif d’identité peut être demandé en cas de doute raisonnable sur l’identité du demandeur.
 
 Les visiteurs d’un site publié avec Lumio s’adressent en priorité au propriétaire de ce site ; Lumio l’aide à répondre à leur demande.
 
