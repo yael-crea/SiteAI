@@ -192,7 +192,7 @@
   font-weight: 600;
 }
 
-.field input {
+.field :is(input, textarea) {
   width: 100%;
   min-height: 60px;
   padding: 0 20px;
@@ -205,14 +205,48 @@
   transition: border-color 0.2s var(--ui-ease), box-shadow 0.2s var(--ui-ease), background-color 0.2s var(--ui-ease);
 }
 
-.field input::placeholder {
+.field :is(input, textarea)::placeholder {
   color: var(--ui-label-3);
 }
 
-.field input:focus {
+.field :is(input, textarea):focus {
   border-color: var(--ui-tint-hover);
   background: rgba(118, 118, 128, 0.26);
   box-shadow: 0 0 0 4px rgba(122, 107, 255, 0.22);
+}
+
+.field textarea {
+  min-height: 112px;
+  padding: 16px 20px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+/* Questions facultatives pour un site plus personnel */
+.more {
+  margin-top: 28px;
+  padding: 4px 0;
+  border-top: 1px solid rgba(118, 118, 128, 0.24);
+}
+
+.more > summary {
+  padding-top: 18px;
+  cursor: pointer;
+  color: var(--ui-label);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.more > summary small {
+  margin-left: 8px;
+  color: var(--ui-label-3);
+  font-weight: 500;
+}
+
+.more .field {
+  margin-top: 18px;
 }
 
 .fieldGrid {
@@ -653,7 +687,7 @@
     font-size: 17px;
   }
 
-  .field input {
+  .field :is(input, textarea) {
     min-height: 56px;
     font-size: 17px;
   }
@@ -741,4 +775,47 @@
   .toneGrid {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+/* Choix de l'accroche (étape du style) */
+.hooks {
+  margin-top: 28px;
+}
+
+.hooks > p {
+  margin: 0 0 12px;
+  color: var(--ui-label-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hooks > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hook {
+  max-width: 100%;
+  padding: 12px 18px;
+  border: 1px solid rgba(118, 118, 128, 0.35);
+  border-radius: 14px;
+  background: rgba(118, 118, 128, 0.12);
+  color: var(--ui-label);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ui-ease), background-color 0.2s var(--ui-ease);
+}
+
+.hook:hover {
+  border-color: var(--ui-tint-hover);
+}
+
+.hookActive {
+  border-color: var(--ui-tint-hover);
+  background: rgba(122, 107, 255, 0.18);
+  box-shadow: 0 0 0 3px rgba(122, 107, 255, 0.18);
 }

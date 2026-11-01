@@ -94,6 +94,9 @@ type DesignSettings struct {
 }
 
 type GeneratedSite struct {
+	// Accroches proposées par l'IA à la création ; le client en choisit une.
+	HeroTitleOptions []string `json:"heroTitleOptions,omitempty"`
+
 	SiteGoal     string `json:"siteGoal,omitempty"`
 	BookingURL   string `json:"bookingUrl,omitempty"`
 	BusinessName string `json:"businessName"`

@@ -55,6 +55,8 @@ export type GeneratedSite = {
   metaTitle: string;
   metaDescription: string;
   heroTitle: string;
+  /** Accroches proposées par l'IA à la création (non enregistrées). */
+  heroTitleOptions?: string[];
   heroText: string;
   phone: string;
   logoUrl: string;
