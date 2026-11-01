@@ -5,6 +5,8 @@ import { createContext, useContext, useState } from "react";
 import { normalizeDesignExtras, type DesignExtras } from "@/lib/appearanceSettings";
 import { designExtrasCSS } from "@/lib/designExtrasCSS";
 import { siteMotionCSS } from "@/lib/siteMotionCSS";
+import SiteLegalNotice from "@/components/site/SiteLegalNotice";
+import type { SiteLegal } from "@/lib/builderTypes";
 import { siteQualityCSS } from "@/lib/siteQualityCSS";
 import { getDesignStyle, type DesignStyle } from "@/lib/designStyles";
 import { getQuoteOptions, type Testimonial } from "@/lib/siteGrowth";
@@ -138,6 +140,7 @@ type GeneratedSite = {
   clientEmail?: string;
 
   socialLinks?: SocialLinks;
+  legal?: SiteLegal;
 
 };
 
@@ -3083,6 +3086,7 @@ function ModernTemplate({
             <p>© {new Date().getFullYear()} {site.businessName}</p>
             <p>Site créé avec Lumio</p>
           </div>
+          <SiteLegalNotice site={site} />
         </div>
       </footer>
 
@@ -3811,6 +3815,7 @@ function ElegantTemplate({
             <p>© {new Date().getFullYear()} {site.businessName}</p>
             <p>Site créé avec Lumio</p>
           </div>
+          <SiteLegalNotice site={site} />
         </div>
       </footer>
 
@@ -4574,6 +4579,7 @@ function ArtisanTemplate({
             <p>© {new Date().getFullYear()} {site.businessName}</p>
             <p>Site créé avec Lumio</p>
           </div>
+          <SiteLegalNotice site={site} />
         </div>
       </footer>
 
@@ -6242,6 +6248,7 @@ function SignatureTemplate({
               <p>© {year} {site.businessName}</p>
               <p>Site créé avec Lumio</p>
             </div>
+            <SiteLegalNotice site={site} />
           </div>
         </footer>
       </div>

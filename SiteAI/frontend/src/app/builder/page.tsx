@@ -6,6 +6,7 @@ import FirstSiteGuide from "@/components/builder/FirstSiteGuide";
 import { sameContent } from "@/lib/builderSaveState";
 import { withTradePhotos } from "@/lib/tradePhotos";
 import { tradeMotion } from "@/lib/siteMotion";
+import LegalNoticeEditor from "@/components/builder/LegalNoticeEditor";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import Icon from "@/components/ui/Icon";
 
@@ -1011,6 +1012,7 @@ export default function Home() {
       seo: "seo",
       local: "local",
       reviews: "reviews",
+      legal: "legal",
     };
     setPreviewFullscreenOpen(false);
     setMobileStep(1);
@@ -1367,6 +1369,7 @@ export default function Home() {
         openingHours: data.openingHours ?? "",
         clientName: data.clientName ?? "",
         clientEmail: data.clientEmail ?? "",
+        legal: data.legal,
         socialLinks: normalizeSocialLinks(data.socialLinks),
       }, activity);
       // Animations proposées selon le métier (modifiables dans « Animations »).
@@ -1450,6 +1453,7 @@ export default function Home() {
       openingHours: site.openingHours ?? incoming.openingHours ?? "",
       clientName: site.clientName ?? incoming.clientName ?? "",
       clientEmail: site.clientEmail ?? incoming.clientEmail ?? "",
+      legal: site.legal ?? incoming.legal,
       socialLinks: normalizeSocialLinks(
         site.socialLinks ?? incoming.socialLinks,
       ),
@@ -1584,6 +1588,7 @@ export default function Home() {
         openingHours: saved.site.openingHours ?? "",
         clientName: saved.site.clientName ?? "",
         clientEmail: saved.site.clientEmail ?? "",
+        legal: saved.site.legal,
         socialLinks: normalizeSocialLinks(saved.site.socialLinks),
       });
 
@@ -1776,6 +1781,7 @@ export default function Home() {
         openingHours: saved.site.openingHours ?? "",
         clientName: saved.site.clientName ?? "",
         clientEmail: saved.site.clientEmail ?? "",
+        legal: saved.site.legal,
         socialLinks: normalizeSocialLinks(saved.site.socialLinks),
       });
 
@@ -2870,6 +2876,7 @@ export default function Home() {
       openingHours: value.openingHours ?? "",
       clientName: value.clientName ?? "",
       clientEmail: value.clientEmail ?? "",
+      legal: value.legal,
       socialLinks: normalizeSocialLinks(value.socialLinks),
     };
   }
@@ -3978,6 +3985,11 @@ export default function Home() {
                         </div>
                       </div>
                     </details>
+
+                    <LegalNoticeEditor
+                      value={site.legal}
+                      onChange={(value) => updateSiteField("legal", value)}
+                    />
 
                     <details className="rounded-xl border border-slate-700 p-4">
                       <summary className="cursor-pointer text-sm font-semibold">

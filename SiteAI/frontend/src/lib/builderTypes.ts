@@ -38,6 +38,17 @@ export type DesignSettings = DesignExtras & {
   background: "auto" | "light" | "dark";
 };
 
+/** Mentions légales affichées en bas du site publié. */
+export type SiteLegal = {
+  companyName?: string;
+  legalForm?: string;
+  address?: string;
+  siren?: string;
+  vatNumber?: string;
+  publisher?: string;
+  email?: string;
+};
+
 export type SocialLinks = {
   instagram?: string;
   facebook?: string;
@@ -72,6 +83,7 @@ export type GeneratedSite = {
   clientName?: string;
   clientEmail?: string;
   socialLinks?: SocialLinks;
+  legal?: SiteLegal;
 };
 
 export type PreviewDevice = "desktop" | "tablet" | "mobile";

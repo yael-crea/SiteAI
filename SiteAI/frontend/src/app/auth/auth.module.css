@@ -764,3 +764,15 @@
     animation: none !important;
   }
 }
+
+.googleNotice {
+  margin: 10px 0 0;
+  color: var(--ui-label-3, #8e8e93);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.googleNotice a {
+  color: inherit;
+  text-decoration: underline;
+}

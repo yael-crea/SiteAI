@@ -1171,6 +1171,7 @@ Retourne le site complet après modification.`,
 	result.Site.OpeningHours = input.Site.OpeningHours
 	result.Site.ClientName = input.Site.ClientName
 	result.Site.ClientEmail = input.Site.ClientEmail
+	result.Site.Legal = input.Site.Legal
 	result.Site.SocialLinks = input.Site.SocialLinks
 
 	// Preserve the existing style when the model leaves an optional design

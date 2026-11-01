@@ -47,7 +47,9 @@ Les présentes CGU encadrent l’accès à la plateforme et son utilisation.
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">2. Compte utilisateur</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              L’utilisateur doit fournir des informations exactes lors de la création de son compte et préserver la confidentialité de ses identifiants.
+              Lumio est réservé aux personnes âgées d’au moins 18 ans qui l’utilisent pour les besoins de leur activité professionnelle. En créant un compte, l’utilisateur déclare remplir ces conditions ; un compte ouvert par une personne mineure peut être fermé.
+
+L’utilisateur doit fournir des informations exactes lors de la création de son compte et préserver la confidentialité de ses identifiants.
 
 L’utilisateur est responsable des actions réalisées depuis son compte, sauf lorsqu’elles résultent d’un incident imputable au service ou d’un accès frauduleux dont il n’est pas responsable.
             </div>
@@ -77,6 +79,8 @@ L’utilisateur doit vérifier les textes, images, informations professionnelles
               L’utilisateur demeure responsable des contenus qu’il fournit, importe ou publie via Lumio.
 
 Il doit notamment disposer des droits nécessaires sur les logos, marques, photographies, textes et autres contenus utilisés dans ses sites.
+
+L’utilisateur est l’éditeur des sites qu’il publie : il renseigne les mentions légales affichées en bas de page (identité, adresse, numéro d’immatriculation, contact) et traite les demandes envoyées par les visiteurs dans le respect de la réglementation sur les données personnelles.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
