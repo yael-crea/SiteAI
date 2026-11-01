@@ -43,6 +43,12 @@ export default function SiteLegalNotice({ site }: { site: LegalSite }) {
               ))}
           </ul>
           <p className="mt-2">{LUMIO_HOST_NOTICE}</p>
+          <p className="mt-2">
+            Signaler un contenu illicite :{" "}
+            <a href="mailto:support@lumio.business?subject=Signalement" className="underline">
+              support@lumio.business
+            </a>
+          </p>
         </div>
         <div>
           <p className="font-semibold">Données personnelles</p>

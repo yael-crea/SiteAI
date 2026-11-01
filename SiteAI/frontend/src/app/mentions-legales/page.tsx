@@ -44,7 +44,8 @@ Statut juridique : entrepreneur individuel (micro-entreprise)
 SIREN : 131 781 932
 Immatriculation : Registre national des entreprises (RNE)
 Adresse : 3 rue de l’Opale, 34070 Montpellier, France
-E-mail de contact : castanyael@gmail.com
+E-mail de contact : support@lumio.business
+Signalement d’un contenu illicite sur un site publié avec Lumio : support@lumio.business, objet « Signalement » (voir l’article 11 des CGU)
 Téléphone : 07 69 07 95 59
 TVA non applicable, article 293 B du Code général des impôts.
             </div>

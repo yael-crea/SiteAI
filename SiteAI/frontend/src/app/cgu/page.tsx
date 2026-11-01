@@ -86,42 +86,76 @@ L’utilisateur est l’éditeur des sites qu’il publie : il renseigne les men
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">6. Disponibilité du service</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Lumio peut faire l’objet d’opérations de maintenance, de mises à jour ou d’interruptions techniques.
+              Lumio met en œuvre les moyens raisonnables pour rendre le service accessible en continu. Il s’agit d’une obligation de moyens : aucun taux de disponibilité n’est garanti.
 
-Les engagements précis de disponibilité, de support et, le cas échéant, de niveau de service devront être définis avant commercialisation.
+Le service peut être interrompu pour maintenance, mise à jour, incident technique ou défaillance d’un prestataire (hébergement, authentification, paiement, intelligence artificielle). Lumio s’efforce de prévenir à l’avance des maintenances programmées et de rétablir le service dans les meilleurs délais.
+
+La base de données est sauvegardée chaque jour ; chaque sauvegarde est conservée 14 jours. Il appartient à l’utilisateur de conserver une copie des contenus qu’il juge importants (textes, photos, logos).
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">7. Abonnements et paiement</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Lumio prévoit des formules d’abonnement payantes.
-
-Les conditions tarifaires, modalités de paiement, renouvellement, résiliation, remboursement et éventuel droit de rétractation devront être précisées dans des Conditions générales de vente (CGV) distinctes avant la commercialisation du service.
+              La publication des sites nécessite un abonnement payant. Les prix, le paiement, le renouvellement, la résiliation et le changement de formule sont régis par les Conditions générales de vente (CGV), acceptées lors de la souscription.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <h2 className="text-xl font-black">8. Suspension ou fermeture de compte</h2>
+            <h2 className="text-xl font-black">8. Suspension et fermeture de compte</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Un compte pourra être suspendu ou fermé dans les conditions qui seront précisées dans la version définitive des CGU, notamment en cas de violation grave ou répétée des règles d’utilisation.
+              Fermeture à la demande de l’utilisateur : l’utilisateur peut demander la fermeture de son compte à tout moment en écrivant à support@lumio.business depuis l’adresse e-mail de son compte. Un abonnement en cours doit d’abord être résilié dans les conditions des CGV.
+
+Suspension ou fermeture par Lumio : Lumio peut suspendre l’accès à tout ou partie du service, ou retirer un site, en cas de violation des présentes CGU, de contenu manifestement illicite, de défaut de paiement, d’usage abusif ou d’atteinte à la sécurité du service. Sauf urgence (contenu manifestement illicite, risque pour la sécurité, demande d’une autorité), Lumio prévient l’utilisateur par e-mail en indiquant le motif et lui laisse 8 jours pour régulariser. En cas de manquement grave ou répété, Lumio peut fermer le compte.
+
+Conséquences : à la fermeture du compte, les sites sont retirés du public et les données sont supprimées dans un délai de 3 mois, sauf obligation légale de conservation (notamment comptable). L’utilisateur peut demander une copie de ses contenus avant la fermeture.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">9. Responsabilité</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Les règles précises de responsabilité devront être adaptées au statut juridique de l’entreprise, au public visé et aux services effectivement proposés.
+              Lumio est tenu d’une obligation de moyens. L’utilisateur reste seul responsable des contenus publiés sur ses sites, de leur vérification avant publication (y compris les contenus générés par l’intelligence artificielle), de ses mentions légales et de l’usage qu’il fait des demandes reçues de ses visiteurs.
 
-Aucune clause définitive de limitation de responsabilité n’est insérée dans cette version provisoire.
+Lumio ne peut être tenu responsable des dommages indirects, notamment perte de chiffre d’affaires, de clientèle, de commandes, d’image ou de chance, ni des conséquences d’informations inexactes publiées par l’utilisateur.
+
+Lorsque la responsabilité de Lumio est engagée, le montant total des dommages et intérêts est limité, toutes causes confondues, aux sommes payées par l’utilisateur à Lumio au cours des 12 mois précédant le fait générateur, et à 100 € pour un utilisateur sans abonnement payant.
+
+Ces limites ne s’appliquent pas en cas de faute lourde ou dolosive de Lumio, de dommage corporel, ni lorsqu’elles videraient de sa substance une obligation essentielle de Lumio.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <h2 className="text-xl font-black">10. Droit applicable et litiges</h2>
+            <h2 className="text-xl font-black">10. Propriété intellectuelle</h2>
+            <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
+              Lumio reste titulaire de tous les droits sur le service : logiciel, gabarits de sites, styles, illustrations fournies, marque et nom « Lumio ». L’utilisateur bénéficie d’un droit d’utilisation personnel et non exclusif pendant la durée de son compte.
+
+L’utilisateur conserve ses droits sur les contenus qu’il fournit (textes, logos, photos, marques). Il accorde à Lumio, pour la seule durée du service et dans le monde entier, une licence non exclusive et gratuite pour héberger, reproduire et afficher ces contenus, dans la mesure nécessaire au fonctionnement du service.
+
+Les textes générés pour l’utilisateur par l’intelligence artificielle de Lumio peuvent être librement utilisés, modifiés et publiés par l’utilisateur, y compris en dehors de Lumio. Lumio ne garantit pas qu’un texte généré soit unique ou protégeable par le droit d’auteur.
+
+Lumio ne présente un site client comme référence commerciale qu’avec l’accord de son utilisateur.
+            </div>
+          </section>
+          <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-xl font-black">11. Signalement des contenus illicites</h2>
+            <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
+              Lumio héberge les sites publiés par ses utilisateurs. Toute personne peut signaler un contenu qu’elle estime illicite en écrivant à support@lumio.business, avec l’objet « Signalement », en précisant : l’adresse exacte de la page, la description du contenu, les raisons pour lesquelles il est illicite et ses coordonnées. Cette adresse est aussi le point de contact de Lumio pour les autorités.
+
+Lumio examine chaque signalement avec diligence. Il peut retirer ou rendre inaccessible un contenu manifestement illicite, informer l’utilisateur concerné de la décision et de ses motifs, et lui permettre de la contester par e-mail. Un signalement abusif ou de mauvaise foi peut engager la responsabilité de son auteur. En cas de manquements répétés, Lumio peut fermer le compte concerné.
+            </div>
+          </section>
+          <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-xl font-black">12. Modification des CGU</h2>
+            <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
+              Lumio peut faire évoluer les présentes CGU pour tenir compte de l’évolution du service ou de la réglementation. En cas de modification substantielle, l’utilisateur est informé par e-mail ou dans son espace au moins 30 jours avant son entrée en vigueur. S’il la refuse, il peut fermer son compte avant cette date ; la poursuite de l’utilisation du service après cette date vaut acceptation.
+            </div>
+          </section>
+          <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <h2 className="text-xl font-black">13. Droit applicable et litiges</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
               Droit applicable : droit français.
 Règlement des litiges : En cas de litige, les parties recherchent d’abord une solution amiable. À défaut, le litige est porté devant les tribunaux compétents ; lorsque l’utilisateur est un professionnel, compétence est attribuée aux tribunaux du ressort de Montpellier.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <h2 className="text-xl font-black">11. Contact</h2>
+            <h2 className="text-xl font-black">14. Contact</h2>
             <p className="mt-3 text-sm leading-7 text-slate-400">
               Contact Lumio :{" "}
               <a href="mailto:support@lumio.business" className="text-blue-400 hover:text-blue-300">

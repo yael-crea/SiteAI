@@ -55,7 +55,7 @@ export default function CGVPage() {
 Forme juridique : entrepreneur individuel (micro-entreprise)
 SIREN : 131 781 932
 Adresse : 3 rue de l’Opale, 34070 Montpellier, France
-E-mail : castanyael@gmail.com
+E-mail : support@lumio.business
 TVA non applicable, article 293 B du Code général des impôts.`}
             </div>
           </section>
@@ -122,10 +122,10 @@ TVA non applicable, article 293 B du Code général des impôts.`}
             </div>
 
             <p className="mt-5 text-xs leading-6 text-slate-500">
-              Les prix ci-dessus correspondent aux offres actuellement
-              configurées dans Lumio. Toute modification tarifaire future
-              devra être affichée avant la souscription ou le renouvellement
-              concerné, selon les règles applicables.
+              Les prix ci-dessus sont ceux en vigueur. Toute modification
+              tarifaire est annoncée par e-mail au moins 30 jours avant de
+              s&apos;appliquer, à partir du renouvellement suivant ; le client
+              qui la refuse peut résilier avant cette date.
             </p>
           </section>
 
@@ -147,16 +147,10 @@ TVA non applicable, article 293 B du Code général des impôts.`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Le client choisit une formule, prend connaissance du prix et
-              des fonctionnalités proposées, puis procède au paiement via
-              l&apos;interface prévue à cet effet. Le contrat prend effet
-              après validation du paiement et activation de l&apos;abonnement.
+              Le client choisit une formule, prend connaissance du prix et des fonctionnalités, accepte expressément les présentes CGV et déclare agir pour les besoins de son activité professionnelle en cochant les cases prévues, puis paie via Stripe. La version des CGV acceptée et la date d&apos;acceptation sont enregistrées.
             </p>
-
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Avant le lancement commercial, le parcours de commande devra
-              comporter une case permettant d&apos;accepter expressément les
-              présentes CGV avant le paiement.
+              Le contrat prend effet à la confirmation du paiement et à l&apos;activation de l&apos;abonnement, confirmées par e-mail par Stripe.
             </p>
           </section>
 
@@ -195,13 +189,16 @@ TVA non applicable, article 293 B du Code général des impôts.`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Les offres actuellement proposées sont des abonnements
-              mensuels. Sauf résiliation, l&apos;abonnement est renouvelé à
-              chaque échéance mensuelle.
+              Les offres sont des abonnements mensuels, renouvelés automatiquement à chaque échéance sauf résiliation.
             </p>
-
             <p className="mt-3 text-sm leading-7 text-slate-400">
               {cancellationText}
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              La résiliation prend effet à la fin de la période déjà payée. Aucun remboursement au prorata n&apos;est effectué pour la période en cours.
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              Changement de formule : le client peut changer de formule depuis son espace client. Le montant éventuellement dû ou crédité est calculé et affiché par Stripe avant validation. En cas de passage à une formule qui inclut moins de sites publiés, les sites en trop repassent en brouillon (les plus anciennement publiés restent en ligne) ; leur contenu est conservé dans le compte.
             </p>
           </section>
 
@@ -213,9 +210,9 @@ TVA non applicable, article 293 B du Code général des impôts.`}
             <p className="mt-3 text-sm leading-7 text-slate-400">
               Pour les clients professionnels, toute somme non payée à son
               échéance pourra entraîner l&apos;application de pénalités de
-              retard calculées, à défaut d&apos;un autre taux fixé dans la
-              version définitive des CGV, sur la base du taux directeur
-              semestriel de la Banque centrale européenne majoré de 10 points.
+              retard calculées au taux directeur semestriel de la Banque
+              centrale européenne majoré de 10 points, exigibles sans rappel
+              dès le lendemain de l&apos;échéance.
             </p>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
@@ -233,18 +230,13 @@ TVA non applicable, article 293 B du Code général des impôts.`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Lumio fournit un service en ligne pouvant dépendre de
-              prestataires tiers, notamment pour l&apos;hébergement,
-              l&apos;authentification, la génération par intelligence
-              artificielle, le paiement et la gestion des domaines.
+              Lumio fournit un service en ligne qui s&apos;appuie sur des prestataires tiers, notamment pour l&apos;hébergement, l&apos;authentification, la génération par intelligence artificielle, le paiement et la gestion des domaines.
             </p>
-
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Le service peut être temporairement interrompu pour maintenance,
-              mise à jour, incident technique ou intervention d&apos;un
-              prestataire tiers. Les éventuels engagements de disponibilité
-              garantis devront être définis séparément si Lumio décide
-              d&apos;en proposer.
+              Lumio est tenu d&apos;une obligation de moyens : il met en œuvre les moyens raisonnables pour assurer la disponibilité du service, sans garantir de taux de disponibilité. Le service peut être interrompu pour maintenance, mise à jour, incident ou défaillance d&apos;un prestataire ; Lumio s&apos;efforce de prévenir des maintenances programmées et de rétablir le service dans les meilleurs délais.
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              La base de données est sauvegardée chaque jour et chaque sauvegarde est conservée 14 jours.
             </p>
           </section>
 
@@ -297,10 +289,10 @@ TVA non applicable, article 293 B du Code général des impôts.`}
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Lumio pourra suspendre l&apos;accès à certaines fonctionnalités
-              en cas de paiement refusé, utilisation manifestement abusive,
-              atteinte à la sécurité du service ou violation grave des
-              conditions contractuelles, sous réserve des règles applicables.
+              Lumio peut suspendre tout ou partie du service, ou retirer un site, en cas de paiement refusé, d&apos;usage abusif, de contenu manifestement illicite, d&apos;atteinte à la sécurité du service ou de manquement grave aux CGU ou aux CGV.
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              Sauf urgence (contenu manifestement illicite, risque pour la sécurité, demande d&apos;une autorité), Lumio prévient le client par e-mail en indiquant le motif et lui laisse 8 jours pour régulariser. En cas de paiement refusé, Stripe effectue de nouvelles tentatives ; si l&apos;abonnement prend fin faute de paiement, les sites repassent en brouillon dans les conditions de l&apos;article 9.
             </p>
           </section>
 
@@ -366,11 +358,16 @@ Engagements du client : disposer d’une base légale pour les données collect�
             <h2 className="text-xl font-black">18. Responsabilité</h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Les règles définitives de responsabilité devront être adaptées
-              au futur statut juridique de Lumio, aux garanties réellement
-              proposées et au type de clientèle. Aucune exclusion générale de
-              responsabilité n&apos;est prévue dans cette version
-              préparatoire.
+              Lumio est tenu d&apos;une obligation de moyens. Le client reste seul responsable des contenus publiés sur ses sites, de leur vérification avant publication (y compris les contenus générés par l&apos;intelligence artificielle), de ses mentions légales et de l&apos;usage des demandes reçues de ses visiteurs.
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              Lumio ne peut être tenu responsable des dommages indirects, notamment perte de chiffre d&apos;affaires, de clientèle, de commandes, d&apos;image ou de chance.
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              Lorsque la responsabilité de Lumio est engagée, le montant total des dommages et intérêts est limité, toutes causes confondues, aux sommes payées par le client à Lumio au cours des 12 mois précédant le fait générateur.
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              Ces limites ne s&apos;appliquent pas en cas de faute lourde ou dolosive de Lumio, de dommage corporel, ni lorsqu&apos;elles videraient de sa substance une obligation essentielle de Lumio.
             </p>
           </section>
 
@@ -391,11 +388,7 @@ Engagements du client : disposer d’une base légale pour les données collect�
             </h2>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Lumio pourra faire évoluer ses CGV afin de tenir compte des
-              évolutions du service, des offres ou de la réglementation. Les
-              modalités d&apos;information des clients en cas de modification
-              substantielle devront être précisées dans la version
-              définitive.
+              Lumio peut faire évoluer ses CGV pour tenir compte de l&apos;évolution du service, des offres ou de la réglementation. En cas de modification substantielle, le client est informé par e-mail au moins 30 jours avant son entrée en vigueur ; la nouvelle version s&apos;applique à partir du renouvellement suivant. Le client qui la refuse peut résilier son abonnement avant cette date.
             </p>
           </section>
 
