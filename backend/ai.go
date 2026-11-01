@@ -38,6 +38,14 @@ type BusinessInput struct {
 	CommunicationStyle string `json:"communicationStyle"`
 
 	PrimaryAction string `json:"primaryAction"`
+
+	// Réponses facultatives du parcours de création : de vrais faits que
+	// l'IA peut mettre en avant sans rien inventer.
+	Strengths string `json:"strengths"`
+
+	ServiceArea string `json:"serviceArea"`
+
+	OpeningHours string `json:"openingHours"`
 }
 
 type AIContent struct {
@@ -48,6 +56,8 @@ type AIContent struct {
 	HeroEyebrow string `json:"heroEyebrow"`
 
 	HeroTitle string `json:"heroTitle"`
+
+	HeroTitleOptions []string `json:"heroTitleOptions"`
 
 	HeroText string `json:"heroText"`
 
@@ -357,6 +367,12 @@ func generateHandler(
 
 	input.PrimaryAction = strings.TrimSpace(input.PrimaryAction)
 
+	input.Strengths = limitRunes(strings.TrimSpace(input.Strengths), 400)
+
+	input.ServiceArea = limitRunes(strings.TrimSpace(input.ServiceArea), 120)
+
+	input.OpeningHours = limitRunes(strings.TrimSpace(input.OpeningHours), 120)
+
 	if input.BusinessName == "" ||
 
 		input.Activity == "" ||
@@ -627,6 +643,7 @@ RÈGLES ABSOLUES :
 - ne pas créer de rubrique "Avis clients" si aucun témoignage réel n'est fourni
 - ne pas transformer une rubrique éditoriale comme "Pourquoi nous choisir" en service commercial
 - chaque affirmation factuelle doit être directement issue des informations fournies ; sinon, la formuler comme une possibilité ou l'omettre
+- les informations « fournies par l'entreprise » (ce qui la distingue, zone d'intervention, horaires) sont des faits : mets-les en valeur dans le hero, la présentation, les avantages ou le contact, fidèlement, sans les exagérer ni en tirer de nouvelles promesses
 
 PERSONNALISATION :
 - adapte le vocabulaire au secteur d'activité
@@ -648,6 +665,7 @@ STRUCTURE À PRODUIRE :
 - metaDescription : description SEO claire, idéalement autour de 140 à 160 caractères
 - heroEyebrow : courte ligne de contexte, par exemple activité + ville
 - heroTitle : titre principal spécifique et orienté bénéfice client
+- heroTitleOptions : exactement 3 accroches possibles pour le titre principal, chacune avec un angle différent (bénéfice client, savoir-faire, proximité), la première identique à heroTitle ; mêmes règles que heroTitle
 - heroText : 1 à 2 phrases qui expliquent clairement la proposition de valeur
 - primaryCta : CTA principal court et adapté au métier
 - secondaryCta : CTA secondaire court
@@ -697,6 +715,9 @@ Ton souhaité : %s
 Style de communication : %s
 
 Action principale souhaitée : %s
+Ce qui distingue l'entreprise (fourni par l'entreprise) : %s
+Zone d'intervention (fournie par l'entreprise) : %s
+Horaires (fournis par l'entreprise) : %s
 
 Crée une version complète et réellement personnalisée du contenu du site en utilisant ces préférences sans inventer de faits.`,
 		input.BusinessName,
@@ -709,6 +730,9 @@ Crée une version complète et réellement personnalisée du contenu du site en 
 		tone,
 		communicationStyle,
 		primaryAction,
+		orNotProvided(input.Strengths),
+		orNotProvided(input.ServiceArea),
+		orNotProvided(input.OpeningHours),
 	)
 
 	outputText, err := callOpenAI(
@@ -742,13 +766,32 @@ Crée une version complète et réellement personnalisée du contenu du site en 
 	)
 
 	if err != nil {
-
 		return GeneratedSite{}, err
+	}
 
+	// Contrôle qualité : une seule demande de correction, ciblée sur les
+	// problèmes trouvés ; on garde la version qui en a le moins.
+	if issues := contentQualityIssues(content); len(issues) > 0 {
+		correctedText, err := callOpenAI(
+			ctx,
+			usageID,
+			instructions,
+			qualityCorrectionPrompt(userPrompt, outputText, issues),
+			"siteai_generated_site_v3",
+			generatedContentSchema(),
+		)
+		var corrected AIContent
+		if err == nil {
+			err = json.Unmarshal([]byte(correctedText), &corrected)
+		}
+		if err != nil {
+			log.Println("Correction qualité IA impossible :", err)
+		} else if len(contentQualityIssues(corrected)) < len(issues) {
+			content = corrected
+		}
 	}
 
 	return GeneratedSite{
-
 		BusinessName: input.BusinessName,
 
 		Slug: slugify(input.BusinessName),
@@ -782,8 +825,13 @@ Crée une version complète et réellement personnalisée du contenu du site en 
 		ContactTitle: content.ContactTitle,
 
 		ContactText: content.ContactText,
-	}, nil
 
+		HeroTitleOptions: heroTitleChoices(content.HeroTitle, content.HeroTitleOptions),
+
+		ServiceArea: input.ServiceArea,
+
+		OpeningHours: input.OpeningHours,
+	}, nil
 }
 
 func modifySiteWithAI(
@@ -1261,12 +1309,16 @@ func saveAIUsageMetrics(
 		UPDATE ai_usage
 		SET
 			model = $2,
-			input_tokens = $3,
-			cached_input_tokens = $4,
-			cache_write_tokens = $5,
-			output_tokens = $6,
-			total_tokens = $7,
-			estimated_cost_usd = $8,
+			input_tokens = COALESCE(input_tokens, 0) + $3,
+			cached_input_tokens = COALESCE(cached_input_tokens, 0) + $4,
+			cache_write_tokens = COALESCE(cache_write_tokens, 0) + $5,
+			output_tokens = COALESCE(output_tokens, 0) + $6,
+			total_tokens = COALESCE(total_tokens, 0) + $7,
+			-- Additif : une génération peut faire un second appel (correction qualité).
+			estimated_cost_usd = CASE
+				WHEN $8::double precision IS NULL THEN estimated_cost_usd
+				ELSE COALESCE(estimated_cost_usd, 0) + $8::double precision
+			END,
 			openai_response_id = $9
 		WHERE id = $1;
 		`,
@@ -1504,6 +1556,11 @@ func generatedContentSchema() map[string]any {
 			"heroEyebrow": aiStringSchema("Repère très court combinant naturellement activité et localisation."),
 
 			"heroTitle": aiStringSchema("Titre principal distinctif, concret et orienté vers le besoin prioritaire du client."),
+			"heroTitleOptions": map[string]any{
+				"type":        "array",
+				"description": "Exactement 3 accroches pour le titre principal, chacune avec un angle différent ; la première est identique à heroTitle.",
+				"items":       aiStringSchema("Accroche de 4 à 9 mots, sans deux-points ni point d'exclamation."),
+			},
 
 			"heroText": aiStringSchema("Une ou deux phrases expliquant clairement l'offre, le public et l'intérêt de contacter l'entreprise."),
 
@@ -1535,7 +1592,7 @@ func generatedContentSchema() map[string]any {
 			"heroEyebrow",
 
 			"heroTitle",
-
+			"heroTitleOptions",
 			"heroText",
 
 			"primaryCta",

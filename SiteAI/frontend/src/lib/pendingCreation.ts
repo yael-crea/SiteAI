@@ -21,6 +21,9 @@ export type PendingCreation = {
   templateServices: string[] | null;
   services?: string[];
   tone?: string;
+  strengths?: string;
+  serviceArea?: string;
+  openingHours?: string;
 };
 
 const STORAGE_KEY = "lumio_pending_creation";

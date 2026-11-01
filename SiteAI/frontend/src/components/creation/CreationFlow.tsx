@@ -142,6 +142,10 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
   const [goal, setGoal] = useState<Goal>("quote");
   const [phone, setPhone] = useState("");
   const [bookingUrl, setBookingUrl] = useState("");
+  // Questions facultatives : de vrais faits pour que l'IA personnalise le site sans rien inventer.
+  const [strengths, setStrengths] = useState("");
+  const [serviceArea, setServiceArea] = useState("");
+  const [openingHours, setOpeningHours] = useState("");
   const [templateServices, setTemplateServices] = useState<string[] | null>(null);
   const [services, setServices] = useState<string[]>([]);
   const [servicesActivity, setServicesActivity] = useState("");
@@ -195,6 +199,9 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
         setCity(pending.city);
         setPhone(pending.phone);
         setBookingUrl(pending.bookingUrl);
+        setStrengths(pending.strengths ?? "");
+        setServiceArea(pending.serviceArea ?? "");
+        setOpeningHours(pending.openingHours ?? "");
         if (pending.templateServices) setTemplateServices(pending.templateServices);
         if (pending.services?.length) {
           setServices(pending.services.slice(0, MAX_SERVICES));
@@ -324,7 +331,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
     event?.preventDefault();
     if (!signedIn) {
       // Les réponses sont gardées pendant l'inscription, puis le parcours reprend ici.
-      savePendingCreation({ activity, businessName, city, phone, goal, bookingUrl, templateServices, services, tone });
+      savePendingCreation({ activity, businessName, city, phone, goal, bookingUrl, templateServices, services, tone, strengths, serviceArea, openingHours });
       router.push("/auth?compte=nouveau");
       return;
     }
@@ -355,6 +362,9 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
           tone: selectedTone.tone,
           communicationStyle: selectedTone.style,
           primaryAction: selectedGoal.action,
+          strengths: strengths.trim(),
+          serviceArea: serviceArea.trim(),
+          openingHours: openingHours.trim(),
         }),
       });
       if (!response.ok) {
@@ -407,6 +417,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
         body: JSON.stringify({
           site: {
             ...generated,
+            heroTitleOptions: undefined,
             designSettings: designFor(style),
           },
           activity: activity.trim(),
@@ -551,6 +562,40 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
               />
             </label>
           </div>
+          <details className={styles.more} open={Boolean(strengths || serviceArea || openingHours)}>
+            <summary>
+              Pour un site plus personnel <small>facultatif</small>
+            </summary>
+            <label className={styles.field}>
+              <span>Ce qui te distingue</span>
+              <textarea
+                value={strengths}
+                onChange={(event) => setStrengths(event.target.value)}
+                placeholder="Ex. : artisan depuis 2009, devis gratuit sous 48 h, spécialiste des salles de bain pour personnes âgées…"
+                maxLength={400}
+              />
+            </label>
+            <div className={styles.fieldGrid}>
+              <label className={styles.field}>
+                <span>Zone d&apos;intervention</span>
+                <input
+                  value={serviceArea}
+                  onChange={(event) => setServiceArea(event.target.value)}
+                  placeholder="Ex. : Montpellier et 30 km autour"
+                  maxLength={120}
+                />
+              </label>
+              <label className={styles.field}>
+                <span>Horaires</span>
+                <input
+                  value={openingHours}
+                  onChange={(event) => setOpeningHours(event.target.value)}
+                  placeholder="Ex. : du lundi au samedi, 8 h – 19 h"
+                  maxLength={120}
+                />
+              </label>
+            </div>
+          </details>
           {error && <p className={styles.error} role="alert">{error}</p>}
           <div className={styles.actions}>
             <button type="button" className={styles.ghost} onClick={back}>
@@ -746,6 +791,26 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
             </div>
           </div>
           {error && <p className={styles.error} role="alert">{error}</p>}
+          {(generated.heroTitleOptions?.length ?? 0) > 1 && (
+            <div className={styles.hooks}>
+              <p>Ton accroche</p>
+              <div role="radiogroup" aria-label="Accroches proposées">
+                {generated.heroTitleOptions!.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    role="radio"
+                    aria-checked={generated.heroTitle === option}
+                    className={`${styles.hook} ${generated.heroTitle === option ? styles.hookActive : ""}`}
+                    onClick={() => setGenerated({ ...generated, heroTitle: option })}
+                    disabled={saving}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className={styles.styleGrid} role="radiogroup" aria-label="Styles proposés">
             {styleChoices.map((id) => {
               const style = getDesignStyle(id);
