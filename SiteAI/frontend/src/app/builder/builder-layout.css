@@ -55,6 +55,34 @@
   color: var(--ui-label);
 }
 
+/* Outils d'édition visibles dans l'en-tête (écrans larges) */
+[data-tool-toggle] {
+  min-height: 36px;
+  padding: 0 0.85rem;
+  border: 1px solid var(--ui-separator-strong);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--ui-bg-elevated-2);
+  color: var(--ui-label-2);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+}
+
+[data-tool-toggle]:hover:not(:disabled) {
+  border-color: rgb(139 92 246);
+  color: var(--ui-label);
+}
+
+[data-tool-toggle][aria-pressed="true"] {
+  border-color: rgb(167 139 250);
+  background: rgb(139 92 246 / 0.18);
+  color: rgb(237 233 254);
+}
+
 [data-account-menu] > summary {
   list-style: none;
   cursor: pointer;
