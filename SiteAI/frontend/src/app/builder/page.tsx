@@ -3008,6 +3008,26 @@ export default function Home() {
               >
                 ↷
               </button>
+              <span className="ml-1 hidden items-center gap-2 lg:flex">
+                <button
+                  type="button"
+                  aria-pressed={previewEditing}
+                  onClick={() => setPreviewEditing((value) => !value)}
+                  title="Cliquer sur un texte ou une image de l’aperçu pour le modifier"
+                  data-tool-toggle
+                >
+                  <span aria-hidden="true">✎</span> Édition directe
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={advancedMode}
+                  onClick={() => setAdvancedMode((value) => !value)}
+                  title="Afficher tous les réglages du design et du contenu"
+                  data-tool-toggle
+                >
+                  <span aria-hidden="true">⚙</span> Réglages avancés
+                </button>
+              </span>
             </div>
           )}
 
@@ -3024,7 +3044,12 @@ export default function Home() {
               onRedo={draft.redo}
               onTogglePreviewEditing={() => setPreviewEditing((value) => !value)}
               align="right"
-              label="Plus"
+              label={
+                <>
+                  <span className="lg:hidden">Outils</span>
+                  <span className="hidden lg:inline">Versions</span>
+                </>
+              }
             >
               <AccountVersions
                 siteId={savedSiteID}

@@ -14,7 +14,7 @@ type BuilderToolsMenuProps = {
   onRedo: () => void;
   onTogglePreviewEditing: () => void;
   align?: "left" | "right";
-  label?: string;
+  label?: ReactNode;
   children?: ReactNode;
 };
 
@@ -75,7 +75,8 @@ export default function BuilderToolsMenu({
       >
         <div className="flex items-center justify-between gap-3 px-1 pb-2">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-            Outils d&apos;édition
+            <span className="lg:hidden">Outils d&apos;édition</span>
+            <span className="hidden lg:inline">Versions</span>
           </p>
           <button
             type="button"
@@ -86,7 +87,8 @@ export default function BuilderToolsMenu({
             × Fermer
           </button>
         </div>
-        <div className="grid gap-2">
+        {/* À partir de 1024 px, ces outils sont dans l'en-tête : le menu ne garde que les versions. */}
+        <div className="grid gap-2 lg:hidden">
           <button
             type="button"
             aria-pressed={advancedMode}
@@ -123,12 +125,12 @@ export default function BuilderToolsMenu({
               {previewEditing ? "✓ Édition directe active" : "Édition directe"}
             </button>
           )}
-          {children && (
-            <div className="grid gap-2 border-t border-slate-800 pt-2">
-              {children}
-            </div>
-          )}
         </div>
+        {children && (
+          <div className="mt-2 grid gap-2 border-t border-slate-800 pt-2 lg:mt-0 lg:border-t-0 lg:pt-0">
+            {children}
+          </div>
+        )}
       </div>
     </details>
   );
