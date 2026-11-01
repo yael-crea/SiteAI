@@ -156,6 +156,20 @@ type GeneratedSite struct {
 	ClientEmail string `json:"clientEmail"`
 
 	SocialLinks map[string]string `json:"socialLinks,omitempty"`
+
+	// Mentions légales du site, affichées en bas de page (obligatoires pour
+	// un site professionnel en France).
+	Legal *SiteLegal `json:"legal,omitempty"`
+}
+
+type SiteLegal struct {
+	CompanyName string `json:"companyName,omitempty"`
+	LegalForm   string `json:"legalForm,omitempty"`
+	Address     string `json:"address,omitempty"`
+	Siren       string `json:"siren,omitempty"`
+	VATNumber   string `json:"vatNumber,omitempty"`
+	Publisher   string `json:"publisher,omitempty"`
+	Email       string `json:"email,omitempty"`
 }
 
 type SaveSiteInput struct {

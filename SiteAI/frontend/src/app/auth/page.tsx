@@ -20,7 +20,7 @@ function afterSignInPath() {
 
 type AuthMode = "login" | "signup" | "forgot";
 
-const TERMS_VERSION = "2026-10-20";
+const TERMS_VERSION = "2026-11-01";
 const PRODUCTION_AUTH_ORIGIN = "https://lumio.business";
 
 function getAuthRedirectUrl(path: string) {
@@ -142,6 +142,13 @@ export default function AuthPage() {
   async function handleGoogleSignIn() {
     setError("");
     setMessage("");
+    // L'inscription avec Google demande la même déclaration que par e-mail.
+    if (mode === "signup" && !acceptedTerms) {
+      setError(
+        "Coche d’abord la case : tu certifies avoir 18 ans ou plus et acceptes les CGU.",
+      );
+      return;
+    }
     setLoading(true);
 
     try {
@@ -194,7 +201,7 @@ export default function AuthPage() {
 
     if (mode === "signup" && !acceptedTerms) {
       setError(
-        "Tu dois accepter les CGU et prendre connaissance de la politique de confidentialité.",
+        "Coche la case pour certifier avoir 18 ans ou plus, accepter les CGU et prendre connaissance de la politique de confidentialité.",
       );
       return;
     }
@@ -418,6 +425,17 @@ export default function AuthPage() {
                   <span>{loading ? "Connexion…" : "Continuer avec Google"}</span>
                   <b aria-hidden="true">→</b>
                 </button>
+                {mode === "login" && (
+                  <p className={styles.googleNotice}>
+                    Un compte est créé à ta première connexion avec Google : en
+                    continuant, tu certifies avoir 18 ans ou plus et agir pour
+                    ton activité professionnelle, et tu acceptes les{" "}
+                    <Link href="/cgu" target="_blank" rel="noopener noreferrer">
+                      CGU
+                    </Link>
+                    .
+                  </p>
+                )}
 
                 <div className={styles.divider}>
                   <span>ou avec ton e-mail</span>
@@ -480,7 +498,8 @@ export default function AuthPage() {
                     required
                   />
                   <span>
-                    J’accepte les{" "}
+                    Je certifie avoir 18 ans ou plus et agir pour mon activité
+                    professionnelle. J’accepte les{" "}
                     <Link href="/cgu" target="_blank" rel="noopener noreferrer">
                       CGU
                     </Link>{" "}

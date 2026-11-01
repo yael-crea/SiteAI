@@ -1,4 +1,6 @@
 import { safeBookingUrl } from "@/lib/siteGoal";
+import type { SiteLegal } from "@/lib/builderTypes";
+import { legalNoticeMissingFields } from "@/lib/siteLegal";
 
 export type Testimonial = {
   name: string;
@@ -25,6 +27,7 @@ export type GrowthSite = {
   openingHours?: string;
   clientName?: string;
   clientEmail?: string;
+  legal?: SiteLegal;
 };
 
 export type HealthCheck = {
@@ -43,6 +46,7 @@ export function getSiteHealth(site: GrowthSite) {
   const phoneReady = /^[+\d\s().-]+$/.test(phone) && digits.length >= 7 && digits.length <= 15;
   const completeText = (value?: string) => Boolean(value?.trim()) && !/lorem ipsum|à compléter|a completer|votre texte ici|texte à remplacer/i.test(value ?? "");
   const checks: HealthCheck[] = [
+    {id: "legal", label: "Mentions légales (obligatoires)", ready: legalNoticeMissingFields(site).length === 0, priority: true, advice: `Complète : ${legalNoticeMissingFields(site).join(", ")}. Un site professionnel doit indiquer qui l’édite ; les mentions s’affichent en bas du site.`},
     {id: "identity", label: "Nom de l’entreprise", ready: completeText(site.businessName), priority: true, advice: "Renseigne le vrai nom de ton entreprise."},
     {id: "phone", label: "Téléphone de contact", ready: phoneReady, priority: site.siteGoal === "calls", advice: phone ? "Vérifie le format : entre 7 et 15 chiffres, avec éventuellement +, espaces, points ou tirets. La disponibilité du numéro n’est pas vérifiée." : "Ajoute ton téléphone pour permettre aux visiteurs de t’appeler."},
     {id: "intro", label: "Présentation du site", ready: completeText(site.heroTitle) && completeText(site.heroText), priority: true, advice: "Complète le titre et la présentation ; remplace les textes provisoires."},
