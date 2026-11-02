@@ -15,6 +15,8 @@ export type BuilderDraftOptions<T> = {
   /** Enable only after the server value and storage key refer to the same site. */
   enabled: boolean;
   validate: (value: unknown) => value is T;
+  /** Last server save of this site: an older local draft is obsolete and removed. */
+  staleBefore?: string | null;
 };
 
 type History = { past: string[]; present: string; future: string[]; lastChangeAt: number | null };
@@ -82,7 +84,13 @@ function serialize(value: unknown): string {
 }
 
 /** Browser-only drafts. Saving a draft never publishes or changes the server. */
-export function useBuilderDraft<T>({ storageKey, value, onRestore, enabled, validate }: BuilderDraftOptions<T>) {
+export function isDraftOlderThan(savedAt: string, staleBefore: string | null | undefined): boolean {
+  if (!staleBefore) return false;
+  const serverTime = Date.parse(staleBefore);
+  return Number.isFinite(serverTime) && Date.parse(savedAt) <= serverTime;
+}
+
+export function useBuilderDraft<T>({ storageKey, value, onRestore, enabled, validate, staleBefore }: BuilderDraftOptions<T>) {
   const serialized = useMemo(() => {
     try {
       return serialize(value);
@@ -91,7 +99,7 @@ export function useBuilderDraft<T>({ storageKey, value, onRestore, enabled, vali
     }
   }, [value]);
   const sessionRef = useRef<DraftSession<T> | null>(null);
-  const callbacksRef = useRef({ onRestore, validate });
+  const callbacksRef = useRef({ onRestore, validate, staleBefore });
   const [status, setStatus] = useState<DraftStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -99,8 +107,8 @@ export function useBuilderDraft<T>({ storageKey, value, onRestore, enabled, vali
   const [availability, setAvailability] = useState({ canUndo: false, canRedo: false });
 
   useEffect(() => {
-    callbacksRef.current = { onRestore, validate };
-  }, [onRestore, validate]);
+    callbacksRef.current = { onRestore, validate, staleBefore };
+  }, [onRestore, validate, staleBefore]);
 
   const updateAvailability = useCallback((session: DraftSession<T>) => {
     setAvailability({ canUndo: session.history.past.length > 0, canRedo: session.history.future.length > 0 });
@@ -181,6 +189,9 @@ export function useBuilderDraft<T>({ storageKey, value, onRestore, enabled, vali
         if (!draft) {
           setStatus("error");
           setError("Le brouillon enregistré est illisible. Vos prochaines modifications créeront un nouveau brouillon.");
+        } else if (isDraftOlderThan(draft.savedAt, callbacksRef.current.staleBefore)) {
+          // The account already holds a newer version: never offer to go back to this one.
+          window.localStorage.removeItem(storageKey);
         } else if (serialize(draft.value) !== serialized) {
           session.candidate = draft;
           setRestoredDraft(draft);

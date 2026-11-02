@@ -834,6 +834,8 @@ export default function Home() {
   const [savedSiteID, setSavedSiteID] = useState<number | null>(null);
 
   const [draftRevision, setDraftRevision] = useState<number | null>(null);
+  // Date de la dernière version du site enregistrée dans le compte.
+  const [serverUpdatedAt, setServerUpdatedAt] = useState<string | null>(null);
   const [restoringVersion, setRestoringVersion] = useState(false);
   const [saveConflict, setSaveConflict] = useState(false);
 
@@ -904,6 +906,7 @@ export default function Home() {
     enabled: draftReady && !openingSite,
     validate: isBuilderSnapshot,
     onRestore: restoreSnapshot,
+    staleBefore: savedSiteID === null ? null : serverUpdatedAt,
   });
 
   const versions = useBuilderVersions<BuilderSnapshot>(
@@ -964,6 +967,7 @@ export default function Home() {
       if (!response.ok) throw new Error(await response.text());
       const restored: SavedSite = await response.json();
       setDraftRevision(restored.draftRevision);
+      setServerUpdatedAt(restored.updatedAt);
       restoreSnapshot(savedSnapshot(restored));
       await loadSavedSites();
       setSaveMessage(
@@ -1191,7 +1195,11 @@ export default function Home() {
           return;
         }
 
-        const siteToOpen = sessionStorage.getItem("siteai_site_to_open");
+        // Le tableau de bord passe le site par sessionStorage ; après un
+        // rechargement, l'identifiant gardé dans l'URL prend le relais.
+        const siteToOpen =
+          sessionStorage.getItem("siteai_site_to_open") ??
+          new URLSearchParams(window.location.search).get("site");
 
         if (siteToOpen) {
           sessionStorage.removeItem("siteai_site_to_open");
@@ -1219,6 +1227,17 @@ export default function Home() {
       active = false;
     };
   }, [router]);
+
+  // Garde l'identifiant du site ouvert dans l'URL pour qu'un rechargement le rouvre.
+  useEffect(() => {
+    if (!draftReady) return;
+    const url = new URL(window.location.href);
+    const nextSite = savedSiteID === null ? null : String(savedSiteID);
+    if (url.searchParams.get("site") === nextSite) return;
+    if (nextSite === null) url.searchParams.delete("site");
+    else url.searchParams.set("site", nextSite);
+    window.history.replaceState(null, "", url);
+  }, [draftReady, savedSiteID]);
 
   async function getAccessToken() {
     const { data, error: sessionError } = await supabase.auth.getSession();
@@ -1552,8 +1571,10 @@ export default function Home() {
         "Brouillon enregistré",
         `siteai:versions:v1:${draftUserId}:${saved.id}`,
       );
-      if (savedSiteID === null) draft.clearDraft();
+      // Le compte détient désormais cette version : le brouillon local est obsolète.
+      draft.clearDraft();
       setDraftRevision(saved.draftRevision);
+      setServerUpdatedAt(saved.updatedAt);
       setSaveConflict(false);
       setSavedSiteID(saved.id);
 
@@ -1748,6 +1769,7 @@ export default function Home() {
       const saved: SavedSite = await response.json();
 
       setDraftRevision(saved.draftRevision);
+      setServerUpdatedAt(saved.updatedAt);
       setSaveConflict(false);
       setSavedSiteID(saved.id);
 
@@ -1872,6 +1894,7 @@ export default function Home() {
 
     setSavedSiteID(null);
     setDraftRevision(null);
+    setServerUpdatedAt(null);
     setSite(null);
     setMobileStep(0);
     setDesktopPanel(null);
@@ -2829,6 +2852,17 @@ export default function Home() {
           },
         )),
   );
+
+  // Le navigateur demande confirmation avant de quitter tant que le compte n'a pas la dernière version.
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+    return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+  }, [hasUnsavedChanges]);
 
   // Panneau latéral : trois onglets (Contenu, Style, Publier) au lieu de cinq étapes.
   // « apercu » masque le panneau pour laisser toute la place au site.
