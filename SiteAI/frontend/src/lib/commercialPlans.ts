@@ -1,6 +1,6 @@
 export type PlanName = "essentiel" | "pro" | "agence";
 
-export const CGV_VERSION = "2026-11-01";
+export const CGV_VERSION = "2026-11-02";
 export const priceSuffix = "/ mois";
 export const priceTaxText =
   "Prix mensuels. TVA non applicable, article 293 B du Code général des impôts : le prix affiché est le prix payé.";

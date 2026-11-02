@@ -26,13 +26,8 @@ export default function LegalPage() {
           </p>
           <h1 className="mt-4 text-4xl font-black md:text-5xl">Conditions générales d’utilisation</h1>
           <p className="mt-5 max-w-3xl leading-7 text-slate-400">
-            Les présentes CGU constituent une base provisoire pour définir les règles d’utilisation de Lumio. Elles devront être revues et complétées avant une commercialisation.
+            Les présentes conditions générales d’utilisation (CGU) fixent les règles d’accès et d’utilisation de Lumio. Dernière mise à jour : 2 novembre 2026.
           </p>
-
-          <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : ces conditions devront être relues et
-            finalisées avant la commercialisation de Lumio.
-          </div>
         </div>
 
         <div className="space-y-5">
@@ -136,9 +131,13 @@ Lumio ne présente un site client comme référence commerciale qu’avec l’ac
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 className="text-xl font-black">11. Signalement des contenus illicites</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
-              Lumio héberge les sites publiés par ses utilisateurs. Toute personne peut signaler un contenu qu’elle estime illicite en écrivant à support@lumio.business, avec l’objet « Signalement », en précisant : l’adresse exacte de la page, la description du contenu, les raisons pour lesquelles il est illicite et ses coordonnées. Cette adresse est aussi le point de contact de Lumio pour les autorités.
+              Lumio héberge les sites publiés par ses utilisateurs. Toute personne peut signaler un contenu qu’elle estime illicite en écrivant à support@lumio.business, avec l’objet « Signalement », en précisant : l’adresse exacte de la page, la description du contenu, les raisons pour lesquelles il est illicite et ses coordonnées (nom et adresse e-mail).
 
-Lumio examine chaque signalement avec diligence. Il peut retirer ou rendre inaccessible un contenu manifestement illicite, informer l’utilisateur concerné de la décision et de ses motifs, et lui permettre de la contester par e-mail. Un signalement abusif ou de mauvaise foi peut engager la responsabilité de son auteur. En cas de manquements répétés, Lumio peut fermer le compte concerné.
+Cette adresse est aussi le point de contact de Lumio pour les utilisateurs et pour les autorités des États membres de l’Union européenne. Les échanges peuvent avoir lieu en français ou en anglais.
+Lumio accuse réception de chaque signalement, l’examine avec diligence, de manière objective, et informe son auteur de la décision prise. Les signalements sont examinés par une personne : Lumio n’utilise pas d’outil automatisé de modération des contenus.
+Lumio peut retirer ou rendre inaccessible un contenu illicite ou contraire aux présentes CGU. Il en informe l’utilisateur concerné par e-mail en précisant la mesure prise, les faits, le fondement légal ou contractuel de la décision et les voies de recours : l’utilisateur peut la contester en répondant à cet e-mail, et conserve la possibilité de saisir le juge.
+Lorsqu’un contenu laisse soupçonner une infraction pénale menaçant la vie ou la sécurité d’une ou plusieurs personnes, Lumio en informe sans délai les autorités compétentes.
+Un signalement abusif ou de mauvaise foi peut engager la responsabilité de son auteur. En cas de manquements répétés, Lumio peut fermer le compte concerné.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
@@ -151,7 +150,7 @@ Lumio examine chaque signalement avec diligence. Il peut retirer ou rendre inacc
             <h2 className="text-xl font-black">13. Droit applicable et litiges</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
               Droit applicable : droit français.
-Règlement des litiges : En cas de litige, les parties recherchent d’abord une solution amiable. À défaut, le litige est porté devant les tribunaux compétents ; lorsque l’utilisateur est un professionnel, compétence est attribuée aux tribunaux du ressort de Montpellier.
+Règlement des litiges : En cas de litige, les parties recherchent d’abord une solution amiable. À défaut, le litige est porté devant les tribunaux compétents. LORSQUE L’UTILISATEUR A LA QUALITÉ DE COMMERÇANT, COMPÉTENCE EXCLUSIVE EST ATTRIBUÉE AUX TRIBUNAUX DU RESSORT DE MONTPELLIER.
             </div>
           </section>
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">

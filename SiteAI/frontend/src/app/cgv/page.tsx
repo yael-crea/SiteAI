@@ -33,17 +33,12 @@ export default function CGVPage() {
           </h1>
 
           <p className="mt-5 max-w-3xl leading-7 text-slate-400">
-            Version provisoire des conditions commerciales de Lumio.
+            Conditions applicables aux abonnements payants de Lumio, souscrits par des professionnels.
           </p>
 
           <p className="mt-3 text-sm font-bold text-blue-300">
             Version des CGV : {CGV_VERSION}
           </p>
-
-          <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : ces conditions devront être relues et
-            finalisées avant la commercialisation de Lumio.
-          </div>
         </div>
 
         <div className="space-y-5">
@@ -399,8 +394,11 @@ Engagements du client : disposer d’une base légale pour les données collect�
 
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
               {`Droit applicable : droit français.
-Juridiction compétente : En cas de litige, les parties recherchent d’abord une solution amiable. À défaut, compétence est attribuée aux tribunaux du ressort de Montpellier.`}
+Juridiction compétente : En cas de litige, les parties recherchent d’abord une solution amiable. À défaut, le litige est porté devant les tribunaux compétents.`}
             </div>
+            <p className="mt-3 text-sm font-black uppercase leading-7 text-slate-200">
+              Lorsque le client a la qualité de commerçant, compétence exclusive est attribuée aux tribunaux du ressort de Montpellier.
+            </p>
           </section>
 
           <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
