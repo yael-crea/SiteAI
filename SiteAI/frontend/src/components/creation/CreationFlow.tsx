@@ -453,6 +453,11 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
     };
   }
 
+  // Sans ce repère, le tableau de bord renvoie un compte sans site vers le questionnaire : l'utilisateur tournerait en rond.
+  function leaveCreation() {
+    if (signedIn) sessionStorage.setItem("siteai_onboarding_skipped", "true");
+  }
+
   function back() {
     setError("");
     if (step === "business") setStep("activity");
@@ -476,7 +481,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
   return (
     <main className={styles.page}>
       <header className={styles.topbar}>
-        <Link href={signedIn ? "/dashboard" : "/"} className={styles.logo} aria-label={signedIn ? "Lumio, tableau de bord" : "Lumio, accueil"}>
+        <Link href={signedIn ? "/dashboard" : "/"} onClick={leaveCreation} className={styles.logo} aria-label={signedIn ? "Lumio, tableau de bord" : "Lumio, accueil"}>
           lumio<span>.</span>
         </Link>
         {step !== "generating" && step !== "style" && (
@@ -486,7 +491,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
             ))}
           </div>
         )}
-        <Link href={signedIn ? "/dashboard" : "/"} className={styles.quit}>
+        <Link href={signedIn ? "/dashboard" : "/"} onClick={leaveCreation} className={styles.quit}>
           Quitter
         </Link>
       </header>
