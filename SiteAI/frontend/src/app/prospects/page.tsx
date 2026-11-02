@@ -7,7 +7,7 @@ import { notificationLabel } from "@/lib/actionErrors";
 
 
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -382,6 +382,9 @@ export default function ProspectsPage() {
 
 
 
+  // Fonctions appelées par l'effet de chargement initial : leur dernière version est utilisée sans relancer l'effet.
+  const loadLeadsEvent = useEffectEvent(loadLeads);
+
   useEffect(() => {
 
     let active = true;
@@ -456,7 +459,7 @@ export default function ProspectsPage() {
 
 
 
-        await loadLeads();
+        await loadLeadsEvent();
 
       } catch (err) {
 

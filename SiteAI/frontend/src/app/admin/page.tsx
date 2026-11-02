@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import "../app-theme.css";
@@ -171,10 +171,13 @@ export default function AdminPage() {
     }
   }
 
+  // Fonctions appelées par l'effet de chargement initial : leur dernière version est utilisée sans relancer l'effet.
+  const loadStatsEvent = useEffectEvent(loadStats);
+
   useEffect(() => {
     // This effect initializes the remote dashboard state on mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadStats();
+    loadStatsEvent();
   }, []);
 
   if (loading) {
