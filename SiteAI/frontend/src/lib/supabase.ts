@@ -1,5 +1,6 @@
 import { AuthClient } from "@supabase/auth-js";
 import { StorageClient } from "@supabase/storage-js";
+import { clearLocalSiteData } from "@/lib/localSiteData";
 
 /*
  * Client Supabase allégé : Lumio n'utilise que la connexion (auth) et le
@@ -52,6 +53,18 @@ const auth = new AuthClient({
   flowType: "implicit",
   hasCustomAuthorizationHeader: false,
 });
+
+// Toutes les déconnexions (bouton, session expirée, autre onglet) effacent les brouillons du navigateur.
+if (typeof window !== "undefined") {
+  auth.onAuthStateChange((event) => {
+    if (event !== "SIGNED_OUT") return;
+    try {
+      clearLocalSiteData(window.localStorage, window.sessionStorage);
+    } catch {
+      // Stockage indisponible : rien n'y a été gardé.
+    }
+  });
+}
 
 // Requêtes de stockage : jeton de la session en cours, sinon la clé publique (comme supabase-js).
 async function fetchWithAuth(input: RequestInfo | URL, init?: RequestInit) {
