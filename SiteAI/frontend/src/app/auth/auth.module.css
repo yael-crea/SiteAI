@@ -730,7 +730,7 @@
     font-size: 15px;
   }
 
-  /* Sur téléphone, le formulaire doit apparaître sans défiler : l'accroche se résume au titre. */
+  /* Sur téléphone, l'accroche reste mais en version compacte : le formulaire remonte presque en haut de l'écran. */
   .layout {
     gap: 20px;
   }
@@ -739,9 +739,16 @@
     font-size: clamp(30px, 9vw, 38px);
   }
 
-  .storyLead,
+  .storyLead {
+    margin-top: 12px;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
   .reassurance {
-    display: none;
+    margin-top: 12px;
+    gap: 4px 12px;
+    font-size: 12px;
   }
 
   .formCard {
