@@ -250,8 +250,14 @@ export default function AuthPage() {
         return;
       }
 
+      // Supabase répond pareil si l'adresse est déjà inscrite (pas de fuite d'information) :
+      // le message couvre les deux cas, et le formulaire repasse en connexion pour éviter un second envoi.
+      setPassword("");
+      setPasswordConfirm("");
+      setAcceptedTerms(false);
+      setMode("login");
       setMessage(
-        "Compte créé. Vérifie ta boîte mail puis clique sur le lien de confirmation. Tu seras ensuite dirigé vers la création de ton premier site.",
+        "Vérifie ta boîte mail : si cette adresse n’a pas encore de compte, tu as reçu un lien de confirmation qui t’amène à la création de ton premier site. Déjà inscrit ? Connecte-toi ci-dessus ou utilise « Mot de passe oublié ? ».",
       );
     } catch (submitError) {
       console.error(submitError);

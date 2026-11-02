@@ -30,6 +30,7 @@ export function readableBillingStatus(status: string) {
     case "incomplete_expired":
       return "Expiré";
     default:
-      return status || "Inactif";
+      // « inactive » ou statut inconnu : jamais de valeur technique anglaise à l'écran.
+      return "Inactif";
   }
 }

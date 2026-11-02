@@ -15,6 +15,7 @@ import { plans, CGV_VERSION, freePreviewText, domainText, aiUsageText, cancellat
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { readReferralCode } from "@/lib/referral";
+import { readableBillingStatus, readablePlan } from "@/lib/billingLabels";
 
 
 type BillingStatus = {
@@ -55,29 +56,6 @@ function formatDate(
       year: "numeric",
     },
   );
-}
-
-function readableStatus(
-  status: string,
-) {
-  switch (status) {
-    case "active":
-      return "Actif";
-    case "trialing":
-      return "Période d’essai";
-    case "past_due":
-      return "Paiement en retard";
-    case "unpaid":
-      return "Impayé";
-    case "canceled":
-      return "Résilié";
-    case "incomplete":
-      return "Paiement incomplet";
-    case "incomplete_expired":
-      return "Expiré";
-    default:
-      return status || "Inactif";
-  }
 }
 
 export default function PricingPage() {
@@ -649,18 +627,15 @@ export default function PricingPage() {
                   {billing?.isOwner ? "Ton accès propriétaire" : "Ton abonnement"}
                 </p>
 
-                <p className="mt-2 text-xl font-black capitalize">
-                  {billing?.isOwner ? "Propriétaire · sans abonnement" : currentPlan ===
-                  "free"
-                    ? "Aucun abonnement"
-                    : currentPlan}
+                <p className="mt-2 text-xl font-black">
+                  {billing?.isOwner ? "Propriétaire · sans abonnement" : readablePlan(currentPlan)}
                 </p>
 
                 {billing && (
                   <p className="mt-2 text-sm text-slate-400">
                     Statut :{" "}
                     <span className="font-semibold text-white">
-                      {readableStatus(
+                      {readableBillingStatus(
                         billing.status,
                       )}
                     </span>
