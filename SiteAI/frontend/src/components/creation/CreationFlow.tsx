@@ -10,7 +10,15 @@ import { designStyles, getDesignStyle, type DesignStyle } from "@/lib/designStyl
 import { clearExampleTemplate, readExampleTemplate } from "@/lib/exampleTemplates";
 import { tradeHeroLayout, withTradePhotos } from "@/lib/tradePhotos";
 import { tradeMotion } from "@/lib/siteMotion";
-import { clearPendingCreation, readPendingCreation, savePendingCreation } from "@/lib/pendingCreation";
+import {
+  clearCreationProgress,
+  clearPendingCreation,
+  readCreationProgress,
+  readPendingCreation,
+  saveCreationProgress,
+  savePendingCreation,
+  type PendingCreation,
+} from "@/lib/pendingCreation";
 import type { SiteGoal } from "@/lib/siteGoal";
 import type { GeneratedSite } from "@/lib/builderTypes";
 import styles from "./CreationFlow.module.css";
@@ -161,6 +169,22 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
 
   useEffect(() => {
     let active = true;
+    function applyAnswers(answers: PendingCreation) {
+      setActivity(answers.activity);
+      setBusinessName(answers.businessName);
+      setCity(answers.city);
+      setPhone(answers.phone);
+      setBookingUrl(answers.bookingUrl);
+      setStrengths(answers.strengths ?? "");
+      setServiceArea(answers.serviceArea ?? "");
+      setOpeningHours(answers.openingHours ?? "");
+      if (answers.templateServices) setTemplateServices(answers.templateServices);
+      if (answers.services?.length) setServices(answers.services.slice(0, MAX_SERVICES));
+      const savedTone = tones.find((item) => item.id === answers.tone);
+      if (savedTone) setTone(savedTone.id);
+      const savedGoal = goals.find((item) => item.id === answers.goal);
+      if (savedGoal) setGoal(savedGoal.id);
+    }
     async function initialize() {
       const { data } = await supabase.auth.getSession();
       const pending = data.session ? readPendingCreation() : null;
@@ -193,26 +217,17 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
       const requestedTrade = new URLSearchParams(window.location.search).get("metier");
       const trade = activityExamples.find((item) => item.label === requestedTrade);
       if (!template && trade && active) setActivity(trade.label);
+      const progress = pending ? null : readCreationProgress();
       if (pending && active) {
-        setActivity(pending.activity);
-        setBusinessName(pending.businessName);
-        setCity(pending.city);
-        setPhone(pending.phone);
-        setBookingUrl(pending.bookingUrl);
-        setStrengths(pending.strengths ?? "");
-        setServiceArea(pending.serviceArea ?? "");
-        setOpeningHours(pending.openingHours ?? "");
-        if (pending.templateServices) setTemplateServices(pending.templateServices);
-        if (pending.services?.length) {
-          setServices(pending.services.slice(0, MAX_SERVICES));
-          setServicesActivity(pending.activity);
-        }
-        const savedTone = tones.find((item) => item.id === pending.tone);
-        if (savedTone) setTone(savedTone.id);
-        const savedGoal = goals.find((item) => item.id === pending.goal);
-        if (savedGoal) setGoal(savedGoal.id);
+        applyAnswers(pending);
+        if (pending.services?.length) setServicesActivity(pending.activity);
         setResumed(true);
         setStep("goal");
+      } else if (progress && active) {
+        // Rechargement en plein questionnaire : on reprend à la même question.
+        applyAnswers(progress);
+        setServicesActivity(progress.servicesActivity);
+        setStep(progress.step);
       }
       if (active) setChecking(false);
     }
@@ -221,6 +236,27 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
       active = false;
     };
   }, [firstSite, router]);
+
+  useEffect(() => {
+    if (checking) return;
+    if (step === "generating" || step === "style") return;
+    saveCreationProgress({
+      step,
+      servicesActivity,
+      activity,
+      businessName,
+      city,
+      phone,
+      goal,
+      bookingUrl,
+      templateServices,
+      services,
+      tone,
+      strengths,
+      serviceArea,
+      openingHours,
+    });
+  }, [checking, step, servicesActivity, activity, businessName, city, phone, goal, bookingUrl, templateServices, services, tone, strengths, serviceArea, openingHours]);
 
   useEffect(() => {
     if (checking) return;
@@ -433,6 +469,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
       const saved: { id: number } = await response.json();
       clearExampleTemplate();
       clearPendingCreation();
+      clearCreationProgress();
       sessionStorage.setItem("siteai_onboarding_skipped", "true");
       sessionStorage.setItem("siteai_site_to_open", String(saved.id));
       router.push("/builder");
