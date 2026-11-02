@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { authErrorMessage } from "@/lib/authErrors";
 import "../app-theme.css";
 
 export default function ResetPasswordPage() {
@@ -116,9 +117,7 @@ export default function ResetPasswordPage() {
       console.error(err);
 
       setError(
-        err instanceof Error
-          ? err.message
-          : "Impossible de modifier le mot de passe.",
+        authErrorMessage(err, "Impossible de modifier le mot de passe."),
       );
     } finally {
       setLoading(false);

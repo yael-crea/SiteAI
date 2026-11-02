@@ -9,6 +9,7 @@ import {
   rememberExampleTemplate,
 } from "@/lib/exampleTemplates";
 import { hasPendingCreation } from "@/lib/pendingCreation";
+import { authErrorMessage, isEmailNotConfirmed } from "@/lib/authErrors";
 import styles from "./auth.module.css";
 
 // Après connexion : reprendre une création commencée sans compte, sinon l'éditeur (modèle choisi) ou le tableau de bord.
@@ -55,6 +56,8 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [pendingNotice, setPendingNotice] = useState(false);
+  // Adresse dont la connexion a échoué faute de confirmation : on propose le renvoi du lien.
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState("");
 
   useEffect(() => {
     const templateID = new URLSearchParams(window.location.search).get("modele");
@@ -96,6 +99,7 @@ export default function AuthPage() {
     setMode(nextMode);
     setError("");
     setMessage("");
+    setUnconfirmedEmail("");
     setPassword("");
     setPasswordConfirm("");
     setAcceptedTerms(false);
@@ -130,9 +134,10 @@ export default function AuthPage() {
     } catch (resetError) {
       console.error(resetError);
       setError(
-        resetError instanceof Error
-          ? resetError.message
-          : "Impossible d'envoyer l'e-mail de réinitialisation.",
+        authErrorMessage(
+          resetError,
+          "Impossible d'envoyer l'e-mail de réinitialisation.",
+        ),
       );
     } finally {
       setLoading(false);
@@ -163,9 +168,10 @@ export default function AuthPage() {
     } catch (googleError) {
       console.error(googleError);
       setError(
-        googleError instanceof Error
-          ? googleError.message
-          : "Impossible de se connecter avec Google pour le moment.",
+        authErrorMessage(
+          googleError,
+          "Impossible de se connecter avec Google pour le moment.",
+        ),
       );
       setLoading(false);
     }
@@ -183,6 +189,7 @@ export default function AuthPage() {
 
     setError("");
     setMessage("");
+    setUnconfirmedEmail("");
 
     if (!cleanEmail) {
       setError("Entre ton adresse e-mail.");
@@ -249,25 +256,36 @@ export default function AuthPage() {
     } catch (submitError) {
       console.error(submitError);
 
-      if (submitError instanceof Error) {
-        const lowerMessage = submitError.message.toLowerCase();
+      if (isEmailNotConfirmed(submitError)) setUnconfirmedEmail(cleanEmail);
+      setError(authErrorMessage(submitError, "Une erreur est survenue. Réessaie dans un instant."));
+    } finally {
+      setLoading(false);
+    }
+  }
 
-        if (
-          lowerMessage.includes("invalid login credentials") ||
-          lowerMessage.includes("invalid credentials")
-        ) {
-          setError("E-mail ou mot de passe incorrect.");
-        } else if (
-          lowerMessage.includes("user already registered") ||
-          lowerMessage.includes("already registered")
-        ) {
-          setError("Un compte existe déjà avec cette adresse e-mail.");
-        } else {
-          setError(submitError.message);
-        }
-      } else {
-        setError("Une erreur est survenue.");
-      }
+  async function handleResendConfirmation() {
+    setError("");
+    setMessage("");
+    setLoading(true);
+
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: unconfirmedEmail,
+        options: { emailRedirectTo: getAuthRedirectUrl("/onboarding") },
+      });
+
+      if (resendError) throw resendError;
+
+      setMessage(
+        "Nouvel e-mail de confirmation envoyé. Pense à regarder dans tes courriers indésirables.",
+      );
+      setUnconfirmedEmail("");
+    } catch (resendError) {
+      console.error(resendError);
+      setError(
+        authErrorMessage(resendError, "Impossible de renvoyer l’e-mail pour le moment."),
+      );
     } finally {
       setLoading(false);
     }
@@ -534,6 +552,17 @@ export default function AuthPage() {
                 <div className={styles.error} role="alert">
                   {error}
                 </div>
+              )}
+
+              {unconfirmedEmail && (
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={loading}
+                  className={styles.forgotButton}
+                >
+                  Renvoyer l’e-mail de confirmation
+                </button>
               )}
 
               {message && (
