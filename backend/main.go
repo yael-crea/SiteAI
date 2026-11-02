@@ -12,7 +12,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const currentCGVVersion = "2026-11-01"
+const currentCGVVersion = "2026-11-02"
 
 // Types de documents enregistrés dans legal_acceptances.
 const (

@@ -28,11 +28,6 @@ export default function LegalPage() {
           <p className="mt-5 max-w-3xl leading-7 text-slate-400">
             Cette page présente les informations relatives à l’éditeur du service Lumio et à son hébergement.
           </p>
-
-          <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : ces mentions devront être relues avant la
-            commercialisation de Lumio.
-          </div>
         </div>
 
         <div className="space-y-5">

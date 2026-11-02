@@ -20,7 +20,7 @@ function afterSignInPath() {
 
 type AuthMode = "login" | "signup" | "forgot";
 
-const TERMS_VERSION = "2026-11-01-2";
+const TERMS_VERSION = "2026-11-02";
 const PRODUCTION_AUTH_ORIGIN = "https://lumio.business";
 
 function getAuthRedirectUrl(path: string) {

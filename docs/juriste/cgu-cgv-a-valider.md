@@ -48,7 +48,7 @@ provisoire », à retirer après validation.
 - Sites des clients : bloc « Mentions légales et données personnelles » en
   bas de page avec l'identité de l'éditeur, l'hébergeur, l'usage des données
   du formulaire, la mesure d'audience et un lien de signalement.
-- Versions : CGV `2026-11-01`, CGU `2026-11-01-2`. Les nouvelles
+- Versions : CGV `2026-11-02`, CGU `2026-11-02`. Les nouvelles
   acceptations sont enregistrées avec ces versions.
 
 ## Questions ouvertes pour le juriste
@@ -64,3 +64,35 @@ provisoire », à retirer après validation.
    plutôt que par e-mail ?
 5. Une fois validées : retirer les bannières « Version provisoire » et
    l'introduction « base provisoire » des CGU.
+
+## Vérification interne du 2 novembre 2026
+
+Relecture faite sans avocat, à partir des textes et de sources secondaires
+(EUR-Lex et Légifrance n'étaient pas lisibles automatiquement ce jour-là).
+Les bannières « Version provisoire » ont été retirées à la demande de
+l'éditeur, qui en assume la décision. Versions : CGV `2026-11-02`,
+CGU `2026-11-02`.
+
+Corrections apportées :
+
+- CGU art. 11 (règlement (UE) 2022/2065, art. 11, 12, 16, 17 et 18) :
+  point de contact unique pour les utilisateurs et les autorités, langues
+  (français, anglais), accusé de réception, information de l'auteur du
+  signalement, examen humain sans modération automatisée, exposé des motifs
+  avec fondement et voies de recours, information des autorités en cas de
+  soupçon d'infraction menaçant la vie ou la sécurité.
+- Clause attributive de compétence (CGU art. 13, CGV art. 21) : limitée aux
+  clients commerçants et mise en évidence en capitales, l'article 48 du Code
+  de procédure civile la réputant non écrite à l'égard des non-commerçants
+  (artisans, professions libérales, associations).
+- Confidentialité (RGPD art. 13.2.e ; loi Informatique et Libertés,
+  art. 85) : caractère obligatoire ou facultatif des données, directives
+  après décès.
+
+Restent à vérifier par un professionnel :
+
+1. Numéro de téléphone de Vercel Inc. à ajouter aux mentions légales de
+   Lumio et des sites clients (LCEN, art. 1-1) : aucun numéro officiel
+   vérifié n'a été trouvé.
+2. Plafond de responsabilité (question 1 ci-dessus).
+3. Information des clients existants sur Sentry (question 3).

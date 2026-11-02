@@ -28,11 +28,6 @@ export default function LegalPage() {
           <p className="mt-5 max-w-3xl leading-7 text-slate-400">
             Cette politique décrit les données personnelles traitées par Lumio, les raisons de ces traitements, les prestataires qui y participent et les droits des personnes concernées.
           </p>
-
-          <div className="mt-6 rounded-2xl border border-amber-800 bg-amber-950/30 p-5 text-sm leading-7 text-amber-200">
-            ⚠️ Version provisoire : cette politique devra être relue avant
-            la commercialisation de Lumio.
-          </div>
         </div>
 
         <div className="space-y-5">
@@ -59,6 +54,8 @@ Pour les données des visiteurs des sites publiés avec Lumio (demandes de devis
 • demandes de devis envoyées depuis les sites publiés : nom, coordonnées, type de besoin et message ;
 • identifiant aléatoire conservé dans le navigateur, pages vues et clics sur les moyens de contact ;
 • journaux techniques nécessaires à la sécurité, au diagnostic et au fonctionnement du service.
+
+L’adresse e-mail est nécessaire pour créer un compte, et les informations de paiement pour souscrire un abonnement : sans elles, le service ne peut pas être fourni. Les autres informations sont facultatives.
 
 Les données de carte bancaire ne sont pas destinées à être stockées directement par Lumio lorsque le paiement est traité par Stripe.
             </div>
@@ -121,6 +118,8 @@ Lorsque des données sont transférées hors de l’Union européenne, ces trans
             <h2 className="text-xl font-black">7. Droits des personnes concernées</h2>
             <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-400">
               Toute personne concernée peut demander l’accès à ses données, leur rectification, leur effacement, la limitation du traitement ou leur portabilité, et s’opposer aux traitements fondés sur l’intérêt légitime.
+
+Chacun peut aussi définir des directives sur le sort de ses données après son décès.
 
 Pour exercer ces droits, il suffit d’écrire à support@lumio.business. Une réponse est apportée dans un délai d’un mois. Un justificatif d’identité peut être demandé en cas de doute raisonnable sur l’identité du demandeur.
 
