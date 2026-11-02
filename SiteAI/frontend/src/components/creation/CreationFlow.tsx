@@ -295,13 +295,13 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
   }, [templateServices, activity, services]);
 
   function toggleService(label: string) {
+    if (!services.includes(label) && services.length >= MAX_SERVICES) {
+      setError(`Tu as déjà choisi ${MAX_SERVICES} services. Retires-en un pour en ajouter un autre.`);
+      return;
+    }
     setError("");
     setServices((current) =>
-      current.includes(label)
-        ? current.filter((item) => item !== label)
-        : current.length >= MAX_SERVICES
-          ? current
-          : [...current, label],
+      current.includes(label) ? current.filter((item) => item !== label) : [...current, label],
     );
   }
 
@@ -675,6 +675,11 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
               </button>
             ))}
           </div>
+          )}
+          {serviceOptions.length > 0 && (
+            <p className={styles.note} aria-live="polite">
+              {services.length} / {MAX_SERVICES} services choisis
+            </p>
           )}
           <label className={`${styles.field} ${styles.addService}`}>
             <span>Un autre service ?</span>
