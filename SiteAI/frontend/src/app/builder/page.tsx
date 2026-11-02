@@ -3763,11 +3763,12 @@ export default function Home() {
                       }
                     />
                     <div>
-                      <label className="mb-2 block text-sm text-slate-400">
+                      <label htmlFor="builder-nom-affiche" className="mb-2 block text-sm text-slate-400">
                         Nom affiché
                       </label>
 
                       <input
+                        id="builder-nom-affiche"
                         data-builder-edit="businessName"
                         value={site.businessName}
                         onChange={(event) =>
@@ -3779,11 +3780,12 @@ export default function Home() {
 
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <label className="mb-2 block text-sm text-slate-400">
+                        <label htmlFor="builder-activite" className="mb-2 block text-sm text-slate-400">
                           Activité
                         </label>
 
                         <input
+                          id="builder-activite"
                           value={activity}
                           onChange={(event) => {
                             setActivity(event.target.value);
@@ -3794,11 +3796,12 @@ export default function Home() {
                       </div>
 
                       <div>
-                        <label className="mb-2 block text-sm text-slate-400">
+                        <label htmlFor="builder-ville" className="mb-2 block text-sm text-slate-400">
                           Ville
                         </label>
 
                         <input
+                          id="builder-ville"
                           value={city}
                           onChange={(event) => {
                             setCity(event.target.value);
@@ -3810,11 +3813,12 @@ export default function Home() {
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm text-slate-400">
+                      <label htmlFor="builder-telephone" className="mb-2 block text-sm text-slate-400">
                         Téléphone
                       </label>
 
                       <input
+                        id="builder-telephone"
                         data-builder-edit="phone"
                         value={site.phone}
                         onChange={(event) =>
@@ -3856,11 +3860,12 @@ export default function Home() {
                     </details>
 
                     <div>
-                      <label className="mb-2 block text-sm text-slate-400">
+                      <label htmlFor="builder-grand-titre" className="mb-2 block text-sm text-slate-400">
                         Grand titre
                       </label>
 
                       <textarea
+                        id="builder-grand-titre"
                         data-builder-edit="heroTitle"
                         value={site.heroTitle}
                         onChange={(event) =>
@@ -3872,11 +3877,12 @@ export default function Home() {
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm text-slate-400">
+                      <label htmlFor="builder-texte-accueil" className="mb-2 block text-sm text-slate-400">
                         Texte d&apos;accueil
                       </label>
 
                       <textarea
+                        id="builder-texte-accueil"
                         data-builder-edit="heroText"
                         value={site.heroText}
                         onChange={(event) =>
@@ -3903,11 +3909,12 @@ export default function Home() {
                         </p>
 
                         <div className="mt-4">
-                          <label className="mb-2 block text-sm text-slate-400">
+                          <label htmlFor="builder-titre-seo" className="mb-2 block text-sm text-slate-400">
                             Titre SEO
                           </label>
 
                           <input
+                            id="builder-titre-seo"
                             value={site.metaTitle}
                             onChange={(event) =>
                               updateSiteField("metaTitle", event.target.value)
@@ -3921,11 +3928,12 @@ export default function Home() {
                         </div>
 
                         <div className="mt-4">
-                          <label className="mb-2 block text-sm text-slate-400">
+                          <label htmlFor="builder-description-seo" className="mb-2 block text-sm text-slate-400">
                             Description SEO
                           </label>
 
                           <textarea
+                            id="builder-description-seo"
                             value={site.metaDescription}
                             onChange={(event) =>
                               updateSiteField(
@@ -3955,10 +3963,11 @@ export default function Home() {
                       </summary>
                       <div className="mt-4 space-y-5">
                         <div>
-                          <label className="mb-2 block text-sm text-slate-400">
+                          <label htmlFor="builder-zone-d-intervention-ou-adresse" className="mb-2 block text-sm text-slate-400">
                             Zone d’intervention ou adresse
                           </label>
                           <input
+                            id="builder-zone-d-intervention-ou-adresse"
                             data-builder-edit="local"
                             value={site.serviceArea ?? ""}
                             onChange={(event) =>
@@ -3969,10 +3978,11 @@ export default function Home() {
                           />
                         </div>
                         <div>
-                          <label className="mb-2 block text-sm text-slate-400">
+                          <label htmlFor="builder-horaires" className="mb-2 block text-sm text-slate-400">
                             Horaires
                           </label>
                           <input
+                            id="builder-horaires"
                             value={site.openingHours ?? ""}
                             onChange={(event) =>
                               updateSiteField(
