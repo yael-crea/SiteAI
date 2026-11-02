@@ -16,7 +16,7 @@ import dynamic from "next/dynamic";
 const AppearancePanel = dynamic(() => import("@/components/builder/AppearancePanel"));
 const ContentMediaPanel = dynamic(() => import("@/components/builder/ContentMediaPanel"));
 
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -85,17 +85,6 @@ function normalizeSocialLinks(value?: SocialLinks | null): SocialLinks {
     return links;
   }, {});
 }
-
-const defaultDesignSettings: DesignSettings = {
-  font: "system",
-  buttonStyle: "soft",
-  cardStyle: "bordered",
-  logoSize: "medium",
-  heroLayout: "auto",
-  contentWidth: "normal",
-  spacing: "normal",
-  background: "auto",
-};
 
 function normalizeDesignSettings(
   value?: Partial<DesignSettings> | null,
@@ -1152,6 +1141,10 @@ export default function Home() {
     };
   }, [previewFullscreenOpen]);
 
+  // Fonctions appelées par l'effet de chargement initial : leur dernière version est utilisée sans relancer l'effet.
+  const loadSavedSitesEvent = useEffectEvent(loadSavedSites);
+  const openSavedSiteEvent = useEffectEvent(openSavedSite);
+
   useEffect(() => {
     let active = true;
 
@@ -1177,9 +1170,7 @@ export default function Home() {
 
         setAuthLoading(false);
 
-        // These loaders are stable for this one-time authenticated initialization.
-        // eslint-disable-next-line react-hooks/immutability
-        await loadSavedSites();
+        await loadSavedSitesEvent();
 
         const selectedTemplate = readExampleTemplate();
 
@@ -1208,9 +1199,7 @@ export default function Home() {
           const siteID = Number(siteToOpen);
 
           if (Number.isInteger(siteID) && siteID > 0) {
-            // The saved-site loader is stable for this one-time session handoff.
-            // eslint-disable-next-line react-hooks/immutability
-            await openSavedSite(siteID);
+            await openSavedSiteEvent(siteID);
           }
         }
         if (active) setDraftReady(true);
@@ -2245,24 +2234,6 @@ export default function Home() {
     // Removing from the draft does not delete media used by the public site.
   }
 
-  function getStoragePathFromPublicUrl(url: string) {
-    const marker = "/storage/v1/object/public/site-images/";
-
-    const markerIndex = url.indexOf(marker);
-
-    if (markerIndex === -1) {
-      return null;
-    }
-
-    const encodedPath = url.slice(markerIndex + marker.length);
-
-    try {
-      return decodeURIComponent(encodedPath);
-    } catch {
-      return encodedPath;
-    }
-  }
-
   async function handleGalleryUpload(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
 
@@ -2477,29 +2448,6 @@ export default function Home() {
           }
         : current,
     );
-    setSaveMessage("");
-  }
-
-  function updateDesignSetting<K extends keyof DesignSettings>(
-    field: K,
-    value: DesignSettings[K],
-  ) {
-    setSite((current) => {
-      if (!current) {
-        return current;
-      }
-
-      const settings = normalizeDesignSettings(current.designSettings);
-
-      return {
-        ...current,
-        designSettings: {
-          ...settings,
-          [field]: value,
-        },
-      };
-    });
-
     setSaveMessage("");
   }
 
@@ -2813,30 +2761,6 @@ export default function Home() {
         : current,
     );
     setSaveMessage("");
-  }
-
-  function getPreviewBackground() {
-    if (designStyle === "elegant") {
-      return "bg-neutral-950";
-    }
-
-    if (designStyle === "artisan") {
-      return "bg-stone-900";
-    }
-
-    return "bg-slate-950";
-  }
-
-  function getCardStyle() {
-    if (designStyle === "elegant") {
-      return "rounded-none border-neutral-200";
-    }
-
-    if (designStyle === "artisan") {
-      return "rounded-xl border-stone-200";
-    }
-
-    return "rounded-3xl border-slate-200";
   }
 
   function formatDate(value: string) {

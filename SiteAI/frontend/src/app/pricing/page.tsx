@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useEffectEvent,
   useState,
 } from "react";
 
@@ -139,6 +140,9 @@ export default function PricingPage() {
     setMessage,
   ] = useState("");
 
+  // Fonctions appelées par l'effet de chargement initial : leur dernière version est utilisée sans relancer l'effet.
+  const loadBillingEvent = useEffectEvent(loadBilling);
+
   useEffect(() => {
     let active = true;
 
@@ -204,9 +208,7 @@ export default function PricingPage() {
           );
         }
 
-        // The billing loader is stable for this one-time authenticated initialization.
-        // eslint-disable-next-line react-hooks/immutability
-        await loadBilling();
+        await loadBillingEvent();
       } catch (
         err
       ) {

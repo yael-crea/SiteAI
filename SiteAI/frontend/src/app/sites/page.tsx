@@ -10,7 +10,7 @@ import "../app-theme.css";
 import dynamic from "next/dynamic";
 // Assistant fermé au départ : chargé après l'affichage de la page.
 const LumioAssistant = dynamic(() => import("@/components/LumioAssistant"), { ssr: false });
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 
 
 
@@ -387,6 +387,10 @@ export default function SitesPage() {
 
 
 
+  // Fonctions appelées par l'effet de chargement initial : leur dernière version est utilisée sans relancer l'effet.
+  const loadBillingEvent = useEffectEvent(loadBilling);
+  const loadSitesEvent = useEffectEvent(loadSites);
+
   useEffect(() => {
 
 
@@ -467,14 +471,11 @@ export default function SitesPage() {
 
 
 
-          // These loaders are stable for this one-time authenticated initialization.
-          // eslint-disable-next-line react-hooks/immutability
-          loadSites(),
+          loadSitesEvent(),
 
 
 
-          // eslint-disable-next-line react-hooks/immutability
-          loadBilling(),
+          loadBillingEvent(),
 
 
 

@@ -4,10 +4,9 @@ import "../app-theme.css";
 import dynamic from "next/dynamic";
 // Assistant fermé au départ : chargé après l'affichage de la page.
 const LumioAssistant = dynamic(() => import("@/components/LumioAssistant"), { ssr: false });
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useEffectEvent, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useConfirm } from "@/components/ui/ConfirmDialog";
 import Icon from "@/components/ui/Icon";
 import AppSidebar from "@/components/app/AppSidebar";
 import { readableBillingStatus, readablePlan } from "@/lib/billingLabels";
@@ -47,29 +46,6 @@ type ShareFeedback = {
   error?: boolean;
 };
 
-
-type DomainVerification = {
-  type: string;
-  domain?: string;
-  value?: string;
-  reason?: string;
-};
-
-type RecommendedRecord = {
-  rank: string;
-  value: unknown;
-};
-
-type DomainStatus = {
-  domain: string;
-  verified: boolean;
-  configured: boolean;
-  configuredBy?: string;
-  verification?: DomainVerification[];
-  recommendedCNAME?: RecommendedRecord[];
-  recommendedIPv4?: RecommendedRecord[];
-  message?: string;
-};
 
 type BillingStatus = {
   plan: string;
@@ -174,7 +150,6 @@ function TodayLabel() {
 }
 
 export default function DashboardPage() {
-  const [confirm, confirmDialog] = useConfirm();
   const router = useRouter();
 
   const [authLoading, setAuthLoading] = useState(true);
@@ -189,21 +164,19 @@ export default function DashboardPage() {
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [analyticsLocked, setAnalyticsLocked] = useState(false);
   const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [deletingID, setDeletingID] = useState<number | null>(null);
-  const [duplicatingID, setDuplicatingID] = useState<number | null>(null);
   const [shareFeedback, setShareFeedback] = useState<ShareFeedback | null>(null);
   const [posterLoadingID, setPosterLoadingID] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const [domainPanelSiteID, setDomainPanelSiteID] = useState<number | null>(null);
-  const [domainInput, setDomainInput] = useState("");
-  const [domainStatus, setDomainStatus] = useState<DomainStatus | null>(null);
-  const [domainLoading, setDomainLoading] = useState(false);
-  const [domainActionLoading, setDomainActionLoading] = useState(false);
-  const [domainError, setDomainError] = useState("");
+
+  // Fonctions appelées par l'effet de chargement initial : leur dernière version est utilisée sans relancer l'effet.
+  const checkAdminAccessEvent = useEffectEvent(checkAdminAccess);
+  const loadAnalyticsEvent = useEffectEvent(loadAnalytics);
+  const loadBillingEvent = useEffectEvent(loadBilling);
+  const loadLeadsEvent = useEffectEvent(loadLeads);
+  const loadSitesEvent = useEffectEvent(loadSites);
 
   useEffect(() => {
     let active = true;
@@ -226,11 +199,11 @@ export default function DashboardPage() {
         setAuthLoading(false);
 
         await Promise.all([
-          loadSites(),
-          loadBilling(),
-          loadLeads(),
-          loadAnalytics(),
-          checkAdminAccess(),
+          loadSitesEvent(),
+          loadBillingEvent(),
+          loadLeadsEvent(),
+          loadAnalyticsEvent(),
+          checkAdminAccessEvent(),
         ]);
       } catch (err) {
         console.error(err);
@@ -448,397 +421,6 @@ export default function DashboardPage() {
     window.open(`/site/${slug}`, "_blank", "noopener,noreferrer");
   }
 
-  function publicSiteUrl(slug: string) {
-    if (typeof window === "undefined") {
-      return `/site/${encodeURIComponent(slug)}`;
-    }
-
-    return `${window.location.origin}/site/${encodeURIComponent(slug)}`;
-  }
-
-  async function copyText(value: string) {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(value);
-      return;
-    }
-
-    const textarea = document.createElement("textarea");
-    textarea.value = value;
-    textarea.setAttribute("readonly", "");
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.select();
-
-    const copied = document.execCommand("copy");
-    document.body.removeChild(textarea);
-
-    if (!copied) {
-      throw new Error("copy-failed");
-    }
-  }
-
-  async function copyPublicSite(
-    siteID: number,
-    slug: string,
-  ) {
-    if (!slug) return;
-
-    try {
-      await copyText(publicSiteUrl(slug));
-
-      setShareFeedback({
-        siteID,
-        message: "✓ Lien copié",
-      });
-    } catch (err) {
-      console.error(err);
-
-      setShareFeedback({
-        siteID,
-        message: "Impossible de copier le lien.",
-        error: true,
-      });
-    }
-  }
-
-  async function sharePublicSite(
-    siteID: number,
-    slug: string,
-    businessName: string,
-  ) {
-    if (!slug) return;
-
-    const url = publicSiteUrl(slug);
-
-    try {
-      if (typeof navigator.share === "function") {
-        await navigator.share({
-          title: businessName || "Site professionnel",
-          text: `Découvre le site de ${businessName || "cette entreprise"}.`,
-          url,
-        });
-
-        setShareFeedback({
-          siteID,
-          message: "Options de partage ouvertes.",
-        });
-
-        return;
-      }
-
-      await copyText(url);
-
-      setShareFeedback({
-        siteID,
-        message: "✓ Lien copié pour le partager",
-      });
-    } catch (err) {
-      if (
-        err &&
-        typeof err === "object" &&
-        "name" in err &&
-        err.name === "AbortError"
-      ) {
-        return;
-      }
-
-      console.error(err);
-
-      setShareFeedback({
-        siteID,
-        message: "Impossible d’ouvrir le partage.",
-        error: true,
-      });
-    }
-  }
-
-  async function duplicateSite(
-    id: number,
-    businessName: string,
-  ) {
-    if (duplicatingID !== null) return;
-
-    setDuplicatingID(id);
-    setError("");
-
-    try {
-      const response = await authenticatedFetch(
-        `/sites/${id}/duplicate`,
-        {
-          method: "POST",
-        },
-      );
-
-      if (!response.ok) {
-        const message = (await response.text()).trim();
-
-        throw new Error(
-          message || "Impossible de dupliquer ce site.",
-        );
-      }
-
-      const duplicated: SavedSite = await response.json();
-
-      setSites((currentSites) => [
-        duplicated,
-        ...currentSites.filter((site) => site.id !== duplicated.id),
-      ]);
-
-      setSearch("");
-      setFilter("all");
-    } catch (err) {
-      console.error(err);
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : `Impossible de dupliquer "${businessName}".`,
-      );
-    } finally {
-      setDuplicatingID(null);
-    }
-  }
-
-  async function deleteSite(id: number, businessName: string) {
-    const confirmed = await confirm({
-      title: `Supprimer définitivement le site "${businessName}" ?`,
-      confirmLabel: "Supprimer", tone: "danger",
-    });
-
-    if (!confirmed) return;
-
-    setDeletingID(id);
-    setError("");
-
-    try {
-      const response = await authenticatedFetch(`/sites/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur suppression");
-      }
-
-      setSites((currentSites) =>
-        currentSites.filter((site) => site.id !== id),
-      );
-
-      if (domainPanelSiteID === id) {
-        closeDomainPanel();
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Impossible de supprimer ce site.");
-    } finally {
-      setDeletingID(null);
-    }
-  }
-
-  async function openDomainPanel(siteID: number) {
-    if (domainPanelSiteID === siteID) {
-      closeDomainPanel();
-      return;
-    }
-
-    setDomainPanelSiteID(siteID);
-    setDomainInput("");
-    setDomainStatus(null);
-    setDomainError("");
-
-    await loadDomainStatus(siteID);
-  }
-
-  function closeDomainPanel() {
-    setDomainPanelSiteID(null);
-    setDomainInput("");
-    setDomainStatus(null);
-    setDomainError("");
-    setDomainLoading(false);
-    setDomainActionLoading(false);
-  }
-
-  async function loadDomainStatus(siteID: number) {
-    setDomainLoading(true);
-    setDomainError("");
-
-    try {
-      const response = await authenticatedFetch(`/sites/${siteID}/domain`);
-
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(
-          message || "Impossible de récupérer le domaine.",
-        );
-      }
-
-      const data: DomainStatus = await response.json();
-      setDomainStatus(data);
-
-      if (data.domain) {
-        setDomainInput(data.domain);
-      }
-    } catch (err) {
-      console.error(err);
-      setDomainError(
-        err instanceof Error
-          ? err.message
-          : "Impossible de récupérer le domaine.",
-      );
-    } finally {
-      setDomainLoading(false);
-    }
-  }
-
-  async function addDomain(siteID: number) {
-    const cleanDomain = domainInput
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//, "")
-      .replace(/^www\./, "")
-      .split("/")[0];
-
-    if (!cleanDomain) {
-      setDomainError(
-        "Entre un domaine, par exemple : monentreprise.fr",
-      );
-      return;
-    }
-
-    setDomainActionLoading(true);
-    setDomainError("");
-
-    try {
-      const response = await authenticatedFetch(`/sites/${siteID}/domain`, {
-        method: "POST",
-        body: JSON.stringify({ domain: cleanDomain }),
-      });
-
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(
-          message || "Impossible d'ajouter ce domaine.",
-        );
-      }
-
-      const data: DomainStatus = await response.json();
-      setDomainStatus(data);
-      setDomainInput(data.domain || cleanDomain);
-    } catch (err) {
-      console.error(err);
-      setDomainError(
-        err instanceof Error
-          ? err.message
-          : "Impossible d'ajouter le domaine.",
-      );
-    } finally {
-      setDomainActionLoading(false);
-    }
-  }
-
-  async function verifyDomain(siteID: number) {
-    setDomainActionLoading(true);
-    setDomainError("");
-
-    try {
-      const response = await authenticatedFetch(
-        `/sites/${siteID}/domain/verify`,
-        { method: "POST" },
-      );
-
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(
-          message || "Impossible de vérifier le domaine.",
-        );
-      }
-
-      const data: DomainStatus = await response.json();
-      setDomainStatus(data);
-    } catch (err) {
-      console.error(err);
-      setDomainError(
-        err instanceof Error
-          ? err.message
-          : "Impossible de vérifier le domaine.",
-      );
-    } finally {
-      setDomainActionLoading(false);
-    }
-  }
-
-  async function deleteDomain(siteID: number) {
-    if (!domainStatus?.domain) return;
-
-    const confirmed = await confirm({
-      title: `Retirer le domaine "${domainStatus.domain}" de ce site ?`,
-      confirmLabel: "Retirer le domaine", tone: "danger",
-    });
-
-    if (!confirmed) return;
-
-    setDomainActionLoading(true);
-    setDomainError("");
-
-    try {
-      const response = await authenticatedFetch(`/sites/${siteID}/domain`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(
-          message || "Impossible de retirer le domaine.",
-        );
-      }
-
-      const data: DomainStatus = await response.json();
-      setDomainStatus(data);
-      setDomainInput("");
-    } catch (err) {
-      console.error(err);
-      setDomainError(
-        err instanceof Error
-          ? err.message
-          : "Impossible de supprimer le domaine.",
-      );
-    } finally {
-      setDomainActionLoading(false);
-    }
-  }
-
-  function openCustomDomain() {
-    if (!domainStatus?.domain) return;
-
-    window.open(
-      `https://${domainStatus.domain}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-  }
-
-  function formatRecordValue(value: unknown) {
-    if (typeof value === "string") return value;
-    if (typeof value === "number" || typeof value === "boolean") {
-      return String(value);
-    }
-    if (value === null || value === undefined) return "";
-
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-
-  function formatDate(value: string) {
-    return new Date(value).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  }
-
   const publishedSites = sites.filter((site) => site.published).length;
   const draftSites = sites.length - publishedSites;
   const newLeadsCount = leads.filter((lead) => lead.status === "new").length;
@@ -1018,32 +600,10 @@ export default function DashboardPage() {
     };
   }, [leads]);
 
-  const filteredSites = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    return sites.filter((site) => {
-      const matchesSearch =
-        query === "" ||
-        site.businessName.toLowerCase().includes(query) ||
-        site.activity.toLowerCase().includes(query) ||
-        site.city.toLowerCase().includes(query);
-
-      const matchesFilter =
-        filter === "all" ||
-        (filter === "published" && site.published) ||
-        (filter === "draft" && !site.published);
-
-      return matchesSearch && matchesFilter;
-    });
-  }, [sites, search, filter]);
-
   const planName = readablePlan(billing?.plan ?? "free");
   const billingStatus = readableBillingStatus(billing?.status ?? "");
   const subscriptionActive =
     billing?.status === "active" || billing?.status === "trialing";
-
-  const customDomainAllowed =
-    subscriptionActive && billing?.customDomainAllowed === true;
 
   // Pas d'écran de chargement : la structure et le titre partent dans le HTML de la page
   // (affichage plus rapide), les chiffres arrivent ensuite avec leurs squelettes.
@@ -1051,7 +611,6 @@ export default function DashboardPage() {
   return (
     <>
     <main className="lumio-app has-sidebar min-h-screen overflow-x-hidden bg-slate-950 text-white" aria-busy={authLoading || undefined}>
-      {confirmDialog}
       <AppSidebar
         className="hidden lg:flex"
         current="dashboard"
