@@ -26,7 +26,7 @@ const nightDisplay = Unbounded({ subsets: ["latin"], variable: "--font-night-dis
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: "Lumio - Crée ton site professionnel avec l'IA", template: "%s | Lumio" },
+  title: { default: "Crée ton site professionnel avec l’IA | Lumio", template: "%s | Lumio" },
   description: "Lumio permet aux TPE, PME et indépendants de créer rapidement un site professionnel grâce à l'intelligence artificielle.",
   applicationName: "Lumio", creator: "Lumio", publisher: "Lumio",
   robots: publicRobots,
