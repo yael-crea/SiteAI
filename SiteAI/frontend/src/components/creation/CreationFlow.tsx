@@ -282,7 +282,7 @@ export default function CreationFlow({ firstSite = false }: CreationFlowProps) {
             item.keywords.some((keyword) => normalize(keyword).includes(query)),
         )
       : activityExamples;
-    return list.slice(0, query ? 6 : 8).map((item) => item.label);
+    return list.slice(0, query ? 10 : 8).map((item) => item.label);
   }, [activity]);
 
   const stepNumber = step === "activity" ? 1 : step === "business" ? 2 : step === "services" ? 3 : 4;
