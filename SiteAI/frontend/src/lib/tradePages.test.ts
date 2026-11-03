@@ -39,3 +39,16 @@ describe("pages métier (/site-internet/[metier])", () => {
     }
   });
 });
+
+describe("photos par métier", () => {
+  // Photos génériques « commerce » : aucun métier proposé à la création ne devrait y retomber.
+  const fallback = tradePhotosFor("activité inconnue")[0];
+
+  it.each(activityExamples.map((item) => [item.label]))("%s a ses propres photos présentes dans public/", (label) => {
+    const photos = tradePhotosFor(label);
+    expect(photos[0]).not.toBe(fallback);
+    for (const photo of photos) {
+      expect(existsSync(new URL(`../../public${photo}`, import.meta.url)), photo).toBe(true);
+    }
+  });
+});
