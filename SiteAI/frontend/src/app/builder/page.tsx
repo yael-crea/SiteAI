@@ -337,9 +337,15 @@ function followPreviewAnchor(event: MouseEvent, frameDocument: Document) {
   } catch {
     /* Keep malformed fragments inert. */
   }
-  frameDocument
-    .getElementById(id)
-    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  // scrollIntoView ferait aussi défiler les conteneurs de l'éditeur (bloqués
+  // en overflow masqué) : on ne fait défiler que la fenêtre de l'aperçu.
+  const target = frameDocument.getElementById(id);
+  const frameWindow = frameDocument.defaultView;
+  if (!target || !frameWindow) return;
+  frameWindow.scrollTo({
+    top: target.getBoundingClientRect().top + frameWindow.scrollY,
+    behavior: "smooth",
+  });
 }
 
 function ResponsiveSitePreview({
@@ -459,7 +465,7 @@ function ResponsiveSitePreview({
   const scaledHeight = viewport.height * scale;
 
   return (
-    <div ref={containerRef} className="w-full overflow-hidden">
+    <div ref={containerRef} className="w-full overflow-clip">
       <div
         className="mx-auto"
         style={{
@@ -741,7 +747,7 @@ export default function Home() {
         )
       );
     })
-    .slice(0, 6);
+    .slice(0, 12);
 
   const hasExactActivityMatch = activityExamples.some(
     (example) =>
