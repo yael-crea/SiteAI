@@ -1,0 +1,9 @@
+# Lien local vers le projet Vercel (ne jamais partager)
+.vercel/
+
+# Livrables hors code : vidéos, PDF, audits, kits commerciaux, aperçus
+Claude outputs/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
